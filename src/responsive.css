@@ -1,0 +1,150 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   responsive.css — app-wide mobile overrides.
+
+   This app is styled almost entirely with inline style={{}} objects. Inline
+   styles outrank plain class selectors in CSS specificity, so every structural
+   override in here MUST use !important to take effect. Desktop styling lives in
+   the inline styles and is left untouched; these rules only kick in on phones.
+
+   Breakpoints:
+     • <= 980px  → tablet / large-phone landscape (.t- prefix)
+     • <= 768px  → phone (.r- prefix)  ← the main target
+
+   Usage: tag a container with one or more utility classes, e.g.
+     <div className="r-grid r-pad" style={{ display:'grid', ... }}>
+   The inline style holds the desktop look; the class overrides it on mobile.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Tablet (<=980px): drop 3+ column grids to 2 where tagged ─────────────── */
+@media (max-width: 980px) {
+  .t-grid-2 { grid-template-columns: 1fr 1fr !important; }
+  .t-grid-1 { grid-template-columns: 1fr !important; }
+}
+
+/* ── Phone (<=768px): the primary responsive target ───────────────────────── */
+@media (max-width: 768px) {
+
+  /* Collapse any multi-column grid to a single stacked column. */
+  .r-grid { grid-template-columns: 1fr !important; }
+
+  /* Tighten oversized horizontal section padding (e.g. "84px 36px 72px"). */
+  .r-pad { padding-left: 20px !important; padding-right: 20px !important; }
+
+  /* Reduce big vertical section padding. */
+  .r-pad-y { padding-top: 48px !important; padding-bottom: 48px !important; }
+
+  /* Stack a flex row into a column. */
+  .r-stack { flex-direction: column !important; align-items: stretch !important; }
+
+  /* Hide an element entirely on phones (decorative / space-only). */
+  .r-hide { display: none !important; }
+
+  /* Show an element only on phones (paired with .r-hide on desktop markup). */
+  .r-only { display: revert !important; }
+
+  /* Drop width caps so content fills the viewport. */
+  .r-full { width: 100% !important; max-width: 100% !important; }
+
+  /* Centre text and inline content. */
+  .r-center { text-align: center !important; }
+
+  /* Button rows: stack and go full-width so taps are easy. */
+  .r-btnrow { flex-direction: column !important; align-items: stretch !important; }
+  .r-btnrow > * { width: 100% !important; justify-content: center !important; }
+
+  /* Shrink very large clamp()/fixed display headings a touch more on phones. */
+  .r-h1 { font-size: clamp(26px, 7.4vw, 40px) !important; }
+  .r-h2 { font-size: clamp(24px, 7vw, 34px) !important; }
+
+  /* Hero on phones: single stacked column (per user request) — headline + CTAs
+     on top, then the globe centered below, then the sample card. The globe is
+     NOT on the side; it gets a full row so it reads at a comfortable size. */
+  .r-herogrid {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: "text" "globe" "card" !important;
+    column-gap: 0 !important; row-gap: 26px !important;
+    align-items: stretch !important;
+  }
+  /* Hero text flows at its natural height — no forced full-screen min-height
+     (that left an empty gap below the buttons). The globe sits right under the
+     buttons and peeks at the bottom of the first screen, inviting the scroll. */
+  /* Globe overlay labels (date header + severity legend + tracking footer) stay
+     VISIBLE on mobile now that the globe is full-width below the text — same as
+     desktop. (They were hidden earlier only when the globe was tiny on the side.) */
+
+  /* Let a horizontal flex strip scroll instead of overflowing the viewport.
+     Children keep their natural size (no squish) so the row scrolls cleanly. */
+  .r-scrollx { overflow-x: auto !important; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
+  .r-scrollx > * { flex-shrink: 0 !important; white-space: nowrap !important; }
+
+  /* Reduce large gaps that look cavernous once stacked. */
+  .r-gap { gap: 24px !important; }
+
+  /* Wide data tables (fixed multi-column grids) scroll horizontally on phones
+     instead of crushing their columns. The rows keep a sensible min-width. */
+  .r-tablewrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .r-tablewrap > div { min-width: 720px !important; }
+
+  /* Map overlay panels (filter drawer, incident list, filter popover, archive
+     sidebar) are fixed 320-440px and left-anchored — they run off a phone
+     screen. Make them full-width with small side margins. */
+  .r-mappanel {
+    position: fixed !important;        /* anchor to viewport, not a narrow parent */
+    top: 108px !important;             /* clear the nav (56) + mobile map bar (~45) so the panel's close header is visible */
+    left: 10px !important; right: 10px !important;
+    width: auto !important; max-width: none !important;
+    max-height: calc(100vh - 124px) !important;
+  }
+  /* The full-height right detail drawer (archive/diagnostics) → full width,
+     and start below the taller mobile (hamburger) navbar so it never covers it. */
+  .r-mapdrawer { left: 0 !important; right: 0 !important; width: auto !important; top: 80px !important; }
+
+  /* Map LIVE counter: compact on phones so it doesn't dominate the top-right
+     over the map. Smaller padding + min-width; trims the big number a touch. */
+  .map-counter {
+    padding: 8px 12px !important;
+    min-width: 0 !important;
+  }
+  .map-counter > div:nth-child(2) { font-size: 20px !important; }
+  /* Trim the long "ENDED <date>" line on phones to keep the card compact. */
+  .map-counter > div:nth-child(4) { display: none !important; }
+}
+
+/* ── Shared site nav: collapse the link row into a hamburger panel ─────────── */
+.site-nav-burger { display: none; }   /* desktop: no burger */
+@media (max-width: 768px) {
+  .site-nav-burger {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; padding: 0; cursor: pointer;
+    background: transparent; border: 1px solid #333; border-radius: 6px;
+    color: #fff;
+  }
+  .site-nav-links {
+    position: absolute; top: 100%; left: 0; right: 0;
+    flex-direction: column !important; align-items: stretch !important;
+    gap: 2px !important;
+    background: #080808; box-shadow: 0 18px 50px rgba(0,0,0,0.6);
+    border-bottom: 1px solid #333;
+    padding: 10px 20px 18px !important;
+    display: none !important;
+  }
+  .site-nav-links.open { display: flex !important; }
+  /* Full-width tappable rows inside the open panel. */
+  .site-nav-links > a,
+  .site-nav-links > button,
+  .site-nav-links > span {
+    width: 100% !important; text-align: left !important;
+    padding: 13px 12px !important; margin: 0 !important;
+    border-radius: 6px !important;
+  }
+  /* The signed-in account dropdown anchors full-width too. */
+  .site-nav-links > div { width: 100% !important; margin: 0 !important; }
+
+  /* Footer right column: left-align the link rows + social once stacked. */
+  .r-foot-right > div { justify-content: flex-start !important; }
+
+  /* Footer columns must shrink to the viewport, not hold their flex-basis. */
+  .r-foot-left, .r-foot-right {
+    flex-basis: 100% !important; max-width: 100% !important; min-width: 0 !important;
+  }
+}

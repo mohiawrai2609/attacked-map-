@@ -1,0 +1,17 @@
+{
+  "sweeps": [
+    { "date": "2026-05-14", "file": "2026-05-14.json",         "format": "sweep" },
+    { "date": "2026-05-15", "file": "2026-05-15.json",         "format": "sweep" },
+    { "date": "2026-05-16", "file": "2026-05-16.json",         "format": "sweep" },
+    { "date": "2026-05-18", "file": "2026-05-18.json",         "format": "sweep" },
+    { "date": "2026-05-19", "file": "2026-05-19.json",         "format": "sweep" },
+    { "date": "2026-05-20", "file": "2026-05-20.json",         "format": "sweep" },
+    { "date": "2026-05-21", "file": "2026-05-21.json",         "format": "sweep" },
+    { "date": "2026-05-22", "file": "2026-05-22.json",         "format": "sweep" },
+    { "date": "2026-05-23", "file": "2026-05-23.merged.json",  "format": "merged" },
+    { "date": "2026-05-25", "file": "2026-05-25.json",         "format": "sweep" },
+    { "date": "2026-05-26", "file": "2026-05-26.json",         "format": "sweep" },
+    { "date": "2026-05-27", "file": "2026-05-27.json",         "format": "sweep" },
+    { "date": "2026-05-28", "file": "2026-05-28.json",         "format": "sweep" }
+  ]
+}
