@@ -468,7 +468,16 @@ export function LandingPage() {
 
           {/* Right (bottom on desktop / full-width on mobile) — slim sample card */}
           <div style={{ gridArea: "card", width: "100%", maxWidth: 440, margin: "0 auto" }}>
+            {/* Fixed-size card: constant height on desktop so it never resizes as
+                the sample rotates. Columns clip overflow; text is line-clamped.
+                On mobile the two columns stack, so height falls back to auto. */}
+            <style>{`
+              .livesample { height: 210px; }
+              .livesample > div { overflow: hidden; }
+              @media (max-width: 700px) { .livesample { height: auto; } }
+            `}</style>
             <div
+              className="livesample"
               onClick={() => { window.location.href = hero?.id != null ? `/?hub&open=${hero.id}` : "/?hub"; }}
               title="Open this briefing"
               onMouseEnter={e => { e.currentTarget.style.borderColor = BRAND.gold; }}
@@ -493,7 +502,7 @@ export function LandingPage() {
                       <span style={{ padding: "3px 9px", borderRadius: 3, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: `${sevColor}1f`, color: sevColor, border: `1px solid ${sevColor}55` }}>{SEVERITY_LABEL[hero.severity] || "—"}</span>
                       <span style={{ padding: "3px 9px", borderRadius: 3, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: "rgba(255,255,255,0.06)", color: BRAND.t2, border: `1px solid ${BRAND.border}` }}>{hero.primary_category || "OPS"}</span>
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, letterSpacing: "-0.01em", marginBottom: 8, color: BRAND.white }}>{hero.headline}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, letterSpacing: "-0.01em", marginBottom: 8, color: BRAND.white, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{hero.headline}</div>
                     <div style={{ fontSize: 11, color: BRAND.tmuted, fontWeight: 600, letterSpacing: "0.03em" }}>
                       {[hero.entity, hero.country, hero.industry || hero.sector].filter(Boolean).join("  ·  ")}
                     </div>

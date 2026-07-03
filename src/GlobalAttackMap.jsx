@@ -6,6 +6,7 @@ import { PartnerFeedbackModal } from "./auth/PartnerFeedbackModal.jsx";
 import { PartnerApplicationModal } from "./auth/PartnerApplicationModal.jsx";
 import { Logo } from "./auth/Logo.jsx";
 import { SiteNav } from "./auth/SiteNav.jsx";
+import Globe3D from "./Globe3D.jsx";
 // World atlas + topojson are BUNDLED (not loaded from a CDN at runtime) so the
 // continents always render — a blocked/slow CDN used to leave the map empty.
 import { feature as topoFeature } from "topojson-client";
@@ -2006,7 +2007,7 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
           made the map look haloed; demo has a flat black background. */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(245,184,0,0.025) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 62% 54% at 50% 48%, rgba(78,161,255,0.05) 0%, rgba(78,161,255,0.015) 40%, transparent 72%)",
         zIndex: 0,
       }} />
       <svg
@@ -2058,16 +2059,16 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
 
           {/* Graticule — neutral grey, very subtle. Matches the demo's
               barely-visible reference lines. */}
-          <path d={graticule} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={0.3 / k} strokeOpacity={1} />
+          <path d={graticule} fill="none" stroke="rgba(78,161,255,0.07)" strokeWidth={0.3 / k} strokeOpacity={1} />
 
-          {/* Countries — uniform medium-dark fill, soft border. Reads as
-              clean silhouettes against the ocean, like the reference demo. */}
+          {/* Countries — muted earth-green landmasses against the black-space
+              ocean, matching the satellite-globe palette. */}
           {world && world.features.map((feat, i) => (
             <path
               key={i}
               d={pathGen(feat)}
-              fill="#242424"
-              stroke="#333333"
+              fill="#1d2c26"
+              stroke="#33493f"
               strokeWidth={0.4 / k}
             />
           ))}
@@ -9569,17 +9570,11 @@ export default function GlobalAttackMap() {
               />
             ) : (
               <GlobeErrorBoundary>
-                <GlobeCanvas
-                  world={world}
+                <Globe3D
                   visibleIncidents={visibleIncidents}
-                  viewMode={viewMode}
-                  hoveredId={hoveredId}
                   selectedId={selectedId}
-                  onHover={setHoveredId}
                   onSelect={setSelectedId}
-                  showBlastRadius={showBlastRadius}
-                  showHeat={showHeat}
-                  showLabels={showLabels}
+                  onHover={setHoveredId}
                 />
               </GlobeErrorBoundary>
             )}
