@@ -534,6 +534,8 @@ export function AttackHub() {
   const cats = ["ALL", ...Array.from(new Set(articles.map(a => a.primary_category).filter(Boolean)))];
   const inds = ["ALL", ...Array.from(new Set(articles.map(a => a.industry).filter(Boolean))).sort()];
   const days = ["ALL", ...Array.from(new Set(articles.map(a => a.incident_day).filter(Boolean))).sort((a, b) => a < b ? 1 : -1)];
+  const liveDay = days.find(d => d !== "ALL") || "";       // newest incident day = "live now"
+  const liveActive = !!liveDay && dateFrom === liveDay && dateTo === liveDay;
   const visible = articles
     .filter(a => catFilter === "ALL" || a.primary_category === catFilter)
     .filter(a => indFilter === "ALL" || a.industry === indFilter)
@@ -669,12 +671,12 @@ export function AttackHub() {
               `}</style>
               <div style={{
                 flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 8,
-                padding: "0 16px", height: "100%", background: "transparent", color: "#fff",
-                fontWeight: 700, fontSize: 13, letterSpacing: "0.04em",
+                padding: "0 16px", height: "100%", background: "transparent", color: "#E0091C",
+                fontWeight: 800, fontSize: 13, letterSpacing: "0.12em",
                 borderRight: "1px solid rgba(255,255,255,0.14)",
               }}>
                 <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#E0091C", boxShadow: "0 0 8px #E0091C", animation: "hubpulse 1.2s infinite" }} />
-                Live
+                LIVE
               </div>
               <div style={{
                 flex: 1, overflow: "hidden",
@@ -712,12 +714,23 @@ export function AttackHub() {
           <main className="wrap r-pad" style={{ paddingBottom: 64 }}>
             {/* Secondary filters */}
             <div className="filterbar">
+              <button
+                onClick={() => { if (liveActive) { setDateFrom(""); setDateTo(""); } else if (liveDay) { setDateFrom(liveDay); setDateTo(liveDay); } }}
+                title={liveActive ? "Showing the latest day — click to clear" : "Show only the latest live incidents"}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
+                  padding: "6px 13px", borderRadius: 4, fontFamily: "inherit", fontSize: 11,
+                  fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase",
+                  background: liveActive ? "#E0091C" : "transparent",
+                  color: liveActive ? "#fff" : "#E0091C",
+                  border: `1.5px solid #E0091C`,
+                }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: liveActive ? "#fff" : "#E0091C", animation: "hubpulse 1.2s infinite" }} />
+                Live
+              </button>
               <span className="cnt">{visible.length} briefings{catFilter !== "ALL" ? ` · ${CAT_NAME[catFilter] || catFilter}` : ""}</span>
               <select className={indFilter !== "ALL" ? "act" : ""} value={indFilter} onChange={e => setIndFilter(e.target.value)}>
                 {inds.map(i => <option key={i} value={i}>{i === "ALL" ? "All industries" : i}</option>)}
-              </select>
-              <select className={dayFilter !== "ALL" ? "act" : ""} value={dayFilter} onChange={e => setDayFilter(e.target.value)}>
-                {days.map(d => <option key={d} value={d}>{d === "ALL" ? "All days" : fmtDay(d).slice(0, 16)}</option>)}
               </select>
               {(() => {
                 const dStyle = (on) => ({
