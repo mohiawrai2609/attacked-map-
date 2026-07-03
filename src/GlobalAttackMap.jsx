@@ -8185,7 +8185,7 @@ function AuditDrawer({ incidents, onClose }) {
 // delete, and persistence-status messaging. Reads from the archive index
 // (passed in as a prop) so it renders fast without fetching sweeps.
 // ─────────────────────────────────────────────────────────────────────────────
-function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, busy, storageSubstrate, storageCanaryError, onRefresh, timeWindow, onWindow, windowInfo }) {
+function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, busy, storageSubstrate, storageCanaryError, onRefresh, timeWindow, onWindow, windowInfo, timeline }) {
   const persistsAcrossSessions = storageSubstrate === "persistent";
   // Live diagnostics: actual count of stored sweep keys (which may differ
   // from archiveIndex.length if the index is mid-recovery or a write failed)
@@ -8355,6 +8355,75 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
           )}
         </div>
       )}
+
+      {/* Date range → auto-play. Pick From→To; the range renders and then the
+          map steps through the days automatically at the chosen interval. */}
+      {timeline && archiveIndex.length > 0 && (() => {
+        const inStyle = {
+          flex: 1, minWidth: 0, background: BRAND.obsidian, color: BRAND.white,
+          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, padding: "6px 8px",
+          fontFamily: "Inter, sans-serif", fontSize: 11, colorScheme: "dark",
+        };
+        const cur = timeline.playDates[timeline.playPos];
+        return (
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${BRAND.borderSubtle}` }}>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+              ◇ Date Range · Auto-play
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input type="date" value={timeline.rangeFrom} disabled={busy}
+                onChange={e => timeline.setRangeFrom(e.target.value)} style={inStyle} title="From" />
+              <span style={{ color: BRAND.textMuted, fontSize: 12 }}>→</span>
+              <input type="date" value={timeline.rangeTo} disabled={busy}
+                onChange={e => timeline.setRangeTo(e.target.value)} style={inStyle} title="To" />
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8 }}>
+              <button
+                onClick={() => !busy && timeline.onApplyRange(timeline.rangeFrom, timeline.rangeTo)}
+                disabled={busy || !timeline.rangeFrom || !timeline.rangeTo}
+                style={{
+                  flex: 1, padding: "8px 0",
+                  background: (!timeline.rangeFrom || !timeline.rangeTo) ? "transparent" : BRAND.gold,
+                  color: (!timeline.rangeFrom || !timeline.rangeTo) ? BRAND.textMuted : BRAND.obsidian,
+                  border: `1px solid ${(!timeline.rangeFrom || !timeline.rangeTo) ? BRAND.borderSubtle : BRAND.gold}`,
+                  borderRadius: 3, fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700,
+                  letterSpacing: "0.10em", textTransform: "uppercase", cursor: busy ? "wait" : "pointer",
+                }}>
+                Show range &amp; play
+              </button>
+              <select value={timeline.playSpeedMs} onChange={e => timeline.setPlaySpeedMs(Number(e.target.value))}
+                title="Seconds each day is shown before advancing"
+                style={{ flex: "0 0 auto", background: BRAND.obsidian, color: BRAND.white, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, padding: "7px 8px", fontFamily: "Inter, sans-serif", fontSize: 10, colorScheme: "dark" }}>
+                <option value={5000}>5s</option>
+                <option value={10000}>10s</option>
+                <option value={20000}>20s</option>
+                <option value={30000}>30s</option>
+                <option value={35000}>35s</option>
+                <option value={40000}>40s</option>
+                <option value={60000}>60s</option>
+              </select>
+            </div>
+
+            {timeline.playDates.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 800, color: timeline.playing ? BRAND.gold : BRAND.white }}>{cur || "—"}</span>
+                  <button onClick={() => timeline.onTogglePlay()}
+                    style={{ background: "transparent", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, color: BRAND.textSecondary, padding: "4px 10px", fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                    {timeline.playing ? "⏸ Pause" : "▶ Resume"}
+                  </button>
+                </div>
+                <input type="range" min={0} max={timeline.playDates.length - 1} value={timeline.playPos}
+                  onChange={e => timeline.onScrub(Number(e.target.value))}
+                  style={{ width: "100%", accentColor: BRAND.gold, cursor: "pointer" }} />
+                <div style={{ marginTop: 3, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.04em", textAlign: "right" }}>
+                  day {timeline.playPos + 1} / {timeline.playDates.length}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* List */}
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
@@ -8699,6 +8768,17 @@ export default function GlobalAttackMap() {
   // still tracks the anchor day the window is computed backward from.
   const [timeWindow, setTimeWindow] = useState("day");
   const [windowInfo, setWindowInfo] = useState(null);  // { kind, from, to, days, requested }
+  // Date-RANGE + AUTO timeline playback. Applying a range shows every incident
+  // in it, then automatically steps through the days one at a time (no manual
+  // Play button). playDates = ascending days in range; playCacheRef memoises the
+  // per-day sweeps so the loop never refetches. See applyRange() + effect below.
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
+  const [playing, setPlaying] = useState(false);
+  const [playDates, setPlayDates] = useState([]);
+  const [playPos, setPlayPos] = useState(0);
+  const [playSpeedMs, setPlaySpeedMs] = useState(35000);  // ~35 s/day default (configurable)
+  const playCacheRef = useRef(new Map());
 
   const { world, err: worldErr } = useWorldGeo();
 
@@ -9115,6 +9195,87 @@ export default function GlobalAttackMap() {
       setArchiveBusy(false);
     }
   }
+
+  // Show every incident within an arbitrary [from,to] range, then AUTO-PLAY
+  // through the days one at a time (no manual Play button). ISO YYYY-MM-DD
+  // strings compare chronologically, so plain string bounds/sort suffice.
+  async function applyRange(from, to) {
+    if (!from || !to) return;
+    const lo = from <= to ? from : to;
+    const hi = from <= to ? to : from;
+    setRangeFrom(lo); setRangeTo(hi);
+    setPlaying(false);
+    try {
+      setArchiveBusy(true);
+      const idx = await readIndex();
+      setArchiveIndex(idx);
+      const dates = idx.map(e => e.date).filter(Boolean).filter(d => d >= lo && d <= hi).sort();
+      setPlayDates(dates);
+      setPlayPos(0);
+      if (!dates.length) {
+        setWindowInfo({ kind: "range", from: lo, to: hi, days: 0, requested: 0 });
+        setArchiveToast({ type: "warn", text: `No archived days between ${lo} and ${hi}` });
+        setTimeout(() => setArchiveToast(null), 3200);
+        return;
+      }
+      const inputs = [];
+      for (const d of dates) { const j = await readSweep(d); if (j) { inputs.push({ date: d, sweep: j }); playCacheRef.current.set(d, j); } }
+      const merged = mergeSweeps(inputs);
+      setTimeWindow("range");
+      setSweep(merged);
+      setSweepName(`RANGE · ${lo} → ${hi} · ${inputs.length} day${inputs.length === 1 ? "" : "s"}`);
+      setCurrentDate(hi);
+      setSelectedId(null);
+      setHoveredId(null);
+      setWindowInfo({ kind: "range", from: lo, to: hi, days: inputs.length, requested: dates.length });
+      const totalInc = Object.values(merged.results || {}).reduce((n, c) => n + ((c.incidents || []).length), 0);
+      setArchiveToast({ type: "saved", text: `✓ Range · ${inputs.length} day${inputs.length === 1 ? "" : "s"} · ${totalInc} incidents · auto-playing` });
+      setTimeout(() => setArchiveToast(null), 3200);
+      if (dates.length > 1) { setPlayPos(0); setPlaying(true); }   // auto-start the day-by-day progression
+    } catch (e) {
+      console.error("Range apply failed:", e);
+      setArchiveToast({ type: "warn", text: `⚠ Range failed: ${e?.message || e}` });
+      setTimeout(() => setArchiveToast(null), 4500);
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
+
+  // Render one day of the sequence (shared by the interval and manual scrubbing).
+  const showPlayDay = async (i) => {
+    const d = playDates[i];
+    if (!d) return;
+    let json = playCacheRef.current.get(d);
+    if (!json) { json = await readSweep(d); if (json) playCacheRef.current.set(d, json); }
+    if (!json) return;
+    setSweep(json);
+    setSweepName(`▶ ${d} · day ${i + 1}/${playDates.length}`);
+    setCurrentDate(d);
+    setSelectedId(null);
+    setHoveredId(null);
+    setPlayPos(i);
+  };
+
+  // Auto-playback driver — advances one day every playSpeedMs and swaps the
+  // sweep so incidents animate date-by-date. playPos is intentionally NOT a dep
+  // (functional updater) so the interval isn't rebuilt every tick; pause/resume
+  // and speed changes re-arm it from the current position.
+  useEffect(() => {
+    if (!playing || playDates.length === 0) return;
+    let cancelled = false;
+    const show = (i) => { if (!cancelled) showPlayDay(i); };
+    show(playPos);
+    const id = setInterval(() => {
+      setPlayPos(prev => {
+        const next = prev + 1;
+        if (next >= playDates.length) { clearInterval(id); setPlaying(false); return prev; }
+        show(next);
+        return next;
+      });
+    }, Math.max(500, playSpeedMs));
+    return () => { cancelled = true; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, playSpeedMs, playDates]);
 
   function reset() {
     setSweep(null);
@@ -10048,6 +10209,29 @@ export default function GlobalAttackMap() {
         />
       )}
 
+      {/* Auto-play date overlay — the current day, shown large over the map and
+          updated in sync as playback steps date-by-date. */}
+      {playing && currentDate && (
+        <div style={{
+          position: "fixed", top: 92, left: "50%", transform: "translateX(-50%)", zIndex: 65,
+          display: "flex", alignItems: "center", gap: 12, padding: "9px 18px",
+          background: "rgba(8,8,8,0.82)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 10, boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+          pointerEvents: "none",
+        }}>
+          <style>{`@keyframes atkDatePulse {0%,100%{opacity:1}50%{opacity:.3}}`}</style>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E0091C", boxShadow: "0 0 10px #E0091C", animation: "atkDatePulse 1.2s infinite" }} />
+          <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 19, color: "#fff", letterSpacing: "0.01em" }}>
+            {(() => { try { return new Date(currentDate + "T00:00:00Z").toUTCString().slice(0, 16); } catch { return currentDate; } })()}
+          </span>
+          {playDates.length > 0 && (
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: BRAND.textMuted, letterSpacing: "0.04em" }}>
+              day {playPos + 1} / {playDates.length}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Archive drawer */}
       {showArchive && (
         <ArchivePanel
@@ -10062,6 +10246,13 @@ export default function GlobalAttackMap() {
           timeWindow={timeWindow}
           onWindow={applyTimeWindow}
           windowInfo={windowInfo}
+          timeline={{
+            rangeFrom, rangeTo, setRangeFrom, setRangeTo,
+            onApplyRange: applyRange,
+            playing, onTogglePlay: () => setPlaying(p => !p),
+            playDates, playPos, playSpeedMs, setPlaySpeedMs,
+            onScrub: (i) => { setPlaying(false); showPlayDay(i); },
+          }}
           onRefresh={async () => {
             setArchiveBusy(true);
             try {

@@ -13,3 +13,6 @@ dist
 # Logs / OS
 *.log
 Thumbs.db
+
+# Baked incident reports (81MB) — served statically/deployed, not version-controlled
+public/reports/
