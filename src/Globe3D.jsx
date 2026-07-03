@@ -92,12 +92,14 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect })
       });
       viewerRef.current = viewer;
 
-      // ── Photogenic "Google Earth" look ──
-      // Full-bright imagery (no day/night terminator) so the globe is always
-      // vivid — matches Google Earth and avoids a dark hemisphere.
-      viewer.scene.globe.enableLighting = false;
+      // ── Photogenic "Google Earth" look, with a real day/night terminator ──
+      // Lighting is ON (so there are day + night hemispheres like the
+      // reference), but the sun is FROZEN at equinox-noon over the prime
+      // meridian and the camera starts on the lit side — so it opens bright
+      // with the terminator toward one edge, never a black face.
+      viewer.scene.globe.enableLighting = true;
       viewer.scene.skyAtmosphere.show = true;
-      viewer.scene.skyAtmosphere.brightnessShift = 0.25;
+      viewer.scene.skyAtmosphere.brightnessShift = 0.15;
       viewer.scene.globe.showGroundAtmosphere = true;
       viewer.scene.fog.enabled = true;
       viewer.scene.fog.density = 0.00008;
@@ -106,9 +108,21 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect })
       viewer.scene.backgroundColor = Cesium.Color.BLACK;
       if (viewer.scene.skyBox) viewer.scene.skyBox.show = true; // starfield
 
-      // Framing: whole globe from space.
+      // Freeze the sun (sub-solar point on the prime meridian) → stable terminator.
+      viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2025-03-20T12:00:00Z");
+      viewer.clock.shouldAnimate = false;
+      viewer.clock.multiplier = 0;
+
+      // Easy zoom: get right down to street level, no auto-spin fighting the wheel.
+      const cc = viewer.scene.screenSpaceCameraController;
+      cc.minimumZoomDistance = 250;          // ~250 m — street level
+      cc.maximumZoomDistance = 30000000;
+      cc.enableCollisionDetection = true;
+
+      // Framing: whole globe from space, camera on the lit hemisphere so the
+      // terminator falls toward the left edge (like the reference).
       viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(-30, 20, 24000000),
+        destination: Cesium.Cartesian3.fromDegrees(-45, 15, 24000000),
       });
 
       // Click a point → open the existing incident card via onSelect(_id).
@@ -120,14 +134,6 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect })
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
       viewer._clickHandler = handler;
-
-      // Gentle auto-spin that stops the moment the user grabs the globe.
-      let autoSpin = true;
-      const spinRate = 0.0011;
-      viewer.scene.postRender.addEventListener(() => {
-        if (autoSpin) viewer.scene.camera.rotate(Cesium.Cartesian3.UNIT_Z, -spinRate);
-      });
-      viewer.scene.canvas.addEventListener("pointerdown", () => { autoSpin = false; });
 
       buildEntities(viewer, incidentsRef.current);
     } catch (e) {

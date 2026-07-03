@@ -573,12 +573,18 @@ export function AttackHub() {
   function openArticle(a) { setSelected(a); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { window.scrollTo(0, 0); } }
 
   // ── card/rail builders (close over openArticle) ──
+  // BBC-style red LIVE tag, shown on incidents from the latest ("live") day.
+  const LiveTag = () => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#E0091C", fontWeight: 800, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#E0091C", animation: "hubpulse 1.2s infinite" }} />LIVE
+    </span>
+  );
   const Card = (a) => (
     <article key={a._key || a.id} className="card" onClick={() => openArticle(a)}
       style={{ borderTop: `3px solid ${SEV_C[a.severity] || GOLD}` }}>
       <div className="img"><NewsImage a={a} height={165} /></div>
       <div className="bd">
-        <div className="crow"><SevChip a={a} /><Kick>{catName(a)}</Kick><span className="day">{fmtShort(a.incident_day)}</span></div>
+        <div className="crow"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick><span className="day">{fmtShort(a.incident_day)}</span></div>
         <h3>{a.headline}</h3>
         <div className="by">{place(a)}</div>
         {a.summary && <p>{a.summary}</p>}
@@ -588,7 +594,7 @@ export function AttackHub() {
   const Story = (a) => (
     <article key={a._key || a.id} className="story" onClick={() => openArticle(a)}>
       <div className="img"><NewsImage a={a} height={150} /></div>
-      <div className="row"><SevChip a={a} /><Kick>{catName(a)}</Kick></div>
+      <div className="row"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick></div>
       <h3>{a.headline}</h3>
       {a.summary && <div className="ridek">{a.summary}</div>}
       <div className="by" style={{ marginTop: 6 }}>{place(a)}</div>
@@ -598,7 +604,7 @@ export function AttackHub() {
     <div key={a._key || a.id} className="ri" onClick={() => openArticle(a)}>
       {num != null && <span className="num">{num}</span>}
       <div style={{ minWidth: 0 }}>
-        <div className="mrow"><SevChip a={a} /><Kick>{catName(a)}</Kick></div>
+        <div className="mrow"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick></div>
         <h4>{a.headline}</h4>
         {a.summary && <div className="ridek">{a.summary}</div>}
         <div className="by" style={{ marginTop: 6 }}>{place(a)}</div>
@@ -615,7 +621,7 @@ export function AttackHub() {
   );
   const SideLead = (a) => (
     <div key={a._key || a.id} className="side" onClick={() => openArticle(a)}>
-      <div className="row"><SevChip a={a} /><Kick>{catName(a)}</Kick></div>
+      <div className="row"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick></div>
       <h3>{a.headline}</h3>
       {a.summary && <div className="dek">{a.summary}</div>}
       <div className="by" style={{ marginTop: 9 }}>{place(a)} · {fmtShort(a.incident_day)}</div>
@@ -719,13 +725,12 @@ export function AttackHub() {
                 title={liveActive ? "Showing the latest day — click to clear" : "Show only the latest live incidents"}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
-                  padding: "6px 13px", borderRadius: 4, fontFamily: "inherit", fontSize: 11,
-                  fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase",
-                  background: liveActive ? "#E0091C" : "transparent",
-                  color: liveActive ? "#fff" : "#E0091C",
-                  border: `1.5px solid #E0091C`,
+                  padding: "4px 2px", background: "transparent", border: "none",
+                  fontFamily: "inherit", fontSize: 13, fontWeight: 800, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#E0091C",
+                  borderBottom: liveActive ? "2px solid #E0091C" : "2px solid transparent",
                 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: liveActive ? "#fff" : "#E0091C", animation: "hubpulse 1.2s infinite" }} />
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E0091C", animation: "hubpulse 1.2s infinite" }} />
                 Live
               </button>
               <span className="cnt">{visible.length} briefings{catFilter !== "ALL" ? ` · ${CAT_NAME[catFilter] || catFilter}` : ""}</span>
@@ -812,7 +817,7 @@ export function AttackHub() {
                           <div>{spotSide.map(a => (
                             <div key={a._key || a.id} className="aside" onClick={() => openArticle(a)}>
                               <div className="img"><NewsImage a={a} height={170} /></div>
-                              <div className="row"><SevChip a={a} /><Kick>{catName(a)}</Kick></div>
+                              <div className="row"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick></div>
                               <h3>{a.headline}</h3>
                               {a.summary && <div className="ridek">{a.summary}</div>}
                             </div>
