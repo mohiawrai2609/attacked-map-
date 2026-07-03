@@ -8409,10 +8409,17 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
               <div style={{ marginTop: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 800, color: timeline.playing ? BRAND.gold : BRAND.white }}>{cur || "—"}</span>
-                  <button onClick={() => timeline.onTogglePlay()}
-                    style={{ background: "transparent", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, color: BRAND.textSecondary, padding: "4px 10px", fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
-                    {timeline.playing ? "⏸ Pause" : "▶ Resume"}
-                  </button>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <button onClick={() => timeline.onToggleNarrate()}
+                      title={timeline.narrate ? "Mute date narration" : "Enable date narration"}
+                      style={{ background: "transparent", border: `1px solid ${timeline.narrate ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 3, color: timeline.narrate ? BRAND.gold : BRAND.textSecondary, padding: "4px 9px", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      {timeline.narrate ? "🔊" : "🔇"}
+                    </button>
+                    <button onClick={() => timeline.onTogglePlay()}
+                      style={{ background: "transparent", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, color: BRAND.textSecondary, padding: "4px 10px", fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                      {timeline.playing ? "⏸ Pause" : "▶ Resume"}
+                    </button>
+                  </div>
                 </div>
                 <input type="range" min={0} max={timeline.playDates.length - 1} value={timeline.playPos}
                   onChange={e => timeline.onScrub(Number(e.target.value))}
@@ -8779,6 +8786,7 @@ export default function GlobalAttackMap() {
   const [playDates, setPlayDates] = useState([]);
   const [playPos, setPlayPos] = useState(0);
   const [playSpeedMs, setPlaySpeedMs] = useState(35000);  // ~35 s/day default (configurable)
+  const [narrate, setNarrate] = useState(true);           // speak the current date as playback advances
   const playCacheRef = useRef(new Map());
 
   const { world, err: worldErr } = useWorldGeo();
@@ -9255,7 +9263,25 @@ export default function GlobalAttackMap() {
     setSelectedId(null);
     setHoveredId(null);
     setPlayPos(i);
+    // Voice narration — announce the date being shown (cancel any prior line so
+    // fast steps/scrubs don't queue up). Runs off a user gesture (Show & play),
+    // so the browser autoplay policy allows speech.
+    if (narrate && typeof window !== "undefined" && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+        const nice = new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+        const n = Object.values(json.results || {}).reduce((s, c) => s + ((c.incidents || []).length), 0);
+        const u = new SpeechSynthesisUtterance(`Showing ${n} incident${n === 1 ? "" : "s"} for ${nice}`);
+        u.rate = 1; u.pitch = 1; u.volume = 1;
+        window.speechSynthesis.speak(u);
+      } catch { /* noop */ }
+    }
   };
+
+  // Silence narration the moment playback stops or pauses.
+  useEffect(() => {
+    if (!playing) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* noop */ } }
+  }, [playing]);
 
   // Auto-playback driver — advances one day every playSpeedMs and swaps the
   // sweep so incidents animate date-by-date. playPos is intentionally NOT a dep
@@ -10247,6 +10273,7 @@ export default function GlobalAttackMap() {
             playing, onTogglePlay: () => setPlaying(p => !p),
             playDates, playPos, playSpeedMs, setPlaySpeedMs,
             onScrub: (i) => { setPlaying(false); showPlayDay(i); },
+            narrate, onToggleNarrate: () => setNarrate(v => !v),
           }}
           onRefresh={async () => {
             setArchiveBusy(true);

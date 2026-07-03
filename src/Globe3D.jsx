@@ -58,10 +58,10 @@ const EARTH_FRAG = `
   varying vec3 vWorldNormal;
   void main() {
     float intensity = dot(normalize(vWorldNormal), normalize(sunDirection));
-    float mixAmount = smoothstep(-0.12, 0.32, intensity);
+    float mixAmount = smoothstep(-0.15, 0.30, intensity);
     vec3 base = texture2D(dayTexture, vUv).rgb;
-    vec3 day = base * 1.18;
-    vec3 night = base * 0.09 * vec3(0.6, 0.75, 1.15);
+    vec3 day = base * 1.4;
+    vec3 night = base * 0.16 * vec3(0.65, 0.78, 1.15);
     vec3 color = mix(night, day, mixAmount);
     gl_FragColor = vec4(color, 1.0);
   }
@@ -79,8 +79,8 @@ const ATMO_FRAG = `
   uniform vec3 glowColor;
   varying vec3 vNormal;
   void main() {
-    float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.4);
-    gl_FragColor = vec4(glowColor, 1.0) * clamp(intensity, 0.0, 1.0) * 1.5;
+    float intensity = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 4.0);
+    gl_FragColor = vec4(glowColor, 1.0) * clamp(intensity, 0.0, 1.0) * 1.3;
   }
 `;
 
@@ -115,7 +115,7 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0, 0.35, 3.05);
+    camera.position.set(0, 0.3, 3.5);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -127,7 +127,7 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
     controls.autoRotate = true;
     controls.autoRotateSpeed = 0.42;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    scene.add(new THREE.AmbientLight(0xffffff, 1.05));
 
     // Earth — sun direction tracks the camera each frame (offset to one side)
     // so the face we look at is always brightly lit with the terminator near
@@ -158,7 +158,7 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
       blending: THREE.AdditiveBlending,
       transparent: true,
     });
-    const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.18, 64, 64), atmoMat);
+    const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.045, 64, 64), atmoMat);
     scene.add(atmo);
 
     // Stars
@@ -285,9 +285,9 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
     }
     // Large translucent wireframe spheres with a faint gel fill + soft glow —
     // the reference "region sphere" look. Geometries shared across nodes.
-    const fillGeo = new THREE.SphereGeometry(0.082, 24, 18);
-    const wireGeo = new THREE.SphereGeometry(0.088, 20, 14);
-    const glowGeo = new THREE.SphereGeometry(0.11, 22, 16);
+    const fillGeo = new THREE.SphereGeometry(0.040, 18, 14);
+    const wireGeo = new THREE.SphereGeometry(0.046, 16, 12);
+    const glowGeo = new THREE.SphereGeometry(0.058, 18, 14);
     visibleIncidents.forEach((inc, i) => {
       if (typeof inc.latitude !== "number" || typeof inc.longitude !== "number") return;
       const color = new THREE.Color(SEV_COLOR[inc.severity] || SEV_COLOR[3]);
