@@ -13,7 +13,7 @@
 // briefing in-hub (ArticleView) — no navigation away. CTAs route to the map.
 // ─────────────────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
-import { supabase, supabaseHub } from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "./AuthProvider";
 import { AuthModal } from "./AuthModal";
 import { SiteNav } from "./SiteNav";
@@ -135,8 +135,9 @@ const HUB_CSS = `
 .hubft .ri{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
 .hubft .rail .ri:first-child{border-top:none}
 .hubft .ri .num{font-size:20px;font-weight:700;color:var(--gold-d);line-height:1;min-width:24px}
-.hubft .ri h4{font-size:18px;font-weight:600;line-height:1.16;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.hubft .ri h4{font-size:18px;font-weight:600;line-height:1.16;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .ri:hover h4{color:var(--gold-d)}
+.hubft .ridek{font-size:13px;line-height:1.5;color:var(--sub);margin-top:5px;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .mrow{display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap}
 .hubft .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
 .hubft .story{cursor:pointer}
@@ -167,7 +168,7 @@ const HUB_CSS = `
 .hubft .morehead{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);padding-bottom:10px;border-bottom:1px solid var(--ink)}
 .hubft .moreitem{display:block;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
 .hubft .moreitem:first-of-type{border-top:none}
-.hubft .moreitem h4{font-size:18px;font-weight:600;line-height:1.18}
+.hubft .moreitem h4{font-size:18px;font-weight:600;line-height:1.18;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .moreitem:hover h4{color:var(--gold-d)}
 .hubft .analysis{background:#FAF8F3;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .hubft .an3{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
@@ -234,17 +235,96 @@ function HubStyles() {
 // so the fallback box matches the photo it replaces.
 function NewsImage({ a, height, lead }) {
   const [failed, setFailed] = useState(false);
+  const [catFailed, setCatFailed] = useState(false);
   const sev = SEV_C[a.severity] || GOLD;
-  if (failed) {
+
+  // AI-generated image based on the exact incident headline
+  const aiPrompt = encodeURIComponent(`${a.headline}, realistic news photography, editorial`);
+  const generatedImg = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1000&height=600&nologo=true`;
+
+  let primary = a.image_url || generatedImg;
+
+  // Specific overrides for the images we generated via Gemini
+  if (a.headline) {
+    if (a.headline.includes("Rocket Lab")) {
+      primary = "/incidents/rocket_lab_iridium_1782896030009.png";
+    } else if (a.headline.includes("The Founder-Fused Brand")) {
+      primary = "/incidents/corporate_reputation_crisis_1782896048377.png";
+    } else if (a.headline.includes("EU Anti-Subsidy Duties")) {
+      primary = "/incidents/eu_chinese_ev_1782896064535.png";
+    } else if (a.headline.includes("China's Rare-Earth Valve")) {
+      primary = "/incidents/rare_earth_valve_1782896707184.png";
+    } else if (a.headline.includes("When the Balance Sheet Is the Breach")) {
+      primary = "/incidents/northvolt_fraud_probe_1782896738561.png";
+    } else if (a.headline.includes("Concentration-Risk Ransomware")) {
+      primary = "/incidents/dealership_ransomware_1782896754530.png";
+    } else if (a.headline.includes("The Yield Trap")) {
+      primary = "/incidents/yield_trap_gigafactory.png";
+    } else if (a.headline.includes("BMW–Northvolt")) {
+      primary = "/incidents/bmw_northvolt_contract.png";
+    } else if (a.headline.includes("The Fuse, Not the Shot")) {
+      primary = "/incidents/pentagon_catl_fuse.png";
+    } else if (a.headline.includes("SPAC-Fraud Wells Notice")) {
+      primary = "/incidents/spac_fraud_faraday.png";
+    } else if (a.headline.includes("Regulatory Enforcement Sets a New Recall-Compliance Bar")) {
+      primary = "/incidents/nhtsa_ford_recall.png";
+    } else if (a.headline.includes("Strategic Repricing of a Legacy-OEM EV Program")) {
+      primary = "/incidents/ford_lightning_scrap.png";
+    } else if (a.headline.includes("Cruise Robotaxi Exit")) {
+      primary = "/incidents/gm_cruise_exit.png";
+    } else if (a.headline.includes("First-of-Kind FTC Enforcement")) {
+      primary = "/incidents/ftc_gm_onstar.png";
+    } else if (a.headline.includes("California's First Data-Minimization Strike")) {
+      primary = "/incidents/california_gm_ccpa.png";
+    } else if (a.headline.includes("The Sovereign Cost Reset")) {
+      primary = "/incidents/sovereign_cost_reset.png";
+    } else if (a.headline.includes("When One Country Owns the Valve")) {
+      primary = "/incidents/drc_cobalt_ban.png";
+    } else if (a.headline.includes("Akira's Battery-Supply Gambit")) {
+      primary = "/incidents/akira_lges_breach.png";
+    }
+  }
+
+  // Ultimate fallback — branded dark placeholder (no external image at all)
+  if (catFailed) {
     return (
       <div style={{
-        height, width: "100%", background: `linear-gradient(135deg, ${sev}33, ${OB} 70%)`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        color: sev, fontWeight: 800, fontSize: 20, letterSpacing: "0.12em",
-      }}>{a.primary_category || "OPS"}</div>
+        height, width: "100%",
+        background: `radial-gradient(ellipse 120% 100% at 30% 0%, ${sev}22, transparent 60%), linear-gradient(135deg, #141417, ${OB} 70%)`,
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
+        border: "1px solid rgba(255,255,255,0.05)",
+      }}>
+        <span style={{ width: 8, height: 8, borderRadius: 2, background: sev }} />
+        <span style={{ color: "rgba(255,255,255,0.55)", fontWeight: 700, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase" }}>
+          {CAT_NAME[a.primary_category] || a.primary_category || "Incident"}
+        </span>
+      </div>
     );
   }
-  return <img src={lead ? imLead(a) : imVaried(a)} alt="" loading="lazy" onError={() => setFailed(true)} style={{ height }} />;
+
+  // If primary image failed, try the category fallback image
+  if (failed) {
+    const catImg = CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
+    return (
+      <img
+        src={catImg}
+        alt={CAT_NAME[a.primary_category] || "Incident"}
+        loading="lazy"
+        onError={() => setCatFailed(true)}
+        style={{ height, width: "100%", objectFit: "cover" }}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={primary}
+      alt={a.headline || ""}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      style={{ height, width: "100%", objectFit: "cover" }}
+    />
+  );
 }
 
 const SevChip = ({ a }) => (
@@ -258,31 +338,31 @@ const Kick = ({ children }) => <span className="kick">{children}</span>;
 function ArticleView({ article, onBack, onMap, user }) {
   const [full, setFull] = useState(article);
   const [expanded, setExpanded] = useState(false);
-  // Load this article's rich `data` jsonb on open (the feed list omits it to
-  // stay fast). Merge the narrative/standfirst + detail fields into the article.
+  // Load this article's full body + detail fields on open (the feed list
+  // omits them to stay fast). Map's schema is already flat — no jsonb
+  // parsing needed, just select the extra columns directly.
   useEffect(() => {
     let cancelled = false;
     setFull(article);
     (async () => {
       try {
-        const { data: rows } = await supabaseHub
-          .from("incidents").select("data,subtitle").eq("id", article.id).limit(1);
+        const { data: rows } = await supabase
+          .from("incidents")
+          .select("article_body,summary,entity,country,location_name,primary_subcategory_name,severity_rationale,threat_actor,if_you_operate_x_then_y,financial_impact_disclosed")
+          .eq("id", article.id).limit(1);
         const r = rows && rows[0];
         if (!r || cancelled) return;
-        const d = r.data || {};
-        const narrative = Array.isArray(d.narrative) ? d.narrative.filter(Boolean).join("\n\n")
-          : (typeof d.narrative === "string" ? d.narrative : "");
-        const richBody = [d.standfirst, narrative].filter(Boolean).join("\n\n");
         setFull(prev => ({
           ...prev,
-          article_body: richBody || prev.article_body,
-          primary_subcategory_name: d.kicker || d.subhead || prev.primary_subcategory_name,
-          entity: d.entity || d.org || d.company || prev.entity,
-          country: d.country || prev.country,
-          location_name: d.location || d.country || prev.location_name,
-          severity_rationale: typeof d.takeaway === "string" ? d.takeaway : prev.severity_rationale,
-          threat_actor: typeof d.causeTag === "string" ? d.causeTag : prev.threat_actor,
-          data: d,
+          article_body: r.article_body || prev.article_body,
+          primary_subcategory_name: r.primary_subcategory_name || prev.primary_subcategory_name,
+          entity: r.entity || prev.entity,
+          country: r.country || prev.country,
+          location_name: r.location_name || r.country || prev.location_name,
+          severity_rationale: r.severity_rationale || prev.severity_rationale,
+          threat_actor: r.threat_actor || prev.threat_actor,
+          if_you_operate_x_then_y: r.if_you_operate_x_then_y || prev.if_you_operate_x_then_y,
+          financial_impact_disclosed: r.financial_impact_disclosed || prev.financial_impact_disclosed,
         }));
       } catch { /* keep the lightweight version */ }
     })();
@@ -337,9 +417,34 @@ function ArticleView({ article, onBack, onMap, user }) {
   );
 }
 
+// ReportFrame — when a pre-baked full briefing exists for this incident
+// (public/reports/<id>.html), render that exact report inside the hub via an
+// iframe, with a slim back/CTA bar on top. Faithful to the baked design; no
+// re-rendering. Falls back to ArticleView when no report file exists.
+function ReportFrame({ article, onBack, onMap, user }) {
+  return (
+    <main style={{ background: "#fff", fontFamily: "Inter, sans-serif", position: "relative" }}>
+      <button onClick={onBack} style={{
+        position: "absolute", top: 12, left: 24, zIndex: 20,
+        display: "inline-flex", alignItems: "center", gap: 6,
+        background: "rgba(255,255,255,0.9)", backdropFilter: "saturate(1.4) blur(6px)",
+        border: "1px solid #D9D6CE", borderRadius: 8, padding: "7px 13px",
+        color: "#3A362E", cursor: "pointer", fontFamily: "Inter, sans-serif",
+        fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+      }}>← Back to the feed</button>
+      <iframe
+        src={`/reports/${encodeURIComponent(article.reportRef || article.id)}.html`}
+        title={article.headline || article.id}
+        style={{ width: "100%", height: "calc(100vh - 73px)", border: "none", display: "block" }}
+      />
+    </main>
+  );
+}
+
 export function AttackHub() {
   const { user } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
+  const [reportIds, setReportIds] = useState(null);  // Set of incident ids with a baked report
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("ALL");
@@ -348,73 +453,64 @@ export function AttackHub() {
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(0);
 
+  // Which incidents have a pre-baked full report at /reports/<id>.html.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/reports/manifest.json")
+      .then(r => r.ok ? r.json() : [])
+      .then(ids => { if (!cancelled) setReportIds(new Set(ids)); })
+      .catch(() => { if (!cancelled) setReportIds(new Set()); });
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        // The Attacked Hub reads from the dedicated incident-reporting DB
-        // (supabaseHub), NOT the map's primary DB. Its schema differs
-        // (title/subtitle + a rich `data` jsonb), so we map each row into the
-        // article shape the hub renders.
-        // Feed list = LIGHTWEIGHT (no `data` jsonb). The `data` column is large
-        // (narrative arrays, dossier, scenarios…); selecting it for every row
-        // hits the anon statement-timeout. The list omits it; each article's full
-        // `data` is loaded on open (see ArticleView).
-        const [incRes, indRes] = await Promise.all([
-          supabaseHub.from("incidents")
-            .select("id,industry_slug,title,subtitle,severity,confidence,primary_category,categories,event_date,reporter,status,created_at,image_url")
-            .limit(5000),
-          supabaseHub.from("industries").select("slug,name").limit(500),
-        ]);
-        const indName = new Map();
-        for (const i of indRes.data || []) if (i && i.slug) indName.set(i.slug, i.name);
-
-        // Parse the human event_date ("27 Jun 2026") to an ISO day. Built from
-        // the string parts directly — NOT Date.parse, which interprets in the
-        // local timezone and then UTC-shifts the day (e.g. "30 Jun" → "29 Jun"
-        // in IST). Falls back to created_at only if event_date is missing.
-        const MON = { jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06", jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12" };
-        const toISODay = (s, createdAt) => {
-          if (typeof s === "string" && s.trim()) {
-            const t = s.trim();
-            const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-            const m = t.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/);
-            if (m && MON[m[2].slice(0, 3).toLowerCase()]) {
-              return `${m[3]}-${MON[m[2].slice(0, 3).toLowerCase()]}-${String(m[1]).padStart(2, "0")}`;
-            }
-          }
-          return typeof createdAt === "string" ? createdAt.slice(0, 10) : null;
-        };
+        // The Attacked Hub reads from the primary Map DB (`supabase`), the
+        // same 931-incident table the Attack Map renders from. Map's schema
+        // is already flat (headline/summary/entity/country/... real columns,
+        // not a jsonb blob), so this list query is lightweight by construction.
+        // Each article's full body still lazy-loads on open (see ArticleView)
+        // to keep this query cheap. `hub_ref` is a cheap jsonb-key extraction
+        // (not a full blob fetch) used only to match this row to a pre-baked
+        // /reports/<id>.html file, for the 310 incidents that originated in
+        // the Attacked Hub — the other ~621 have no baked report and open via
+        // the normal live ArticleView instead.
+        const incRes = await supabase.from("incidents")
+          .select("id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,reporter,image_url,event_date,incident_day,hub_ref:raw->>hub_id")
+          .limit(5000);
 
         const mapped = (incRes.data || []).map(r => {
-          const day = toISODay(r.event_date, r.created_at);
+          const day = r.incident_day || r.event_date || null;
           return {
             id: r.id,
-            _key: `h-${r.id}`,
-            headline: r.title,
-            summary: r.subtitle || "",
-            article_body: r.subtitle || "",   // full body loads on open
+            _key: `m-${r.id}`,
+            reportRef: r.hub_ref || null,
+            headline: r.headline,
+            summary: r.summary || "",
+            article_body: r.summary || "",   // full body loads on open
             severity: r.severity,
             primary_category: r.primary_category,
-            primary_subcategory_name: null,
+            primary_subcategory_name: r.primary_subcategory_name || null,
             image_url: r.image_url || null,
-            industry: indName.get(r.industry_slug) || r.industry_slug || null,
-            sector: indName.get(r.industry_slug) || null,
-            entity: null,
-            country: null,
-            location_name: null,
+            industry: r.industry || null,
+            sector: r.sector || r.industry || null,
+            entity: r.entity || null,
+            country: r.country || null,
+            location_name: r.location_name || null,
             reporter: r.reporter,
             confidence: r.confidence,
-            status: r.status,
+            status: null,
             incident_day: day,
             event_date: day,
+            sortDay: day,
             data: null,
           };
         });
         const sorted = mapped
           .filter(a => a.headline)
-          .sort((a, b) => (a.incident_day || "") < (b.incident_day || "") ? 1 : (a.incident_day || "") > (b.incident_day || "") ? -1 : (b.severity || 0) - (a.severity || 0));
+          .sort((a, b) => (a.sortDay || "") < (b.sortDay || "") ? 1 : (a.sortDay || "") > (b.sortDay || "") ? -1 : (b.severity || 0) - (a.severity || 0));
         if (!cancelled) setArticles(sorted);
       } catch { /* graceful empty */ }
       finally { if (!cancelled) setLoading(false); }
@@ -429,20 +525,20 @@ export function AttackHub() {
     let openId = null;
     try { openId = new URLSearchParams(window.location.search).get("open"); } catch { /* noop */ }
     if (!openId) { didDeepOpen.current = true; return; }
-    const a = articles.find(x => String(x.id) === String(openId) || x._key === `i-${openId}` || x._key === `v-${openId}`);
+    const a = articles.find(x => String(x.id) === String(openId) || x.reportRef === openId);
     if (a) { didDeepOpen.current = true; setSelected(a); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { window.scrollTo(0, 0); } }
   }, [articles]);
 
   const cats = ["ALL", ...Array.from(new Set(articles.map(a => a.primary_category).filter(Boolean)))];
   const inds = ["ALL", ...Array.from(new Set(articles.map(a => a.industry).filter(Boolean))).sort()];
-  const days = ["ALL", ...Array.from(new Set(articles.map(a => a.incident_day).filter(Boolean)))];
+  const days = ["ALL", ...Array.from(new Set(articles.map(a => a.incident_day).filter(Boolean))).sort((a, b) => a < b ? 1 : -1)];
   const visible = articles
     .filter(a => catFilter === "ALL" || a.primary_category === catFilter)
     .filter(a => indFilter === "ALL" || a.industry === indFilter)
     .filter(a => dayFilter === "ALL" || a.incident_day === dayFilter);
 
   const isFiltered = catFilter !== "ALL" || indFilter !== "ALL" || dayFilter !== "ALL";
-  const latestDay = articles[0]?.incident_day;
+  const latestDay = articles[0]?.sortDay;
 
   // Editorial zoning (unfiltered, page 0). All derived from `visible`, so it scales.
   const featured = visible[0] || null;
@@ -488,6 +584,7 @@ export function AttackHub() {
       <div className="img"><NewsImage a={a} height={150} /></div>
       <div className="row"><SevChip a={a} /><Kick>{catName(a)}</Kick></div>
       <h3>{a.headline}</h3>
+      {a.summary && <div className="ridek">{a.summary}</div>}
       <div className="by" style={{ marginTop: 6 }}>{place(a)}</div>
     </article>
   );
@@ -497,7 +594,8 @@ export function AttackHub() {
       <div style={{ minWidth: 0 }}>
         <div className="mrow"><SevChip a={a} /><Kick>{catName(a)}</Kick></div>
         <h4>{a.headline}</h4>
-        <div className="by" style={{ marginTop: 4 }}>{place(a)}</div>
+        {a.summary && <div className="ridek">{a.summary}</div>}
+        <div className="by" style={{ marginTop: 6 }}>{place(a)}</div>
       </div>
     </div>
   );
@@ -505,7 +603,8 @@ export function AttackHub() {
     <div key={a._key || a.id} className="moreitem" onClick={() => openArticle(a)}>
       <div className="mrow" style={{ marginBottom: 4 }}><SevChip a={a} /><span className="by">{fmtShort(a.incident_day)}</span></div>
       <h4>{a.headline}</h4>
-      <div className="by" style={{ marginTop: 4 }}>{place(a)}</div>
+      {a.summary && <div className="ridek">{a.summary}</div>}
+      <div className="by" style={{ marginTop: 6 }}>{place(a)}</div>
     </div>
   );
   const SideLead = (a) => (
@@ -546,9 +645,54 @@ export function AttackHub() {
       <SiteNav active="hub" />
 
       {selected ? (
-        <ArticleView article={selected} onBack={() => setSelected(null)} onMap={openMap} user={user} />
+        (reportIds && selected.reportRef && reportIds.has(selected.reportRef))
+          ? <ReportFrame article={selected} onBack={() => setSelected(null)} onMap={openMap} user={user} />
+          : <ArticleView article={selected} onBack={() => setSelected(null)} onMap={openMap} user={user} />
       ) : (
         <>
+          {/* LIVE TICKER — breaking-news strip of the latest incidents */}
+          {articles.length > 0 && (
+            <div className="hub-ticker" role="region" aria-label="Live incidents ticker" style={{
+              display: "flex", alignItems: "center", background: "#0c0c0c",
+              borderBottom: "1px solid var(--line)", color: "#fff", height: 40, overflow: "hidden",
+            }}>
+              <style>{`
+                @keyframes hubticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+                .hub-ticker-track { animation: hubticker 90s linear infinite; }
+                .hub-ticker:hover .hub-ticker-track { animation-play-state: paused; }
+                @keyframes hubpulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+                .hub-ticker-item:hover .hti-h { color: #F5B800; }
+              `}</style>
+              <div style={{
+                flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "0 16px", height: "100%", background: "transparent", color: "#fff",
+                fontWeight: 700, fontSize: 13, letterSpacing: "0.04em",
+                borderRight: "1px solid rgba(255,255,255,0.14)",
+              }}>
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#E0091C", boxShadow: "0 0 8px #E0091C", animation: "hubpulse 1.2s infinite" }} />
+                Live
+              </div>
+              <div style={{
+                flex: 1, overflow: "hidden",
+                WebkitMaskImage: "linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent)",
+                maskImage: "linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent)",
+              }}>
+                <div className="hub-ticker-track" style={{ display: "inline-flex", alignItems: "center", width: "max-content", whiteSpace: "nowrap" }}>
+                  {[...articles.slice(0, 24), ...articles.slice(0, 24)].map((a, i) => (
+                    <span key={`${a.id}-${i}`} className="hub-ticker-item" onClick={() => openArticle(a)}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "0 22px", cursor: "pointer", fontSize: 12.5 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: 2, background: SEV_C[a.severity] || GOLD, flex: "0 0 auto" }} />
+                      <span style={{ color: SEV_C[a.severity] || GOLD, fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase" }}>{CAT_SHORT[a.primary_category] || a.primary_category || ""}</span>
+                      <span className="hti-h" style={{ color: "#eaeaea", fontWeight: 500, transition: "color 120ms" }}>{a.headline}</span>
+                      <span style={{ color: "#666" }}>·</span>
+                      <span style={{ color: "#888", fontSize: 11 }}>{fmtShort(a.incident_day)}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* CATEGORY NAV (filter) */}
           <nav className="catnav">
             <div className="wrap r-pad">
@@ -637,6 +781,7 @@ export function AttackHub() {
                               <div className="img"><NewsImage a={a} height={170} /></div>
                               <div className="row"><SevChip a={a} /><Kick>{catName(a)}</Kick></div>
                               <h3>{a.headline}</h3>
+                              {a.summary && <div className="ridek">{a.summary}</div>}
                             </div>
                           ))}</div>
                         </div>
