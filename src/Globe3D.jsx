@@ -1,22 +1,21 @@
 // ─────────────────────────────────────────────────────────────────────────
-// Globe3D — the GLOBE view, rendered as a photorealistic 3D satellite Earth.
+// Globe3D — the GLOBE view, rendered as a photorealistic 3D satellite Earth
+// styled to match the "Digital Twin Protocol" reference: a bright, vivid
+// blue-marble Earth with a soft day/night terminator, a luminous atmosphere
+// rim, a starfield, and large translucent wireframe "region spheres" floating
+// above each incident (clean lat/long grids), coloured by the app's SEVERITY
+// scale. Auto-orbiting camera; drag / scroll / click a sphere.
 //
-// Drop-in replacement for the previous d3 orthographic globe: same props
-// (visibleIncidents / selectedId / onSelect / onHover). Realistic blue-marble
-// day texture blended with a night texture across a fixed day/night
-// terminator, an auto-orbiting camera (drag / scroll / click a node), a
-// starfield + atmospheric rim, and glowing wireframe "region nodes" placed
-// at each incident's lat/lon and coloured by the app's SEVERITY scale.
-//
-// No extra chrome (no header, no layer bar) — the map's existing HUD, the
-// Flat/Globe toggle and the RISK LEVEL legend are unchanged.
+// Drop-in for the previous d3 globe: same props. No extra chrome — the map's
+// existing HUD, the Flat/Globe toggle and the RISK LEVEL legend are unchanged.
 // ─────────────────────────────────────────────────────────────────────────
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-// Severity → node colour (mirrors GlobalAttackMap's SEVERITY scale, 1–5,
-// so the RISK LEVEL legend stays accurate).
+// Severity → sphere colour (mirrors GlobalAttackMap's SEVERITY scale, 1–5,
+// so the RISK LEVEL legend stays accurate). The reference uses a cool cyan/
+// red/white/mint set; these severity hues give the same multi-colour look.
 const SEV_COLOR = {
   5: "#FF3B30", // CRITICAL
   4: "#FF6B35", // HIGH
@@ -26,7 +25,7 @@ const SEV_COLOR = {
 };
 
 const R = 1;              // earth radius (scene units)
-const NODE_LIFT = 1.045;  // nodes float just above the surface
+const NODE_LIFT = 1.05;   // region spheres float just above the surface
 
 // lat/lon (degrees) → point on a sphere of `radius`, matching an
 // equirectangular Earth texture (0,0 → Gulf of Guinea, off West Africa).
@@ -40,8 +39,9 @@ function latLonToVec3(lat, lon, radius) {
   );
 }
 
-// Day/night blend shader — mixes a day and night texture across the
-// terminator defined by a world-space sun direction.
+// Day/night shader — the sunlit face shows the vivid day texture; the far
+// side fades to a smooth dark (darkened, cool-tinted day texture, like the
+// reference — no city lights). `sunDirection` is updated each frame.
 const EARTH_VERT = `
   varying vec2 vUv;
   varying vec3 vWorldNormal;
@@ -53,21 +53,21 @@ const EARTH_VERT = `
 `;
 const EARTH_FRAG = `
   uniform sampler2D dayTexture;
-  uniform sampler2D nightTexture;
   uniform vec3 sunDirection;
   varying vec2 vUv;
   varying vec3 vWorldNormal;
   void main() {
     float intensity = dot(normalize(vWorldNormal), normalize(sunDirection));
-    float mixAmount = smoothstep(-0.08, 0.28, intensity);
-    vec3 day = texture2D(dayTexture, vUv).rgb * 1.15;
-    vec3 night = texture2D(nightTexture, vUv).rgb * 0.5;
+    float mixAmount = smoothstep(-0.12, 0.32, intensity);
+    vec3 base = texture2D(dayTexture, vUv).rgb;
+    vec3 day = base * 1.18;
+    vec3 night = base * 0.09 * vec3(0.6, 0.75, 1.15);
     vec3 color = mix(night, day, mixAmount);
     gl_FragColor = vec4(color, 1.0);
   }
 `;
 
-// Atmosphere fresnel rim (back side, additive).
+// Atmosphere fresnel rim (back side, additive) — bright blue-white halo.
 const ATMO_VERT = `
   varying vec3 vNormal;
   void main() {
@@ -79,8 +79,8 @@ const ATMO_FRAG = `
   uniform vec3 glowColor;
   varying vec3 vNormal;
   void main() {
-    float intensity = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);
-    gl_FragColor = vec4(glowColor, 1.0) * clamp(intensity, 0.0, 1.0);
+    float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.4);
+    gl_FragColor = vec4(glowColor, 1.0) * clamp(intensity, 0.0, 1.0) * 1.5;
   }
 `;
 
@@ -90,7 +90,6 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
   const selectedRef = useRef(selectedId);
   const [webglOk, setWebglOk] = useState(true);
 
-  // keep the animation loop's notion of "selected" fresh without rebuilds
   useEffect(() => { selectedRef.current = selectedId; }, [selectedId]);
 
   // ── Scene setup (mount once) ──────────────────────────────────────────
@@ -105,8 +104,8 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
       setWebglOk(false);
       return;
     }
-    const width = mount.clientWidth || window.innerWidth;
-    const height = mount.clientHeight || window.innerHeight;
+    const width = mount.clientWidth || window.innerWidth || 1200;
+    const height = mount.clientHeight || window.innerHeight || 700;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
     renderer.setClearColor(0x000000, 0);
@@ -115,97 +114,85 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
     renderer.domElement.style.cursor = "grab";
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
-    camera.position.set(0, 0.4, 3.1);
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+    camera.position.set(0, 0.35, 3.05);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
     controls.rotateSpeed = 0.45;
     controls.enablePan = false;
-    controls.minDistance = 1.6;
+    controls.minDistance = 1.55;
     controls.maxDistance = 6;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.5;
+    controls.autoRotateSpeed = 0.42;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.1);
-    dir.position.set(-3, 1.4, 2.5);
-    scene.add(dir);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
 
-    // Earth. The sun direction is updated every frame to track the camera
-    // (offset to one side) so the face we look at stays brightly lit.
+    // Earth — sun direction tracks the camera each frame (offset to one side)
+    // so the face we look at is always brightly lit with the terminator near
+    // one edge, never a black face.
     const WORLD_UP = new THREE.Vector3(0, 1, 0);
-    const sunDirection = new THREE.Vector3(-0.6, 0.28, 0.55).normalize();
     const loader = new THREE.TextureLoader();
     const dayTex = loader.load("/textures/earth-blue-marble.jpg");
-    const nightTex = loader.load("/textures/earth-night.jpg");
     dayTex.colorSpace = THREE.SRGBColorSpace;
-    nightTex.colorSpace = THREE.SRGBColorSpace;
+    dayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
     const earthMat = new THREE.ShaderMaterial({
       uniforms: {
         dayTexture: { value: dayTex },
-        nightTexture: { value: nightTex },
-        sunDirection: { value: sunDirection },
+        sunDirection: { value: new THREE.Vector3(1, 0, 0) },
       },
       vertexShader: EARTH_VERT,
       fragmentShader: EARTH_FRAG,
     });
-    const earth = new THREE.Mesh(new THREE.SphereGeometry(R, 96, 96), earthMat);
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(R, 128, 128), earthMat);
     scene.add(earth);
 
-    // Faint graticule (lat/lon grid) for the "digital twin" satellite feel.
-    const grat = new THREE.Mesh(
-      new THREE.SphereGeometry(R * 1.001, 36, 24),
-      new THREE.MeshBasicMaterial({ color: 0x2a3550, wireframe: true, transparent: true, opacity: 0.14 })
-    );
-    scene.add(grat);
-
-    // Atmosphere (soft blue rim)
+    // Atmosphere (bright blue-white rim)
     const atmoMat = new THREE.ShaderMaterial({
-      uniforms: { glowColor: { value: new THREE.Color("#4EA1FF") } },
+      uniforms: { glowColor: { value: new THREE.Color("#6fb8ff") } },
       vertexShader: ATMO_VERT,
       fragmentShader: ATMO_FRAG,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
       transparent: true,
     });
-    const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.16, 64, 64), atmoMat);
+    const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.18, 64, 64), atmoMat);
     scene.add(atmo);
 
     // Stars
-    const starCount = 3500;
+    const starCount = 4000;
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
-      const rr = 120 + Math.random() * 260;
+      const rr = 140 + Math.random() * 300;
       const u = Math.random() * 2 - 1;
-      const t = Math.random() * Math.PI * 2;
+      const th = Math.random() * Math.PI * 2;
       const s = Math.sqrt(1 - u * u);
-      starPos[i * 3] = rr * s * Math.cos(t);
+      starPos[i * 3] = rr * s * Math.cos(th);
       starPos[i * 3 + 1] = rr * u;
-      starPos[i * 3 + 2] = rr * s * Math.sin(t);
+      starPos[i * 3 + 2] = rr * s * Math.sin(th);
     }
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
     const stars = new THREE.Points(
       starGeo,
-      new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, sizeAttenuation: true, transparent: true, opacity: 0.7 })
+      new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, sizeAttenuation: true, transparent: true, opacity: 0.75 })
     );
     scene.add(stars);
 
-    // Node group (rebuilt when incidents change)
+    // Region-sphere group (rebuilt when incidents change)
     const nodeGroup = new THREE.Group();
     scene.add(nodeGroup);
 
-    // Raycasting for node clicks
+    // Raycasting for sphere clicks
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let downX = 0, downY = 0;
     const onPointerDown = (e) => { downX = e.clientX; downY = e.clientY; renderer.domElement.style.cursor = "grabbing"; };
     const onPointerUp = (e) => {
       renderer.domElement.style.cursor = "grab";
-      if (Math.abs(e.clientX - downX) > 5 || Math.abs(e.clientY - downY) > 5) return; // was a drag
+      if (Math.abs(e.clientX - downX) > 5 || Math.abs(e.clientY - downY) > 5) return; // drag, not click
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -223,41 +210,38 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
     // Animation loop
     const clock = new THREE.Clock();
     let raf;
+    const camDir = new THREE.Vector3();
     const animate = () => {
       const t = clock.getElapsedTime();
 
-      // Keep the sun just off to the side of the camera: the hemisphere we're
-      // looking at stays lit and vivid, with the day/night terminator curving
-      // across toward one edge (like the reference), never a black face.
-      const camDir = camera.position.clone().normalize();
-      camDir.applyAxisAngle(WORLD_UP, 0.6);
-      camDir.y += 0.18;
+      // Sun sits just off the camera axis → the visible hemisphere stays lit,
+      // terminator curves toward one edge (reference look).
+      camDir.copy(camera.position).normalize();
+      camDir.applyAxisAngle(WORLD_UP, 0.62);
+      camDir.y += 0.16;
       camDir.normalize();
       earthMat.uniforms.sunDirection.value.copy(camDir);
 
       const sel = selectedRef.current;
-      nodeGroup.children.forEach((m) => {
-        const isSel = sel != null && m.userData.incidentId === sel;
-        const base = isSel ? 1.4 : 1;
-        const s = base + 0.06 * Math.sin(t * 1.6 + (m.userData.phase || 0));
-        m.scale.setScalar(s);
-        if (m.userData.halo) {
-          m.userData.halo.material.opacity =
-            (isSel ? 0.24 : 0.10) + 0.05 * (0.5 + 0.5 * Math.sin(t * 1.6 + (m.userData.phase || 0)));
-        }
-        if (m.userData.wire) m.userData.wire.material.opacity = isSel ? 0.95 : 0.7;
+      nodeGroup.children.forEach((n) => {
+        const isSel = sel != null && n.userData.incidentId === sel;
+        n.rotation.y += 0.004;                        // slow grid spin
+        const base = isSel ? 1.35 : 1;
+        n.scale.setScalar(base + 0.03 * Math.sin(t * 1.5 + (n.userData.phase || 0)));
+        if (n.userData.wire) n.userData.wire.material.opacity = isSel ? 0.95 : 0.72;
+        if (n.userData.glow) n.userData.glow.material.opacity = isSel ? 0.16 : 0.07;
       });
-      stars.rotation.y = t * 0.005;
+      stars.rotation.y = t * 0.004;
       controls.update();
       renderer.render(scene, camera);
       raf = requestAnimationFrame(animate);
     };
     animate();
 
-    // Resize
     const onResize = () => {
       const w = mount.clientWidth || window.innerWidth;
       const h = mount.clientHeight || window.innerHeight;
+      if (!w || !h) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -283,14 +267,14 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
           else o.material.dispose();
         }
       });
-      dayTex.dispose(); nightTex.dispose();
+      dayTex.dispose();
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
       sceneRef.current = {};
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Rebuild nodes when incidents change ───────────────────────────────
+  // ── Rebuild region spheres when incidents change ──────────────────────
   useEffect(() => {
     const s = sceneRef.current;
     if (!s.nodeGroup) return;
@@ -299,10 +283,11 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
       const c = group.children.pop();
       c.traverse?.((o) => { o.geometry?.dispose?.(); o.material?.dispose?.(); });
     }
-    // Small, finely-gridded wireframe spheres with a soft halo — delicate
-    // "region nodes" like the reference, not solid glowing blobs.
-    const wireGeo = new THREE.SphereGeometry(0.03, 16, 12);
-    const haloGeo = new THREE.SphereGeometry(0.046, 16, 12);
+    // Large translucent wireframe spheres with a faint gel fill + soft glow —
+    // the reference "region sphere" look. Geometries shared across nodes.
+    const fillGeo = new THREE.SphereGeometry(0.082, 24, 18);
+    const wireGeo = new THREE.SphereGeometry(0.088, 20, 14);
+    const glowGeo = new THREE.SphereGeometry(0.11, 22, 16);
     visibleIncidents.forEach((inc, i) => {
       if (typeof inc.latitude !== "number" || typeof inc.longitude !== "number") return;
       const color = new THREE.Color(SEV_COLOR[inc.severity] || SEV_COLOR[3]);
@@ -312,22 +297,18 @@ export default function Globe3D({ visibleIncidents = [], selectedId, onSelect, o
       node.userData.incidentId = inc.id;
       node.userData.phase = (i % 12) * 0.5;
 
-      const wire = new THREE.Mesh(
-        wireGeo,
-        new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.7 })
-      );
+      const fill = new THREE.Mesh(fillGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.12, depthWrite: false }));
+      fill.userData.incidentId = inc.id;
+
+      const wire = new THREE.Mesh(wireGeo, new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.72 }));
       wire.userData.incidentId = inc.id;
+
+      const glow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, side: THREE.BackSide, depthWrite: false }));
+      glow.userData.incidentId = inc.id;
+
       node.userData.wire = wire;
-      node.add(wire);
-
-      const halo = new THREE.Mesh(
-        haloGeo,
-        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.10, blending: THREE.AdditiveBlending, depthWrite: false })
-      );
-      halo.userData.incidentId = inc.id;
-      node.userData.halo = halo;
-      node.add(halo);
-
+      node.userData.glow = glow;
+      node.add(fill, wire, glow);
       group.add(node);
     });
   }, [visibleIncidents]);

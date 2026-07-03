@@ -450,6 +450,8 @@ export function AttackHub() {
   const [catFilter, setCatFilter] = useState("ALL");
   const [indFilter, setIndFilter] = useState("ALL");
   const [dayFilter, setDayFilter] = useState("ALL");
+  const [dateFrom, setDateFrom] = useState("");   // range filter (ISO YYYY-MM-DD, "" = unbounded)
+  const [dateTo, setDateTo] = useState("");
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(0);
 
@@ -535,9 +537,11 @@ export function AttackHub() {
   const visible = articles
     .filter(a => catFilter === "ALL" || a.primary_category === catFilter)
     .filter(a => indFilter === "ALL" || a.industry === indFilter)
-    .filter(a => dayFilter === "ALL" || a.incident_day === dayFilter);
+    .filter(a => dayFilter === "ALL" || a.incident_day === dayFilter)
+    .filter(a => !dateFrom || (a.incident_day && a.incident_day >= dateFrom))
+    .filter(a => !dateTo || (a.incident_day && a.incident_day <= dateTo));
 
-  const isFiltered = catFilter !== "ALL" || indFilter !== "ALL" || dayFilter !== "ALL";
+  const isFiltered = catFilter !== "ALL" || indFilter !== "ALL" || dayFilter !== "ALL" || !!dateFrom || !!dateTo;
   const latestDay = articles[0]?.sortDay;
 
   // Editorial zoning (unfiltered, page 0). All derived from `visible`, so it scales.
@@ -560,7 +564,7 @@ export function AttackHub() {
   const gridPage = gridAll.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
   const pageWindow = (() => { let s = Math.max(0, safePage - 2); const e = Math.min(pageCount, s + 5); s = Math.max(0, e - 5); const w = []; for (let p = s; p < e; p++) w.push(p); return w; })();
 
-  useEffect(() => { setPage(0); }, [catFilter, indFilter, dayFilter]);
+  useEffect(() => { setPage(0); }, [catFilter, indFilter, dayFilter, dateFrom, dateTo]);
 
   function goToPage(p) { setPage(Math.max(0, Math.min(p, pageCount - 1))); try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); } }
   function openMap() { if (user) window.location.href = "/"; else setAuthOpen(true); }
@@ -715,7 +719,23 @@ export function AttackHub() {
               <select className={dayFilter !== "ALL" ? "act" : ""} value={dayFilter} onChange={e => setDayFilter(e.target.value)}>
                 {days.map(d => <option key={d} value={d}>{d === "ALL" ? "All days" : fmtDay(d).slice(0, 16)}</option>)}
               </select>
-              {isFiltered && <button className="clr" onClick={() => { setCatFilter("ALL"); setIndFilter("ALL"); setDayFilter("ALL"); }}>Clear ✕</button>}
+              {(() => {
+                const dStyle = (on) => ({
+                  fontFamily: "inherit", fontSize: 12, padding: "6px 8px", borderRadius: 3,
+                  border: `1px solid ${on ? "var(--gold-d)" : "var(--line)"}`, background: "#fff",
+                  color: on ? "var(--ink)" : "var(--mut)", colorScheme: "light", cursor: "pointer",
+                });
+                return (
+                  <span title="Filter by date range" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <input type="date" value={dateFrom} max={dateTo || undefined}
+                      onChange={e => setDateFrom(e.target.value)} style={dStyle(!!dateFrom)} title="From" />
+                    <span style={{ color: "var(--mut)", fontSize: 12 }}>→</span>
+                    <input type="date" value={dateTo} min={dateFrom || undefined}
+                      onChange={e => setDateTo(e.target.value)} style={dStyle(!!dateTo)} title="To" />
+                  </span>
+                );
+              })()}
+              {isFiltered && <button className="clr" onClick={() => { setCatFilter("ALL"); setIndFilter("ALL"); setDayFilter("ALL"); setDateFrom(""); setDateTo(""); }}>Clear ✕</button>}
             </div>
 
             {loading ? (
