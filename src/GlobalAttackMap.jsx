@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as d3 from "d3";
 import { useAuth } from "./auth/AuthProvider.jsx";
 import { AuthModal } from "./auth/AuthModal.jsx";
@@ -1439,8 +1439,8 @@ async function loadIncidentsFast() {
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,threat_actor,financial_impact_disclosed,if_you_operate_x_then_y,reporter,desk";
-  const viCols = "id,vi_sweep_id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,threat_actor,financial_impact_disclosed,if_you_operate_x_then_y,category,reporter,desk";
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,threat_actor,financial_impact_disclosed,if_you_operate_x_then_y,reporter,desk,image_url";
+  const viCols = "id,vi_sweep_id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,threat_actor,financial_impact_disclosed,if_you_operate_x_then_y,category,reporter,desk,image_url";
   try {
     const [reg, vi, sweeps, reporters] = await Promise.all([
       _fetchSupabaseTable(url, key, "incidents", `select=${cols}&incident_day=not.is.null&latitude=not.is.null&longitude=not.is.null&order=incident_day.desc&limit=10000`),
@@ -2002,12 +2002,31 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
   }, [pathGen]);
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", minHeight: 480, background: "#080808", borderRadius: 8, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
-      {/* Ambience — very subtle warm wash, not a visible halo. Earlier 7%
-          made the map look haloed; demo has a flat black background. */}
+    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", minHeight: 480, background: "#020b1c", borderRadius: 8, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
+      {/* Deep space starfield behind the map */}
+      <canvas style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }}
+        ref={el => {
+          if (!el || el._starsDrawn) return;
+          el._starsDrawn = true;
+          const ctx = el.getContext("2d");
+          el.width = el.offsetWidth || 1200;
+          el.height = el.offsetHeight || 800;
+          for (let i = 0; i < 350; i++) {
+            const x = Math.random() * el.width;
+            const y = Math.random() * el.height;
+            const r = Math.random() * 0.9 + 0.1;
+            const opacity = Math.random() * 0.7 + 0.15;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+            ctx.fill();
+          }
+        }}
+      />
+      {/* Subtle deep-space ambient glow */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 62% 54% at 50% 48%, rgba(78,161,255,0.05) 0%, rgba(78,161,255,0.015) 40%, transparent 72%)",
+        background: "radial-gradient(ellipse 62% 54% at 50% 48%, rgba(30,80,160,0.08) 0%, rgba(30,80,160,0.015) 40%, transparent 72%)",
         zIndex: 0,
       }} />
       <svg
@@ -2048,9 +2067,8 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
           </clipPath>
         </defs>
 
-        {/* Ocean — flat dark, matches demo. Sits OUTSIDE the zoom layer so
-            it always fills the viewport even at high pan. */}
-        <rect x={0} y={0} width={dims.width} height={dims.height} fill="#080808" />
+        {/* Ocean — transparent so the deep-blue container and stars show through. */}
+        <rect x={0} y={0} width={dims.width} height={dims.height} fill="transparent" />
 
         {/* All geographic content goes inside the zoom transform group */}
         <g
@@ -2061,17 +2079,26 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
               barely-visible reference lines. */}
           <path d={graticule} fill="none" stroke="rgba(78,161,255,0.07)" strokeWidth={0.3 / k} strokeOpacity={1} />
 
-          {/* Countries — muted earth-green landmasses against the black-space
-              ocean, matching the satellite-globe palette. */}
-          {world && world.features.map((feat, i) => (
-            <path
-              key={i}
-              d={pathGen(feat)}
-              fill="#1d2c26"
-              stroke="#33493f"
-              strokeWidth={0.4 / k}
-            />
-          ))}
+          {/* Countries — muted earth-green/brown landmasses matching the 
+              photorealistic satellite palette. */}
+          {world && world.features.map((feat, i) => {
+            const d = pathGen(feat);
+            if (!d) return null;
+            const tones = [
+              "#2d3d1e","#324020","#2a3a1c","#2e3b1d","#304220",
+              "#28381b","#334521","#2b3e1e","#2f4122","#263519",
+            ];
+            const fill = tones[i % tones.length];
+            return (
+              <path
+                key={i}
+                d={d}
+                fill={fill}
+                stroke="rgba(60,80,40,0.55)"
+                strokeWidth={0.4 / k}
+              />
+            );
+          })}
 
           {/* Country labels — gated on the showLabels toggle. When off, only
               the country of the selected or hovered incident gets a soft label
@@ -2561,10 +2588,10 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
         zIndex: 2,
       }} />
 
-      {/* Zoom controls — bottom-right corner of the map, above audit drawer btn */}
+      {/* Zoom controls — moved up to bottom: 170 to prevent overlap with the Risk Level legend */}
       <div style={{
         position: "absolute",
-        bottom: 56,
+        bottom: 170,
         right: 12,
         display: "flex",
         flexDirection: "column",
@@ -2786,10 +2813,32 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
     return map;
   }, [visibleIncidents]);
 
+  // Country centroid fallback — covers every ISO-2 code seen in the sweep data.
+  const COUNTRY_CENTROIDS_MAP = {
+    US:[-98.58,39.83],GB:[-3.44,55.38],DE:[10.45,51.17],FR:[2.21,46.23],JP:[138.25,36.20],
+    CN:[104.20,35.86],IN:[78.96,20.59],RU:[105.32,61.52],BR:[-51.93,-14.24],AU:[133.78,-25.27],
+    CA:[-96.80,56.13],KR:[127.77,35.91],IT:[12.57,41.87],ES:[-3.75,40.46],NL:[5.29,52.13],
+    SE:[18.64,60.13],CH:[8.23,46.82],SG:[103.82,1.36],IL:[34.85,30.80],AE:[53.85,23.42],
+    SA:[45.08,23.89],ZA:[25.08,-29.00],NG:[8.68,9.08],EG:[30.80,26.82],MX:[-102.55,23.95],
+    AR:[-63.62,-38.42],CO:[-74.30,4.57],PL:[19.15,51.92],BE:[4.47,50.50],AT:[14.55,47.52],
+    NO:[8.47,60.47],DK:[9.50,56.26],FI:[25.75,61.92],PT:[-8.22,39.40],IE:[-8.24,53.41],
+    TR:[35.24,38.96],UA:[31.17,48.38],PK:[69.35,30.38],BD:[90.36,23.68],ID:[117.75,-0.79],
+    MY:[109.70,4.21],TH:[100.99,15.87],VN:[108.28,14.06],PH:[122.87,12.88],NZ:[174.89,-40.90],
+    CZ:[15.47,49.82],HU:[19.50,47.16],RO:[24.97,45.94],GR:[21.82,39.07],ZZ:[0.00,20.00],
+    EU:[10.00,50.00],
+  };
   function coordFor(inc) {
     const offset = spiderfyMap.get(inc._id);
-    if (offset) return [inc.longitude + offset.dLng, inc.latitude + offset.dLat];
-    return [inc.longitude, inc.latitude];
+    const hasCoords = typeof inc.latitude === "number" && typeof inc.longitude === "number"
+                      && inc.latitude !== 0 && inc.longitude !== 0;
+    let lng = inc.longitude, lat = inc.latitude;
+    if (!hasCoords) {
+      const fb = COUNTRY_CENTROIDS_MAP[inc.country];
+      if (!fb) return [0, 0]; // will be filtered out by isVisible / projection
+      [lng, lat] = fb;
+    }
+    if (offset) return [lng + offset.dLng, lat + offset.dLat];
+    return [lng, lat];
   }
 
   // ── Projection + path generator
@@ -2971,18 +3020,35 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
       width: "100%",
       height: "100%",
       minHeight: 480,
-      background: BRAND.obsidianDeep,
+      background: "#000005",
       borderRadius: 8,
       overflow: "hidden",
       border: `1px solid ${BRAND.borderSubtle}`,
     }}>
-      {/* Ambience — very subtle warm glow behind the globe. Previous 10%
-          opacity was way too strong and made the globe look haloed; the
-          reference demo has no visible rim at all. Dialled back to a barely-
-          perceptible warmth that only registers subconsciously. */}
+      {/* Deep space starfield behind the globe */}
+      <canvas style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }}
+        ref={el => {
+          if (!el || el._starsDrawn) return;
+          el._starsDrawn = true;
+          const ctx = el.getContext("2d");
+          el.width = el.offsetWidth || 1200;
+          el.height = el.offsetHeight || 800;
+          for (let i = 0; i < 320; i++) {
+            const x = Math.random() * el.width;
+            const y = Math.random() * el.height;
+            const r = Math.random() * 0.9 + 0.1;
+            const opacity = Math.random() * 0.7 + 0.15;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+            ctx.fill();
+          }
+        }}
+      />
+      {/* Subtle deep-space ambient glow */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(245,184,0,0.03) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(30,80,160,0.08) 0%, transparent 70%)",
         zIndex: 0,
       }} />
       <svg
@@ -3000,30 +3066,30 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
         }}
       >
         <defs>
-          {/* Ocean — flat, uniform dark. The reference demo's globe doesn't
-              have a centre-to-edge radial gradient; it's one even shade so
-              countries stand on their own. Closer to that here: tiny tonal
-              shift only, almost imperceptible. */}
-          {/* Ocean — dark so the lighter country fill (#242424) reads as
-              distinct continent silhouettes. Earlier attempt at #1F1F1F made
-              ocean and countries nearly the same shade — everything flattened
-              into one grey blob. Back to clear contrast: ocean noticeably
-              darker than land. */}
-          <radialGradient id="globe-ocean-grad" cx="0.5" cy="0.5" r="0.55">
-            <stop offset="0%"   stopColor="#0E0E0E" />
-            <stop offset="100%" stopColor="#080808" />
+          {/* Ocean — deep satellite-blue, lit from top-left like sun */}
+          <radialGradient id="globe-ocean-grad" cx="0.38" cy="0.35" r="0.65">
+            <stop offset="0%"   stopColor="#1a4a8a" />
+            <stop offset="40%"  stopColor="#0d2d5e" />
+            <stop offset="75%"  stopColor="#071a3a" />
+            <stop offset="100%" stopColor="#020b1c" />
           </radialGradient>
-          {/* Atmospheric rim — soft gold scatter only at the very limb of the
-              sphere. This is what gives the 3D feel in the reference demo:
-              the centre stays flat dark, but the edge fades into a warm halo
-              like sunlight scattering through atmosphere. Tuned much
-              gentler than the first attempt — barely-there warmth, not a
-              bright ring. */}
+          {/* Atmospheric rim — cyan-blue glow like real Earth from space */}
           <radialGradient id="globe-atmosphere" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%"   stopColor="rgba(245,184,0,0)" />
-            <stop offset="94%"  stopColor="rgba(245,184,0,0)" />
-            <stop offset="99%"  stopColor="rgba(245,184,0,0.08)" />
-            <stop offset="100%" stopColor="rgba(245,184,0,0)" />
+            <stop offset="0%"   stopColor="rgba(60,140,255,0)" />
+            <stop offset="88%"  stopColor="rgba(60,140,255,0)" />
+            <stop offset="95%"  stopColor="rgba(80,160,255,0.25)" />
+            <stop offset="100%" stopColor="rgba(100,200,255,0.0)" />
+          </radialGradient>
+          {/* Land shading — lit from top-left, dark on far side */}
+          <radialGradient id="globe-land-light" cx="0.35" cy="0.32" r="0.70">
+            <stop offset="0%"   stopColor="rgba(255,255,255,0.13)" />
+            <stop offset="50%"  stopColor="rgba(255,255,255,0.04)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0.22)" />
+          </radialGradient>
+          {/* Specular glint on ocean near light source */}
+          <radialGradient id="globe-ocean-specular" cx="0.32" cy="0.28" r="0.28">
+            <stop offset="0%"   stopColor="rgba(120,180,255,0.18)" />
+            <stop offset="100%" stopColor="rgba(120,180,255,0)" />
           </radialGradient>
           {/* Pin glow — softer Gaussian for the cinematic bloom */}
           <filter id="globe-pin-glow" x="-100%" y="-100%" width="300%" height="300%">
@@ -3063,39 +3129,53 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
           pointerEvents="none"
         />
 
-        {/* Graticule grid — slightly more visible than before so the user
-            can still feel the sphere's curvature (the reference demo has
-            faint lines too), but still neutral grey, not gold. */}
+        {/* Graticule grid — faint blue-white lines for realism */}
         <path
           d={path(graticule) || ""}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={0.4}
+          stroke="rgba(100,160,255,0.08)"
+          strokeWidth={0.35}
           opacity={1}
           pointerEvents="none"
         />
 
-        {/* Country outlines — uniform medium-dark fill, soft border. Matches
-            the demo's flat continent rendering: no fight between fill and
-            stroke, continents read as silhouettes against the void. */}
+        {/* Country fills — earth-tone browns/greens, lit from top-left */}
         {world && world.features && (
           <g pointerEvents="none">
             {world.features.map((feature, i) => {
               const d = path(feature);
               if (!d) return null;
+              // Subtle per-country tonal variation — cycles through earth tones
+              const tones = [
+                "#2d3d1e","#324020","#2a3a1c","#2e3b1d","#304220",
+                "#28381b","#334521","#2b3e1e","#2f4122","#263519",
+              ];
+              const fill = tones[i % tones.length];
               return (
                 <path
                   key={i}
                   d={d}
-                  fill="#242424"
-                  stroke="#333333"
-                  strokeWidth={0.4}
+                  fill={fill}
+                  stroke="rgba(60,80,40,0.55)"
+                  strokeWidth={0.35}
                   opacity={1}
                 />
               );
             })}
           </g>
         )}
+        {/* Land lighting overlay — top-left lit, bottom-right shadowed */}
+        <circle
+          cx={CX} cy={CY} r={scaleRef.current}
+          fill="url(#globe-land-light)"
+          pointerEvents="none"
+        />
+        {/* Ocean specular glint near light source */}
+        <circle
+          cx={CX} cy={CY} r={scaleRef.current}
+          fill="url(#globe-ocean-specular)"
+          pointerEvents="none"
+        />
 
         {/* Country labels — gated on showLabels toggle. When off, only the
             country of the selected or hovered incident shows (gold, soft).
@@ -4636,6 +4716,89 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
 // The carousel shell handles positioning, header, footer, transitions.
 // Internal row staggering uses CSS keyframes defined in CASCADE_STYLES.
 // ─────────────────────────────────────────────────────────────────────────────
+// ───── 0. INCIDENT IMAGE ─────
+function MapIncidentImage({ incident, height = 150 }) {
+  const [failed, setFailed] = useState(false);
+
+  // AI-generated image based on the exact incident headline
+  const aiPrompt = encodeURIComponent(`${incident.headline || ""}, realistic news photography, editorial`);
+  const generatedImg = `https://image.pollinations.ai/prompt/${aiPrompt}?width=800&height=500&nologo=true`;
+
+  let primary = incident.image_url || generatedImg;
+
+  // Specific overrides for the images we generated locally
+  if (incident.headline) {
+    if (incident.headline.includes("Rocket Lab")) {
+      primary = "/incidents/rocket_lab_iridium_1782896030009.png";
+    } else if (incident.headline.includes("The Founder-Fused Brand")) {
+      primary = "/incidents/corporate_reputation_crisis_1782896048377.png";
+    } else if (incident.headline.includes("EU Anti-Subsidy Duties")) {
+      primary = "/incidents/eu_chinese_ev_1782896064535.png";
+    } else if (incident.headline.includes("China's Rare-Earth Valve")) {
+      primary = "/incidents/rare_earth_valve_1782896707184.png";
+    } else if (incident.headline.includes("When the Balance Sheet Is the Breach")) {
+      primary = "/incidents/northvolt_fraud_probe_1782896738561.png";
+    } else if (incident.headline.includes("Concentration-Risk Ransomware")) {
+      primary = "/incidents/dealership_ransomware_1782896754530.png";
+    } else if (incident.headline.includes("The Yield Trap")) {
+      primary = "/incidents/yield_trap_gigafactory.png";
+    } else if (incident.headline.includes("BMW–Northvolt")) {
+      primary = "/incidents/bmw_northvolt_contract.png";
+    } else if (incident.headline.includes("The Fuse, Not the Shot")) {
+      primary = "/incidents/pentagon_catl_fuse.png";
+    } else if (incident.headline.includes("SPAC-Fraud Wells Notice")) {
+      primary = "/incidents/spac_fraud_faraday.png";
+    } else if (incident.headline.includes("Regulatory Enforcement Sets a New Recall-Compliance Bar")) {
+      primary = "/incidents/nhtsa_ford_recall.png";
+    } else if (incident.headline.includes("Strategic Repricing of a Legacy-OEM EV Program")) {
+      primary = "/incidents/ford_lightning_scrap.png";
+    } else if (incident.headline.includes("Cruise Robotaxi Exit")) {
+      primary = "/incidents/gm_cruise_exit.png";
+    } else if (incident.headline.includes("First-of-Kind FTC Enforcement")) {
+      primary = "/incidents/ftc_gm_onstar.png";
+    } else if (incident.headline.includes("California's First Data-Minimization Strike")) {
+      primary = "/incidents/california_gm_ccpa.png";
+    } else if (incident.headline.includes("The Sovereign Cost Reset")) {
+      primary = "/incidents/sovereign_cost_reset.png";
+    } else if (incident.headline.includes("When One Country Owns the Valve")) {
+      primary = "/incidents/drc_cobalt_ban.png";
+    } else if (incident.headline.includes("Akira's Battery-Supply Gambit")) {
+      primary = "/incidents/akira_lges_breach.png";
+    }
+  }
+
+  // Branded fallback
+  if (failed) {
+    return (
+      <div style={{
+        height, width: "100%",
+        background: "linear-gradient(135deg, #141417, #1A1A1A 70%)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+        border: "1px solid rgba(255,255,255,0.05)",
+        borderRadius: 6,
+        marginBottom: 14,
+      }}>
+        <span style={{ width: 6, height: 6, borderRadius: 2, background: "#F5B800" }} />
+        <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          {incident.primary_category || "Incident"}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: "relative", height, overflow: "hidden", borderRadius: 6, marginBottom: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+      <img
+        src={primary}
+        alt={incident.headline || ""}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+      />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(8,8,8,0), rgba(8,8,8,0.5))" }} />
+    </div>
+  );
+}
 
 // ───── 1. CLASSIFICATION ─────
 function ClassificationBody({ incident, sev, cat }) {
@@ -4686,6 +4849,9 @@ function ClassificationBody({ incident, sev, cat }) {
           "{toText(incident.summary)}"
         </div>
       )}
+
+      {/* Render the incident-specific image or clean branded fallback */}
+      <MapIncidentImage incident={incident} />
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
         <span style={{
@@ -9581,29 +9747,16 @@ export default function GlobalAttackMap() {
               bot-left, bot-right) plus the two mid-edges; they do not push
               the globe aside. */}
           <div style={{ position: "absolute", inset: 0 }}>
-            {mapMode === "flat" ? (
-              <MapCanvas
-                world={world}
+            <GlobeErrorBoundary>
+              <Globe3D
+                mapMode={mapMode}
                 visibleIncidents={visibleIncidents}
-                viewMode={viewMode}
-                hoveredId={hoveredId}
                 selectedId={selectedId}
-                onHover={setHoveredId}
                 onSelect={setSelectedId}
+                onHover={setHoveredId}
                 showBlastRadius={showBlastRadius}
-                showHeat={showHeat}
-                showLabels={showLabels}
               />
-            ) : (
-              <GlobeErrorBoundary>
-                <Globe3D
-                  visibleIncidents={visibleIncidents}
-                  selectedId={selectedId}
-                  onSelect={setSelectedId}
-                  onHover={setHoveredId}
-                />
-              </GlobeErrorBoundary>
-            )}
+            </GlobeErrorBoundary>
           </div>
 
           {/* ─── HUD: TOP-LEFT — Filters (button → drawer) + active chips ─── */}

@@ -155,7 +155,7 @@ export function Globe({ size = 380 }) {
           <span style={{ width:7, height:7, borderRadius:'50%', background:'#F5B800', boxShadow:'0 0 8px rgba(245,184,0,0.6)' }} />Live incidents · 18 Jun 2026
         </span>
       </div>
-      <canvas ref={canvasRef} style={{ display:'block', width:'100%', height:'100%' }} aria-label="Live rotating globe of classified incidents" />
+      <canvas ref={canvasRef} style={{ display:'block', width:'100%', height:'100%', cursor:'grab' }} aria-label="Live rotating globe of classified incidents — drag to rotate, scroll to zoom" />
       <div className="globe-ovl" style={{ position:'absolute', left:16, bottom:14, display:'flex', gap:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6a6a6a', flexWrap:'wrap', pointerEvents:'none' }}>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF453A', display:'inline-block' }} />Critical</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF6B35', display:'inline-block' }} />High</span>

@@ -123,11 +123,11 @@ const HUB_CSS = `
 .hubft .lead .img img{width:100%;object-fit:cover;transition:transform .55s}
 .hubft .lead:hover .img{border-color:var(--gold);box-shadow:0 16px 38px rgba(20,20,20,.13)}
 .hubft .lead:hover .img img{transform:scale(1.04)}
-.hubft .lead h2{font-size:clamp(30px,3.4vw,44px);font-weight:700;line-height:1.05;letter-spacing:-.01em;margin:11px 0 0}
+.hubft .lead h2{font-size:clamp(24px,2.8vw,34px);font-weight:700;line-height:1.1;letter-spacing:-.01em;margin:11px 0 0}
 .hubft .lead:hover h2{color:var(--gold-d)}
 .hubft .lead .dek{margin-top:13px;font-size:15px;line-height:1.66;color:var(--sub);-webkit-line-clamp:4;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .side{cursor:pointer;padding-bottom:18px}
-.hubft .side h3{font-size:27px;font-weight:700;line-height:1.1;margin:9px 0 0}
+.hubft .side h3{font-size:21px;font-weight:700;line-height:1.1;margin:9px 0 0}
 .hubft .side:hover h3{color:var(--gold-d)}
 .hubft .side .dek{margin-top:9px;font-size:13px;line-height:1.55;color:var(--sub);-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .side+.side{border-top:1px solid var(--line);padding-top:18px}
@@ -151,7 +151,7 @@ const HUB_CSS = `
 .hubft .spot .img{overflow:hidden;border:1px solid var(--line);margin-bottom:12px}
 .hubft .spot .img img{width:100%;object-fit:cover;transition:transform .55s}
 .hubft .spot .big:hover .img img,.hubft .spot .aside:hover .img img{transform:scale(1.04)}
-.hubft .spot .big h3{font-size:32px;font-weight:700;line-height:1.08;margin-top:6px}
+.hubft .spot .big h3{font-size:26px;font-weight:700;line-height:1.08;margin-top:6px}
 .hubft .spot .big:hover h3{color:var(--gold-d)}
 .hubft .spot .big .dek{margin-top:11px;font-size:14px;color:var(--sub);line-height:1.6;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .spot .aside{display:block;margin-bottom:22px}
@@ -162,7 +162,7 @@ const HUB_CSS = `
 .hubft .band .feat .img{overflow:hidden;border:1px solid var(--line);margin-bottom:13px}
 .hubft .band .feat .img img{width:100%;object-fit:cover;transition:transform .55s}
 .hubft .band .feat:hover .img img{transform:scale(1.04)}
-.hubft .band .feat h3{font-size:28px;font-weight:700;line-height:1.1;margin-top:6px}
+.hubft .band .feat h3{font-size:24px;font-weight:700;line-height:1.1;margin-top:6px}
 .hubft .band .feat:hover h3{color:var(--gold-d)}
 .hubft .band .feat .dek{margin-top:10px;font-size:14px;color:var(--sub);line-height:1.6;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .morehead{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);padding-bottom:10px;border-bottom:1px solid var(--ink)}
@@ -204,7 +204,7 @@ const HUB_CSS = `
 .hubft .card .bd{padding:0 17px 17px}
 .hubft .card .crow{display:flex;align-items:center;gap:7px;margin:14px 0 8px;flex-wrap:wrap}
 .hubft .card .day{margin-left:auto;font-size:10px;color:var(--mut)}
-.hubft .card h3{font-size:22px;font-weight:700;line-height:1.14;letter-spacing:-.01em;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.hubft .card h3{font-size:18px;font-weight:700;line-height:1.14;letter-spacing:-.01em;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .card:hover h3{color:var(--gold-d)}
 .hubft .card p{margin-top:9px;font-size:12.5px;line-height:1.55;color:var(--sub);-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .pager{margin-top:44px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
@@ -713,6 +713,21 @@ export function AttackHub() {
                   {c === "ALL" ? "All" : (CAT_SHORT[c] || CAT_NAME[c] || c)}
                 </button>
               ))}
+              
+              {/* LIVE button moved to the side of REPUTATION (end of cats) */}
+              <button
+                onClick={() => { if (liveActive) { setDateFrom(""); setDateTo(""); } else if (liveDay) { setDateFrom(liveDay); setDateTo(liveDay); } }}
+                title={liveActive ? "Showing the latest day — click to clear" : "Show only the latest live incidents"}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
+                  padding: "0 4px", background: "transparent", border: "none",
+                  fontFamily: "inherit", fontSize: 13, fontWeight: 800, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#E0091C", marginLeft: "auto",
+                  borderBottom: liveActive ? "2px solid #E0091C" : "2px solid transparent",
+                }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E0091C", animation: "hubpulse 1.2s infinite" }} />
+                Live
+              </button>
             </div>
           </nav>
 
@@ -720,20 +735,9 @@ export function AttackHub() {
           <main className="wrap r-pad" style={{ paddingBottom: 64 }}>
             {/* Secondary filters */}
             <div className="filterbar">
-              <button
-                onClick={() => { if (liveActive) { setDateFrom(""); setDateTo(""); } else if (liveDay) { setDateFrom(liveDay); setDateTo(liveDay); } }}
-                title={liveActive ? "Showing the latest day — click to clear" : "Show only the latest live incidents"}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
-                  padding: "4px 2px", background: "transparent", border: "none",
-                  fontFamily: "inherit", fontSize: 13, fontWeight: 800, letterSpacing: "0.1em",
-                  textTransform: "uppercase", color: "#E0091C",
-                  borderBottom: liveActive ? "2px solid #E0091C" : "2px solid transparent",
-                }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E0091C", animation: "hubpulse 1.2s infinite" }} />
-                Live
-              </button>
-              <span className="cnt">{visible.length} briefings{catFilter !== "ALL" ? ` · ${CAT_NAME[catFilter] || catFilter}` : ""}</span>
+              <span className="cnt" style={{ fontSize: 18, fontWeight: 700, color: "#666", marginRight: 16 }}>
+                {visible.length} BRIEFINGS{catFilter !== "ALL" ? ` · ${CAT_NAME[catFilter] || catFilter}` : ""}
+              </span>
               <select className={indFilter !== "ALL" ? "act" : ""} value={indFilter} onChange={e => setIndFilter(e.target.value)}>
                 {inds.map(i => <option key={i} value={i}>{i === "ALL" ? "All industries" : i}</option>)}
               </select>

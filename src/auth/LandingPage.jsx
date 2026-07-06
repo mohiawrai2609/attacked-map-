@@ -123,7 +123,7 @@ function useLiveIntel() {
           supabase.from("incidents").select("id", { count: "exact", head: true }),
           supabase.from("incidents").select("incident_day").order("incident_day", { ascending: false }).limit(1),
           supabase.from("incidents")
-            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry")
+            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry,image_url")
             .order("incident_day", { ascending: false })
             .order("severity", { ascending: false })
             .limit(40),
