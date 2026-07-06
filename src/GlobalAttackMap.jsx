@@ -9755,6 +9755,7 @@ export default function GlobalAttackMap() {
                 onSelect={setSelectedId}
                 onHover={setHoveredId}
                 showBlastRadius={showBlastRadius}
+                showLabels={showLabels}
               />
             </GlobeErrorBoundary>
           </div>

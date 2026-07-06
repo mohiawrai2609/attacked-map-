@@ -22,10 +22,13 @@ const SEV_COLOR = {
 
 const ARCGIS_WORLD_IMAGERY =
   "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
+const ARCGIS_LABELS =
+  "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer";
 
-export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, onSelect, onHover, showBlastRadius = false }) {
+export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, onSelect, onHover, showBlastRadius = false, showLabels = false }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
+  const labelsLayerRef = useRef(null);
   const onSelectRef = useRef(onSelect);
   const incidentsRef = useRef(visibleIncidents);
   const [ready, setReady] = useState(typeof window !== "undefined" && !!window.Cesium);
@@ -57,6 +60,27 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       scene.morphTo3D(1.2);
     }
   }, [mapMode]);
+
+  // ── Toggle country/city label overlay based on showLabels ──────────────
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !window.Cesium) return;
+    const Cesium = window.Cesium;
+
+    if (showLabels) {
+      if (!labelsLayerRef.current) {
+        labelsLayerRef.current = viewer.imageryLayers.addImageryProvider(
+          new Cesium.ArcGisMapServerImageryProvider({ url: ARCGIS_LABELS })
+        );
+      }
+    } else {
+      if (labelsLayerRef.current) {
+        viewer.imageryLayers.remove(labelsLayerRef.current);
+        labelsLayerRef.current = null;
+      }
+    }
+    viewer.scene.requestRender();
+  }, [showLabels, ready]);
 
 // Country centroid fallback — used when an incident has no lat/lng
 // but has a country ISO-2 code. Covers the most common countries in the data.
