@@ -134,7 +134,7 @@ function resolveCoords(inc) {
       if (!coords) return;
       const [lng, lat] = coords;
       const c = Cesium.Color.fromCssColorString(SEV_COLOR[inc.severity] || SEV_COLOR[3]);
-      viewer.entities.add({
+      const entity = viewer.entities.add({
         id: String(inc._id),
         position: Cesium.Cartesian3.fromDegrees(lng, lat),
         point: {
@@ -146,6 +146,7 @@ function resolveCoords(inc) {
           scaleByDistance: new Cesium.NearFarScalar(1.5e6, 1.5, 4.0e7, 0.5),
         },
       });
+      entity._incident = inc;
     });
     viewer.scene.requestRender();
   }
@@ -478,20 +479,42 @@ function resolveCoords(inc) {
     const hoverHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     hoverHandler.setInputAction((movement) => {
       const picked = viewer.scene.pick(movement.endPosition);
-      if (Cesium.defined(picked) && picked.id && picked.id._blastMeta) {
-        const meta = picked.id._blastMeta;
-        setTooltip({
-          x: movement.endPosition.x,
-          y: movement.endPosition.y,
-          name: meta.name,
-          channel: meta.channel,
-          color: meta.color,
-          country: meta.country,
-          entityType: meta.entityType,
-          incidentName: meta.incidentName,
-        });
+      if (Cesium.defined(picked) && picked.id) {
+        if (picked.id._blastMeta) {
+          const meta = picked.id._blastMeta;
+          setTooltip({
+            type: "blast",
+            x: movement.endPosition.x,
+            y: movement.endPosition.y,
+            name: meta.name,
+            channel: meta.channel,
+            color: meta.color,
+            country: meta.country,
+            entityType: meta.entityType,
+            incidentName: meta.incidentName,
+          });
+          onHover(null);
+        } else if (picked.id._incident) {
+          const inc = picked.id._incident;
+          const sevColor = SEV_COLOR[inc.severity] || SEV_COLOR[3];
+          setTooltip({
+            type: "incident",
+            x: movement.endPosition.x,
+            y: movement.endPosition.y,
+            name: inc.headline,
+            color: sevColor,
+            category: inc.primary_category || "Classification",
+            locationName: inc.location_name || inc.country || "",
+            severity: inc.severity,
+          });
+          onHover(inc._id);
+        } else {
+          setTooltip(null);
+          onHover(null);
+        }
       } else {
         setTooltip(null);
+        onHover(null);
       }
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
     viewer._blastHoverHandler = hoverHandler;
@@ -532,7 +555,7 @@ function resolveCoords(inc) {
     <div style={{ position: "absolute", inset: 0, background: "#000", overflow: "hidden" }}>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-      {/* Blast-radius dot tooltip — positioned to stay left of right panel */}
+      {/* Hover tooltip — handles both blast nodes and incident pins */}
       {tooltip && (
         <div style={{
           position: "absolute",
@@ -546,27 +569,45 @@ function resolveCoords(inc) {
           borderLeft: `3px solid ${tooltip.color}`,
           borderRadius: 8,
           padding: "8px 12px",
-          minWidth: 180,
-          maxWidth: 240,
+          minWidth: 200,
+          maxWidth: 280,
           boxShadow: `0 4px 24px rgba(0,0,0,0.6), 0 0 12px ${tooltip.color}22`,
           fontFamily: "Inter, sans-serif",
         }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: tooltip.color, marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: tooltip.color, flexShrink: 0 }} />
-            {tooltip.channel}{tooltip.entityType ? ` · ${tooltip.entityType}` : ""}
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#FFFFFF", lineHeight: 1.3 }}>
-            {tooltip.name}
-          </div>
-          {tooltip.country && (
-            <div style={{ fontSize: 11, color: "#C0C0C8", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ fontSize: 12 }}>📍</span> {tooltip.country}
-            </div>
-          )}
-          {tooltip.incidentName && (
-            <div style={{ fontSize: 10, color: "#808088", lineHeight: 1.4, borderTop: "1px solid #2a2a30", paddingTop: 5, marginTop: 5 }}>
-              ↳ {tooltip.incidentName}
-            </div>
+          {tooltip.type === "incident" ? (
+            <>
+              <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: tooltip.color, marginBottom: 4 }}>
+                {tooltip.category} · SEV {tooltip.severity}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#FFFFFF", lineHeight: 1.3 }}>
+                {tooltip.name}
+              </div>
+              {tooltip.locationName && (
+                <div style={{ fontSize: 11, color: "#C0C0C8", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 12 }}>📍</span> {tooltip.locationName}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: tooltip.color, marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: tooltip.color, flexShrink: 0 }} />
+                {tooltip.channel}{tooltip.entityType ? ` · ${tooltip.entityType}` : ""}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#FFFFFF", lineHeight: 1.3 }}>
+                {tooltip.name}
+              </div>
+              {tooltip.country && (
+                <div style={{ fontSize: 11, color: "#C0C0C8", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 12 }}>📍</span> {tooltip.country}
+                </div>
+              )}
+              {tooltip.incidentName && (
+                <div style={{ fontSize: 10, color: "#808088", lineHeight: 1.4, borderTop: "1px solid #2a2a30", paddingTop: 5, marginTop: 5 }}>
+                  ↳ {tooltip.incidentName}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
