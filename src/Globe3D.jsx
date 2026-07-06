@@ -81,6 +81,59 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     }
     viewer.scene.requestRender();
   }, [showLabels, ready]);
+  // ── Highlight country/region on map ─────────────────────────────────────
+  const geoDataSourceRef = useRef(null);
+  const [highlightedCountry, setHighlightedCountry] = useState(null);
+  const highlightSevRef = useRef(3);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !window.Cesium || !world || !world.features) return;
+    if (geoDataSourceRef.current) return;
+    const Cesium = window.Cesium;
+    const geojson = { type: "FeatureCollection", features: world.features };
+    Cesium.GeoJsonDataSource.load(geojson, {
+      stroke: Cesium.Color.TRANSPARENT, fill: Cesium.Color.TRANSPARENT,
+      strokeWidth: 0, clampToGround: true,
+    }).then(ds => {
+      viewer.dataSources.add(ds);
+      geoDataSourceRef.current = ds;
+      ds.entities.values.forEach(ent => {
+        const nm = ent.properties && ent.properties.name && ent.properties.name.getValue();
+        ent._countryName = nm || null;
+        if (ent.polygon) { ent.polygon.material = Cesium.Color.TRANSPARENT; ent.polygon.outline = false; }
+      });
+      viewer.scene.requestRender();
+    }).catch(() => {});
+  }, [world, ready]);
+
+  useEffect(() => {
+    const ds = geoDataSourceRef.current;
+    if (!ds || !window.Cesium) return;
+    const Cesium = window.Cesium;
+    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#F5B800");
+    ds.entities.values.forEach(ent => {
+      if (!ent.polygon) return;
+      if (ent._countryName && highlightedCountry && ent._countryName === highlightedCountry) {
+        ent.polygon.material = c.withAlpha(0.25);
+        ent.polygon.outline = true;
+        ent.polygon.outlineColor = c.withAlpha(0.9);
+      } else {
+        ent.polygon.material = Cesium.Color.TRANSPARENT;
+        ent.polygon.outline = false;
+      }
+    });
+    if (viewerRef.current) viewerRef.current.scene.requestRender();
+  }, [highlightedCountry]);
+
+  useEffect(() => {
+    const focusId = selectedId || hoveredId;
+    if (!focusId) { setHighlightedCountry(null); return; }
+    const inc = visibleIncidents.find(i => i._id === focusId);
+    if (!inc || !inc.country) { setHighlightedCountry(null); return; }
+    highlightSevRef.current = inc.severity || 3;
+    setHighlightedCountry(inc.country);
+  }, [selectedId, hoveredId, visibleIncidents]);
 
 // Country centroid fallback — used when an incident has no lat/lng
 // but has a country ISO-2 code. Covers the most common countries in the data.

@@ -9752,10 +9752,12 @@ export default function GlobalAttackMap() {
                 mapMode={mapMode}
                 visibleIncidents={visibleIncidents}
                 selectedId={selectedId}
+                hoveredId={hoveredId}
                 onSelect={setSelectedId}
                 onHover={setHoveredId}
                 showBlastRadius={showBlastRadius}
                 showLabels={showLabels}
+                world={world}
               />
             </GlobeErrorBoundary>
           </div>
