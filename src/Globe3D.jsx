@@ -229,7 +229,7 @@ function resolveCoords(inc) {
         id: String(inc._id),
         position: Cesium.Cartesian3.fromDegrees(lng, lat),
         point: {
-          pixelSize: 11,
+          pixelSize: 18,
           color: c.withAlpha(0.95),
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
@@ -517,7 +517,7 @@ function resolveCoords(inc) {
         const dotEnt = viewer.entities.add({
           position: Cesium.Cartesian3.fromDegrees(ent.longitude, ent.latitude, 20000),
           point: {
-            pixelSize: 10,
+            pixelSize: 16,
             color: Cesium.Color.fromCssColorString(def.color).withAlpha(0.9),
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 1.5,
