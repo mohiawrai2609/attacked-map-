@@ -121,6 +121,36 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     }).catch(() => {});
   }, [world, ready]);
 
+  // Case-insensitive & alias-tolerant country matching helper
+  const isSameCountry = (c1, c2) => {
+    if (!c1 || !c2) return false;
+    const n1 = c1.toLowerCase().trim();
+    const n2 = c2.toLowerCase().trim();
+    if (n1 === n2) return true;
+    
+    const aliases = {
+      "united states": ["united states of america", "usa", "us"],
+      "united states of america": ["united states", "usa", "us"],
+      "united kingdom": ["united kingdom of great britain and northern ireland", "uk", "great britain"],
+      "united kingdom of great britain and northern ireland": ["united kingdom", "uk", "great britain"],
+      "south korea": ["korea, republic of", "korea", "republic of korea", "korea, south"],
+      "korea, republic of": ["south korea", "korea", "republic of korea", "korea, south"],
+      "republic of korea": ["south korea", "korea", "korea, republic of", "korea, south"],
+      "russia": ["russian federation"],
+      "russian federation": ["russia"],
+      "vietnam": ["viet nam"],
+      "viet nam": ["vietnam"],
+      "iran": ["iran, islamic republic of"],
+      "iran, islamic republic of": ["iran"],
+      "syria": ["syrian arab republic"],
+      "syrian arab republic": ["syria"],
+    };
+
+    if (aliases[n1] && aliases[n1].includes(n2)) return true;
+    if (aliases[n2] && aliases[n2].includes(n1)) return true;
+    return n1.includes(n2) || n2.includes(n1);
+  };
+
   useEffect(() => {
     const ds = geoDataSourceRef.current;
     if (!ds || !window.Cesium) return;
@@ -132,11 +162,22 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       const countryName = ent._countryName;
       if (!countryName) return;
 
-      if (highlightedCountry && countryName === highlightedCountry) {
+      const isFocused = highlightedCountry && isSameCountry(countryName, highlightedCountry);
+      let isActiveFilter = false;
+      if (activeCountries && activeCountries.size > 0) {
+        for (const ac of activeCountries) {
+          if (isSameCountry(countryName, ac)) {
+            isActiveFilter = true;
+            break;
+          }
+        }
+      }
+
+      if (isFocused) {
         ent.polygon.material = c.withAlpha(0.25);
         ent.polygon.outline = true;
         ent.polygon.outlineColor = c.withAlpha(0.9);
-      } else if (activeCountries && activeCountries.has(countryName)) {
+      } else if (isActiveFilter) {
         ent.polygon.material = goldColor.withAlpha(0.18);
         ent.polygon.outline = true;
         ent.polygon.outlineColor = goldColor.withAlpha(0.85);
