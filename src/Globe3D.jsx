@@ -59,7 +59,12 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       scene.morphTo2D(1.2);
       const done = scene.morphComplete.addEventListener(() => {
         done();
-        if (!viewer.isDestroyed()) viewer.camera.flyHome(0);
+        if (!viewer.isDestroyed()) {
+          viewer.camera.flyHome(0);
+          if (viewer.camera.frustum && typeof viewer.camera.frustum.width === "number") {
+            viewer.camera.frustum.width *= 1.7;
+          }
+        }
       });
     } else {
       scene.morphTo3D(1.2);
@@ -452,6 +457,9 @@ function resolveCoords(inc) {
       if (mapMode === "flat") {
         viewer.scene.morphTo2D(0);
         viewer.camera.flyHome(0);
+        if (viewer.camera.frustum && typeof viewer.camera.frustum.width === "number") {
+          viewer.camera.frustum.width *= 1.7;
+        }
       }
 
       buildEntities(viewer, incidentsRef.current);
