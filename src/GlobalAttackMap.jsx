@@ -8898,6 +8898,8 @@ export default function GlobalAttackMap() {
   const [activeCats, setActiveCats] = useState(new Set());
   const [activeIndustries, setActiveIndustries] = useState(new Set());
   const [industryPanelOpen, setIndustryPanelOpen] = useState(false);
+  const [activeCountries, setActiveCountries] = useState(new Set());
+  const [regionPanelOpen, setRegionPanelOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false); // top-left Filters drawer
   const [showBlastRadius, setShowBlastRadius] = useState(true);
   const [showHeat, setShowHeat] = useState(false);  // off by default — heat halos compete with the cinematic pin bloom; user can toggle on for analytical density view
@@ -9138,12 +9140,16 @@ export default function GlobalAttackMap() {
     if (activeIndustries.size > 0) {
       filtered = filtered.filter(inc => inc.industry && activeIndustries.has(inc.industry));
     }
+    // Country/Region filter — multi-select. Empty = all.
+    if (activeCountries.size > 0) {
+      filtered = filtered.filter(inc => inc.country && activeCountries.has(inc.country));
+    }
     // Search filter (v3 — empty = all)
     if (searchQuery && searchQuery.trim()) {
       filtered = filtered.filter(inc => searchMatches(inc, searchQuery));
     }
     return filtered;
-  }, [incidents, activeCats, activeReporters, activeSeverities, activeConfidences, activeIndustries, searchQuery, reporters]);
+  }, [incidents, activeCats, activeReporters, activeSeverities, activeConfidences, activeIndustries, activeCountries, searchQuery, reporters]);
 
   const visibleCats = useMemo(() => new Set(visibleIncidents.map(i => i._cat)), [visibleIncidents]);
 
@@ -9812,7 +9818,7 @@ export default function GlobalAttackMap() {
           {/* ─── HUD: TOP-LEFT — Filters (button → drawer) + active chips ─── */}
           <div className="map-hud-tl" style={{ position: "absolute", top: 20, left: 24, zIndex: 20, maxWidth: "calc(100% - 500px)" }}>
             {(() => {
-              const fCount = (activeSeverities.size > 0 ? 1 : 0) + activeCats.size + activeIndustries.size;
+              const fCount = (activeSeverities.size > 0 ? 1 : 0) + activeCats.size + activeIndustries.size + activeCountries.size;
               const chip = {
                 display: "inline-flex", alignItems: "center", gap: 5,
                 padding: "4px 9px", borderRadius: 4, fontFamily: "Inter, sans-serif",
@@ -9861,8 +9867,14 @@ export default function GlobalAttackMap() {
                     <span key={ind} style={chip}>{String(ind).slice(0, 16)}<span style={xs} onClick={() => setActiveIndustries(prev => { const n = new Set(prev); n.delete(ind); return n; })}>×</span></span>
                   ))}
                   {activeIndustries.size > 3 && <span style={{ ...chip, background: "rgba(255,255,255,0.06)", color: BRAND.textSecondary, border: `1px solid ${BRAND.borderSubtle}` }}>+{activeIndustries.size - 3}</span>}
+                  
+                  {[...activeCountries].slice(0, 3).map(country => (
+                    <span key={country} style={chip}>{String(country).slice(0, 16)}<span style={xs} onClick={() => setActiveCountries(prev => { const n = new Set(prev); n.delete(country); return n; })}>×</span></span>
+                  ))}
+                  {activeCountries.size > 3 && <span style={{ ...chip, background: "rgba(255,255,255,0.06)", color: BRAND.textSecondary, border: `1px solid ${BRAND.borderSubtle}` }}>+{activeCountries.size - 3}</span>}
+                  
                   {fCount > 0 && (
-                    <button onClick={() => { setActiveSeverities(new Set()); setActiveCats(new Set()); setActiveIndustries(new Set()); }}
+                    <button onClick={() => { setActiveSeverities(new Set()); setActiveCats(new Set()); setActiveIndustries(new Set()); setActiveCountries(new Set()); }}
                       style={{ background: "none", border: "none", color: BRAND.textSecondary, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Clear all</button>
                   )}
                 </div>
@@ -9961,7 +9973,7 @@ export default function GlobalAttackMap() {
               const filterCount = activeIndustries.size;
               const showBadge = filterCount > 0 ? filterCount : presentCount;
               return (
-                <button onClick={() => setIndustryPanelOpen(s => !s)}
+                <button onClick={() => { setIndustryPanelOpen(s => !s); setRegionPanelOpen(false); setShowFilterPopover(false); }}
                   style={{
                     padding: "5px 12px", borderRadius: 4,
                     background: (industryPanelOpen || activeIndustries.size > 0) ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
@@ -9977,8 +9989,34 @@ export default function GlobalAttackMap() {
               );
             })()}
 
+            {/* REGION — opens country filter panel */}
+            {(() => {
+              const distinctCountries = new Set();
+              for (const inc of visibleIncidents) {
+                if (inc.country) distinctCountries.add(inc.country);
+              }
+              const presentCount = distinctCountries.size;
+              const filterCount = activeCountries.size;
+              const showBadge = filterCount > 0 ? filterCount : presentCount;
+              return (
+                <button onClick={() => { setRegionPanelOpen(s => !s); setIndustryPanelOpen(false); setShowFilterPopover(false); }}
+                  style={{
+                    padding: "5px 12px", borderRadius: 4,
+                    background: (regionPanelOpen || activeCountries.size > 0) ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
+                    backdropFilter: "blur(12px)",
+                    border: `1px solid ${(regionPanelOpen || activeCountries.size > 0) ? BRAND.borderGold : BRAND.borderSubtle}`,
+                    fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    color: (regionPanelOpen || activeCountries.size > 0) ? BRAND.gold : BRAND.textSecondary,
+                    textTransform: "uppercase", cursor: "pointer",
+                  }}>
+                  ◈ REGION {showBadge}
+                </button>
+              );
+            })()}
+
             {/* MORE — opens detailed filter popover */}
-            <button onClick={() => setShowFilterPopover(s => !s)}
+            <button onClick={() => { setShowFilterPopover(s => !s); setIndustryPanelOpen(false); setRegionPanelOpen(false); }}
               style={{
                 padding: "5px 12px", borderRadius: 4,
                 background: showFilterPopover ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
@@ -10095,6 +10133,92 @@ export default function GlobalAttackMap() {
                     {untaggedCount} incidents untagged (Government / Education / Civil Society)
                   </div>
                 )}
+              </div>
+            );
+          })()}
+
+          {/* Region/Country filter panel — opens below REGION button. Shows
+              all countries present in current dataset. Click to toggle filter, "Clear all" to reset. */}
+          {regionPanelOpen && (() => {
+            const counts = new Map();
+            for (const inc of visibleIncidents) {
+              if (inc.country) counts.set(inc.country, (counts.get(inc.country) || 0) + 1);
+            }
+            const presentCountries = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+            return (
+              <div className="r-mappanel" style={{
+                position: "absolute", top: 64, left: 24, width: 380,
+                maxHeight: "70vh", overflowY: "auto",
+                padding: 16,
+                background: "rgba(26,26,26,0.95)", backdropFilter: "blur(20px)",
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 8,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                zIndex: 20,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div style={{
+                    fontFamily: "Inter, sans-serif", fontSize: 10,
+                    color: BRAND.gold, letterSpacing: "0.14em",
+                    textTransform: "uppercase", fontWeight: 600,
+                  }}>
+                    ◈ Filter by Region · {presentCountries.length} present
+                  </div>
+                  <button onClick={() => setRegionPanelOpen(false)} style={{
+                    background: "none", border: "none", color: BRAND.textSecondary,
+                    fontSize: 18, cursor: "pointer",
+                  }}>×</button>
+                </div>
+
+                {activeCountries.size > 0 && (
+                  <button onClick={() => setActiveCountries(new Set())}
+                    style={{
+                      width: "100%", padding: "6px 10px", marginBottom: 12,
+                      background: "transparent",
+                      border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 4,
+                      fontFamily: "Inter, sans-serif", fontSize: 10,
+                      color: BRAND.textSecondary, letterSpacing: "0.06em",
+                      textTransform: "uppercase", cursor: "pointer",
+                    }}
+                  >
+                    Clear all ({activeCountries.size}) filters
+                  </button>
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {presentCountries.map(([cname, cnt]) => {
+                    const on = activeCountries.has(cname);
+                    return (
+                      <button key={cname}
+                        onClick={() => {
+                          setActiveCountries(prev => {
+                            const next = new Set(prev);
+                            if (next.has(cname)) next.delete(cname); else next.add(cname);
+                            return next;
+                          });
+                        }}
+                        style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center",
+                          padding: "8px 12px",
+                          background: on ? "rgba(245,184,0,0.18)" : "rgba(8,8,8,0.4)",
+                          border: `1px solid ${on ? BRAND.gold : BRAND.borderSubtle}`,
+                          borderRadius: 4,
+                          fontFamily: "Inter, sans-serif", fontSize: 12,
+                          color: on ? BRAND.white : BRAND.textSecondary,
+                          fontWeight: on ? 600 : 400,
+                          textAlign: "left", cursor: "pointer",
+                          transition: "all 140ms ease",
+                        }}
+                      >
+                        <span>{cname}</span>
+                        <span style={{
+                          fontFamily: "'Inter', sans-serif", fontSize: 10,
+                          color: on ? BRAND.gold : BRAND.textMuted,
+                          fontWeight: 600,
+                        }}>{cnt}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })()}
