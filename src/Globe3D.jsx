@@ -25,7 +25,7 @@ const ARCGIS_WORLD_IMAGERY =
 const ARCGIS_LABELS =
   "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer";
 
-export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, hoveredId, onSelect, onHover, showBlastRadius = false, showLabels = false, world = null }) {
+export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, hoveredId, activeCountries = new Set(), onSelect, onHover, showBlastRadius = false, showLabels = false, world = null }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const labelsLayerRef = useRef(null);
@@ -125,20 +125,28 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     const ds = geoDataSourceRef.current;
     if (!ds || !window.Cesium) return;
     const Cesium = window.Cesium;
+    const goldColor = Cesium.Color.fromCssColorString("#F5B800");
     const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#F5B800");
     ds.entities.values.forEach(ent => {
       if (!ent.polygon) return;
-      if (ent._countryName && highlightedCountry && ent._countryName === highlightedCountry) {
+      const countryName = ent._countryName;
+      if (!countryName) return;
+
+      if (highlightedCountry && countryName === highlightedCountry) {
         ent.polygon.material = c.withAlpha(0.25);
         ent.polygon.outline = true;
         ent.polygon.outlineColor = c.withAlpha(0.9);
+      } else if (activeCountries && activeCountries.has(countryName)) {
+        ent.polygon.material = goldColor.withAlpha(0.18);
+        ent.polygon.outline = true;
+        ent.polygon.outlineColor = goldColor.withAlpha(0.85);
       } else {
         ent.polygon.material = Cesium.Color.TRANSPARENT;
         ent.polygon.outline = false;
       }
     });
     if (viewerRef.current) viewerRef.current.scene.requestRender();
-  }, [highlightedCountry]);
+  }, [highlightedCountry, activeCountries]);
 
   useEffect(() => {
     const focusId = selectedId || hoveredId;
@@ -229,7 +237,7 @@ function resolveCoords(inc) {
         id: String(inc._id),
         position: Cesium.Cartesian3.fromDegrees(lng, lat),
         point: {
-          pixelSize: 18,
+          pixelSize: 22,
           color: c.withAlpha(0.95),
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
@@ -517,7 +525,7 @@ function resolveCoords(inc) {
         const dotEnt = viewer.entities.add({
           position: Cesium.Cartesian3.fromDegrees(ent.longitude, ent.latitude, 20000),
           point: {
-            pixelSize: 16,
+            pixelSize: 18,
             color: Cesium.Color.fromCssColorString(def.color).withAlpha(0.9),
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 1.5,
