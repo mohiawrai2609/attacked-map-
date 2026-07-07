@@ -9429,20 +9429,22 @@ export default function GlobalAttackMap() {
     setSelectedId(null);
     setHoveredId(null);
     setPlayPos(i);
-    // Voice narration — announce the date being shown (cancel any prior line so
-    // fast steps/scrubs don't queue up). Runs off a user gesture (Show & play),
-    // so the browser autoplay policy allows speech.
+  };
+
+  // Sync Voice Narration to trigger after state renders the new incidents
+  useEffect(() => {
+    if (!playing || !currentDate || !sweep) return;
     if (narrate && typeof window !== "undefined" && window.speechSynthesis) {
       try {
         window.speechSynthesis.cancel();
-        const nice = new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
-        const n = Object.values(json.results || {}).reduce((s, c) => s + ((c.incidents || []).length), 0);
+        const nice = new Date(currentDate + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+        const n = visibleIncidents.length;
         const u = new SpeechSynthesisUtterance(`Showing ${n} incident${n === 1 ? "" : "s"} for ${nice}`);
         u.rate = 1; u.pitch = 1; u.volume = 1;
         window.speechSynthesis.speak(u);
       } catch { /* noop */ }
     }
-  };
+  }, [currentDate, playing, narrate, visibleIncidents]);
 
   // Silence narration the moment playback stops or pauses.
   useEffect(() => {
