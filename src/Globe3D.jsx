@@ -59,7 +59,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       setTimeout(() => {
         if (viewerRef.current && !viewerRef.current.isDestroyed() && scene.mode === Cesium.SceneMode.SCENE2D) {
           viewerRef.current.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(10, 0, 2.85e7),
+            destination: Cesium.Rectangle.fromDegrees(-180, -85, 180, 85),
             duration: 0.8,
           });
         }
@@ -306,7 +306,7 @@ function resolveCoords(inc) {
       // terminator falls toward the left edge (like the reference).
       if (mapMode === "flat") {
         viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(10, 0, 2.85e7),
+          destination: Cesium.Rectangle.fromDegrees(-180, -85, 180, 85),
         });
       } else {
         viewer.camera.setView({
@@ -407,7 +407,7 @@ function resolveCoords(inc) {
       if (mapMode === "flat") {
         viewer.scene.morphTo2D(0);
         viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(10, 0, 2.85e7),
+          destination: Cesium.Rectangle.fromDegrees(-180, -85, 180, 85),
         });
       }
 
