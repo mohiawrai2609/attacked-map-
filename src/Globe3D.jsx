@@ -52,28 +52,26 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
   // ── Morph between 2D and 3D based on mapMode ──────────────────────────
   useEffect(() => {
     if (!viewerRef.current) return;
-    const scene = viewerRef.current.scene;
+    const viewer = viewerRef.current;
+    const scene = viewer.scene;
     const Cesium = window.Cesium;
     if (mapMode === "flat") {
       scene.morphTo2D(1.2);
-      setTimeout(() => {
-        if (viewerRef.current && !viewerRef.current.isDestroyed() && scene.mode === Cesium.SceneMode.SCENE2D) {
-          viewerRef.current.camera.flyTo({
-            destination: Cesium.Rectangle.fromDegrees(-180, -85, 180, 85),
-            duration: 0.8,
-          });
-        }
-      }, 1200);
+      const done = scene.morphComplete.addEventListener(() => {
+        done();
+        if (!viewer.isDestroyed()) viewer.camera.flyHome(0);
+      });
     } else {
       scene.morphTo3D(1.2);
-      setTimeout(() => {
-        if (viewerRef.current && !viewerRef.current.isDestroyed() && scene.mode === Cesium.SceneMode.SCENE3D) {
-          viewerRef.current.camera.flyTo({
+      const done = scene.morphComplete.addEventListener(() => {
+        done();
+        if (!viewer.isDestroyed()) {
+          viewer.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(-45, 15, 2.4e7),
             duration: 0.8,
           });
         }
-      }, 1200);
+      });
     }
   }, [mapMode]);
 
@@ -305,9 +303,7 @@ function resolveCoords(inc) {
       // Framing: whole globe from space, camera on the lit hemisphere so the
       // terminator falls toward the left edge (like the reference).
       if (mapMode === "flat") {
-        viewer.camera.setView({
-          destination: Cesium.Rectangle.fromDegrees(-180, -85, 180, 85),
-        });
+        // Will be overridden by morphTo2D(0) + flyHome below
       } else {
         viewer.camera.setView({
           destination: Cesium.Cartesian3.fromDegrees(-45, 15, 24000000),
@@ -406,9 +402,7 @@ function resolveCoords(inc) {
       // Handle initial mapMode
       if (mapMode === "flat") {
         viewer.scene.morphTo2D(0);
-        viewer.camera.setView({
-          destination: Cesium.Rectangle.fromDegrees(-180, -85, 180, 85),
-        });
+        viewer.camera.flyHome(0);
       }
 
       buildEntities(viewer, incidentsRef.current);
