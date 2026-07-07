@@ -2081,24 +2081,34 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
 
           {/* Countries — muted earth-green/brown landmasses matching the 
               photorealistic satellite palette. */}
-          {world && world.features.map((feat, i) => {
-            const d = pathGen(feat);
-            if (!d) return null;
+          {(() => {
+            const focusInc = visibleIncidents.find(i => i._id === (selectedId || hoveredId));
+            const focusCountry = focusInc?.country;
+            const focusColor = focusInc ? (SEV_COLOR[focusInc.severity] || BRAND.gold) : BRAND.gold;
             const tones = [
               "#2d3d1e","#324020","#2a3a1c","#2e3b1d","#304220",
               "#28381b","#334521","#2b3e1e","#2f4122","#263519",
             ];
-            const fill = tones[i % tones.length];
-            return (
-              <path
-                key={i}
-                d={d}
-                fill={fill}
-                stroke="rgba(60,80,40,0.55)"
-                strokeWidth={0.4 / k}
-              />
-            );
-          })}
+            return world && world.features.map((feat, i) => {
+              const d = pathGen(feat);
+              if (!d) return null;
+              const name = feat.properties?.name;
+              const isFocused = focusCountry && name === focusCountry;
+              const fill = isFocused ? `${focusColor}33` : tones[i % tones.length];
+              const stroke = isFocused ? focusColor : "rgba(60,80,40,0.55)";
+              const strokeWidth = (isFocused ? 1.5 : 0.4) / k;
+              return (
+                <path
+                  key={i}
+                  d={d}
+                  fill={fill}
+                  stroke={stroke}
+                  strokeWidth={strokeWidth}
+                  style={{ transition: "fill 0.2s, stroke 0.2s, stroke-width 0.2s" }}
+                />
+              );
+            });
+          })()}
 
           {/* Country labels — gated on the showLabels toggle. When off, only
               the country of the selected or hovered incident gets a soft label
@@ -9784,19 +9794,34 @@ export default function GlobalAttackMap() {
               bot-left, bot-right) plus the two mid-edges; they do not push
               the globe aside. */}
           <div style={{ position: "absolute", inset: 0 }}>
-            <GlobeErrorBoundary>
-              <Globe3D
-                mapMode={mapMode}
-                visibleIncidents={visibleIncidents}
-                selectedId={selectedId}
-                hoveredId={hoveredId}
-                onSelect={setSelectedId}
-                onHover={setHoveredId}
-                showBlastRadius={showBlastRadius}
-                showLabels={showLabels}
+            {mapMode === "flat" ? (
+              <MapCanvas
                 world={world}
+                visibleIncidents={visibleIncidents}
+                viewMode={viewMode}
+                hoveredId={hoveredId}
+                selectedId={selectedId}
+                onHover={setHoveredId}
+                onSelect={setSelectedId}
+                showBlastRadius={showBlastRadius}
+                showHeat={showHeat}
+                showLabels={showLabels}
               />
-            </GlobeErrorBoundary>
+            ) : (
+              <GlobeErrorBoundary>
+                <Globe3D
+                  mapMode={mapMode}
+                  visibleIncidents={visibleIncidents}
+                  selectedId={selectedId}
+                  hoveredId={hoveredId}
+                  onSelect={setSelectedId}
+                  onHover={setHoveredId}
+                  showBlastRadius={showBlastRadius}
+                  showLabels={showLabels}
+                  world={world}
+                />
+              </GlobeErrorBoundary>
+            )}
           </div>
 
           {/* ─── HUD: TOP-LEFT — Filters (button → drawer) + active chips ─── */}
