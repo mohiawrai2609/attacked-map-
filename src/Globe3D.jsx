@@ -25,7 +25,7 @@ const ARCGIS_WORLD_IMAGERY =
 const ARCGIS_LABELS =
   "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer";
 
-export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, onSelect, onHover, showBlastRadius = false, showLabels = false }) {
+export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, hoveredId, onSelect, onHover, showBlastRadius = false, showLabels = false, world = null }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const labelsLayerRef = useRef(null);
