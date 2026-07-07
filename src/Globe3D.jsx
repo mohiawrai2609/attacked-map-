@@ -53,11 +53,27 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
   useEffect(() => {
     if (!viewerRef.current) return;
     const scene = viewerRef.current.scene;
-    // Morph duration in seconds
+    const Cesium = window.Cesium;
     if (mapMode === "flat") {
       scene.morphTo2D(1.2);
+      setTimeout(() => {
+        if (viewerRef.current && !viewerRef.current.isDestroyed() && scene.mode === Cesium.SceneMode.SCENE2D) {
+          viewerRef.current.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(10, 20, 1.2e7),
+            duration: 0.8,
+          });
+        }
+      }, 1200);
     } else {
       scene.morphTo3D(1.2);
+      setTimeout(() => {
+        if (viewerRef.current && !viewerRef.current.isDestroyed() && scene.mode === Cesium.SceneMode.SCENE3D) {
+          viewerRef.current.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(-45, 15, 2.4e7),
+            duration: 0.8,
+          });
+        }
+      }, 1200);
     }
   }, [mapMode]);
 
@@ -287,9 +303,15 @@ function resolveCoords(inc) {
 
       // Framing: whole globe from space, camera on the lit hemisphere so the
       // terminator falls toward the left edge (like the reference).
-      viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(-45, 15, 24000000),
-      });
+      if (mapMode === "flat") {
+        viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(10, 20, 1.2e7),
+        });
+      } else {
+        viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(-45, 15, 24000000),
+        });
+      }
 
       // ── Auto-rotation: rotate globe slowly when user is idle ─────────────
       let isUserInteracting = false;
@@ -383,6 +405,9 @@ function resolveCoords(inc) {
       // Handle initial mapMode
       if (mapMode === "flat") {
         viewer.scene.morphTo2D(0);
+        viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(10, 20, 1.2e7),
+        });
       }
 
       buildEntities(viewer, incidentsRef.current);

@@ -8172,6 +8172,8 @@ function IncidentListPanel({ visibleIncidents, selectedId, onSelect, onHover, ho
         )}
       </div>
       <div style={{ overflowY: "auto", flex: 1, padding: "4px 0" }}>
+
+
         {[5, 4, 3, 2, 1].map(level => {
           const items = grouped[level];
           if (!items || items.length === 0) return null;
@@ -8951,6 +8953,7 @@ export default function GlobalAttackMap() {
   const [playing, setPlaying] = useState(false);
   const [playDates, setPlayDates] = useState([]);
   const [playPos, setPlayPos] = useState(0);
+  const [playSummary, setPlaySummary] = useState("");
   const [playSpeedMs, setPlaySpeedMs] = useState(35000);  // ~35 s/day default (configurable)
   const [narrate, setNarrate] = useState(true);           // speak the current date as playback advances
   const playCacheRef = useRef(new Map());
@@ -9431,16 +9434,48 @@ export default function GlobalAttackMap() {
     setPlayPos(i);
   };
 
-  // Sync Voice Narration to trigger after state renders the new incidents
+  // Sync Voice Narration and text summary to trigger after state renders the new incidents
   useEffect(() => {
-    if (!playing || !currentDate || !sweep) return;
+    if (!playing || !currentDate || !sweep) {
+      setPlaySummary("");
+      return;
+    }
+    const nice = new Date(currentDate + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+    const n = visibleIncidents.length;
+    
+    let msg = "";
+    if (n === 0) {
+      msg = `No incidents reported for ${nice}.`;
+    } else {
+      msg = `Showing ${n} incident${n === 1 ? "" : "s"} for ${nice}. `;
+      const sevNames = { 5: "critical", 4: "high severity", 3: "medium severity", 2: "low severity", 1: "minimal severity" };
+      const catNames = { CYB: "cyber attack", DAT: "data leak", TEC: "tech risk", INF: "infrastructure issue", OPS: "operational incident" };
+
+      const getDesc = (inc) => {
+        const sev = sevNames[inc.severity] || "medium severity";
+        const cat = catNames[inc._cat] || "incident";
+        const ent = inc.entity ? `on ${inc.entity}` : "";
+        return `a ${sev} ${cat}${ent ? " " + ent : ""}`;
+      };
+
+      if (n === 1) {
+        msg += `It is ${getDesc(visibleIncidents[0])}.`;
+      } else if (n === 2) {
+        msg += `They are ${getDesc(visibleIncidents[0])}, and ${getDesc(visibleIncidents[1])}.`;
+      } else if (n === 3) {
+        msg += `They are ${getDesc(visibleIncidents[0])}, ${getDesc(visibleIncidents[1])}, and ${getDesc(visibleIncidents[2])}.`;
+      } else {
+        msg += `They include ${getDesc(visibleIncidents[0])}, ${getDesc(visibleIncidents[1])}, and ${n - 2} other events.`;
+      }
+    }
+
+    setPlaySummary(msg);
+
     if (narrate && typeof window !== "undefined" && window.speechSynthesis) {
       try {
         window.speechSynthesis.cancel();
-        const nice = new Date(currentDate + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
-        const n = visibleIncidents.length;
-        const u = new SpeechSynthesisUtterance(`Showing ${n} incident${n === 1 ? "" : "s"} for ${nice}`);
-        u.rate = 1; u.pitch = 1; u.volume = 1;
+        const u = new SpeechSynthesisUtterance(msg);
+        u.rate = 1.05; u.pitch = 1; u.volume = 1;
         window.speechSynthesis.speak(u);
       } catch { /* noop */ }
     }
@@ -10393,20 +10428,33 @@ export default function GlobalAttackMap() {
       {playing && currentDate && (
         <div style={{
           position: "fixed", top: 92, left: "50%", transform: "translateX(-50%)", zIndex: 65,
-          display: "flex", alignItems: "center", gap: 12, padding: "9px 18px",
-          background: "rgba(8,8,8,0.82)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 10, boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
-          pointerEvents: "none",
+          display: "flex", flexDirection: "column", gap: 8, padding: "12px 20px", width: "min(480px, 90vw)",
+          background: "rgba(10,10,12,0.92)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 12, boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+          transition: "all 0.3s ease-in-out",
         }}>
-          <style>{`@keyframes atkDatePulse {0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#E0091C", boxShadow: "0 0 10px #E0091C", animation: "atkDatePulse 1.2s infinite" }} />
-          <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 19, color: "#fff", letterSpacing: "0.01em" }}>
-            {(() => { try { return new Date(currentDate + "T00:00:00Z").toUTCString().slice(0, 16); } catch { return currentDate; } })()}
-          </span>
-          {playDates.length > 0 && (
-            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: BRAND.textMuted, letterSpacing: "0.04em" }}>
-              day {playPos + 1} / {playDates.length}
-            </span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <style>{`@keyframes atkDatePulse {0%,100%{opacity:1}50%{opacity:.3}}`}</style>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#E0091C", boxShadow: "0 0 8px #E0091C", animation: "atkDatePulse 1.2s infinite" }} />
+              <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 16, color: "#fff", letterSpacing: "0.01em" }}>
+                {(() => { try { return new Date(currentDate + "T00:00:00Z").toUTCString().slice(0, 16); } catch { return currentDate; } })()}
+              </span>
+            </div>
+            {playDates.length > 0 && (
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 600, color: BRAND.textMuted, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                day {playPos + 1} / {playDates.length}
+              </span>
+            )}
+          </div>
+          {playSummary && (
+            <div style={{
+              fontFamily: "Inter, sans-serif", fontSize: 11.5, color: BRAND.textSecondary,
+              lineHeight: 1.4, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8,
+              textAlign: "left", letterSpacing: "0.01em"
+            }}>
+              {playSummary}
+            </div>
           )}
         </div>
       )}
