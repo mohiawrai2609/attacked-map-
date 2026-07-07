@@ -104,6 +104,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
   const geoDataSourceRef = useRef(null);
   const [highlightedCountry, setHighlightedCountry] = useState(null);
   const highlightSevRef = useRef(3);
+  const [geoLoaded, setGeoLoaded] = useState(false);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -112,16 +113,19 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     const Cesium = window.Cesium;
     const geojson = { type: "FeatureCollection", features: world.features };
     Cesium.GeoJsonDataSource.load(geojson, {
-      stroke: Cesium.Color.TRANSPARENT, fill: Cesium.Color.TRANSPARENT,
-      strokeWidth: 0, clampToGround: true,
+      clampToGround: true,
     }).then(ds => {
       viewer.dataSources.add(ds);
       geoDataSourceRef.current = ds;
       ds.entities.values.forEach(ent => {
         const nm = ent.properties && ent.properties.name && ent.properties.name.getValue();
         ent._countryName = nm || null;
-        if (ent.polygon) { ent.polygon.material = Cesium.Color.TRANSPARENT; ent.polygon.outline = false; }
+        if (ent.polygon) {
+          ent.polygon.material = Cesium.Color.TRANSPARENT;
+          ent.polygon.outline = false;
+        }
       });
+      setGeoLoaded(true);
       viewer.scene.requestRender();
     }).catch(() => {});
   }, [world, ready]);
@@ -192,7 +196,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       }
     });
     if (viewerRef.current) viewerRef.current.scene.requestRender();
-  }, [highlightedCountry, activeCountries]);
+  }, [highlightedCountry, activeCountries, geoLoaded]);
 
   useEffect(() => {
     const focusId = selectedId || hoveredId;
