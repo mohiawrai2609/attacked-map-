@@ -55,6 +55,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     const scene = viewerRef.current.scene;
     const Cesium = window.Cesium;
     if (mapMode === "flat") {
+      scene.mapMode2D = Cesium.MapMode2D.CLAMP;
       scene.morphTo2D(1.2);
       setTimeout(() => {
         if (viewerRef.current && !viewerRef.current.isDestroyed() && scene.mode === Cesium.SceneMode.SCENE2D) {
@@ -265,6 +266,7 @@ function resolveCoords(inc) {
         animation: false,
         creditContainer: document.createElement("div"), // hide the credit bar
         contextOptions: { webgl: { alpha: false } },
+        mapMode2D: mapMode === "flat" ? Cesium.MapMode2D.CLAMP : Cesium.MapMode2D.INFINITE_SCROLL,
       });
       viewerRef.current = viewer;
 
