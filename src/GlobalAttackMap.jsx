@@ -9794,34 +9794,19 @@ export default function GlobalAttackMap() {
               bot-left, bot-right) plus the two mid-edges; they do not push
               the globe aside. */}
           <div style={{ position: "absolute", inset: 0 }}>
-            {mapMode === "flat" ? (
-              <MapCanvas
-                world={world}
+            <GlobeErrorBoundary>
+              <Globe3D
+                mapMode={mapMode}
                 visibleIncidents={visibleIncidents}
-                viewMode={viewMode}
-                hoveredId={hoveredId}
                 selectedId={selectedId}
-                onHover={setHoveredId}
+                hoveredId={hoveredId}
                 onSelect={setSelectedId}
+                onHover={setHoveredId}
                 showBlastRadius={showBlastRadius}
-                showHeat={showHeat}
                 showLabels={showLabels}
+                world={world}
               />
-            ) : (
-              <GlobeErrorBoundary>
-                <Globe3D
-                  mapMode={mapMode}
-                  visibleIncidents={visibleIncidents}
-                  selectedId={selectedId}
-                  hoveredId={hoveredId}
-                  onSelect={setSelectedId}
-                  onHover={setHoveredId}
-                  showBlastRadius={showBlastRadius}
-                  showLabels={showLabels}
-                  world={world}
-                />
-              </GlobeErrorBoundary>
-            )}
+            </GlobeErrorBoundary>
           </div>
 
           {/* ─── HUD: TOP-LEFT — Filters (button → drawer) + active chips ─── */}
