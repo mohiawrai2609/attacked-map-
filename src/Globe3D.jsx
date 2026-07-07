@@ -112,52 +112,70 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     if (geoDataSourceRef.current) return;
     const Cesium = window.Cesium;
     const geojson = { type: "FeatureCollection", features: world.features };
+    console.log("Cesium: Loading world boundaries GeoJSON with features count:", world.features.length);
     Cesium.GeoJsonDataSource.load(geojson, {
       clampToGround: true,
     }).then(ds => {
       viewer.dataSources.add(ds);
       geoDataSourceRef.current = ds;
+      console.log("Cesium: GeoJSON loaded successfully! Number of entities:", ds.entities.values.length);
       ds.entities.values.forEach(ent => {
-        const nm = ent.properties && ent.properties.name && ent.properties.name.getValue();
+        const nm = ent.properties ? (
+          typeof ent.properties.name?.getValue === "function"
+            ? ent.properties.name.getValue()
+            : ent.properties.name
+        ) : null;
         ent._countryName = nm || null;
         if (ent.polygon) {
-          ent.polygon.material = Cesium.Color.TRANSPARENT;
+          ent.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.TRANSPARENT);
           ent.polygon.outline = false;
         }
       });
       setGeoLoaded(true);
       viewer.scene.requestRender();
-    }).catch(() => {});
+    }).catch(err => {
+      console.error("Cesium: GeoJSON load failed with error:", err);
+    });
   }, [world, ready]);
 
-  // Case-insensitive & alias-tolerant country matching helper
-  const isSameCountry = (c1, c2) => {
-    if (!c1 || !c2) return false;
-    const n1 = c1.toLowerCase().trim();
-    const n2 = c2.toLowerCase().trim();
+  // Case-insensitive, alias-tolerant & composite tokenizer country matching helper
+  const isSameCountry = (mapCountry, filterCountry) => {
+    if (!mapCountry || !filterCountry) return false;
+    const n1 = mapCountry.toLowerCase().trim();
+    const n2 = filterCountry.toLowerCase().trim();
     if (n1 === n2) return true;
     
-    const aliases = {
-      "united states": ["united states of america", "usa", "us"],
-      "united states of america": ["united states", "usa", "us"],
-      "united kingdom": ["united kingdom of great britain and northern ireland", "uk", "great britain"],
-      "united kingdom of great britain and northern ireland": ["united kingdom", "uk", "great britain"],
-      "south korea": ["korea, republic of", "korea", "republic of korea", "korea, south"],
-      "korea, republic of": ["south korea", "korea", "republic of korea", "korea, south"],
-      "republic of korea": ["south korea", "korea", "korea, republic of", "korea, south"],
-      "russia": ["russian federation"],
-      "russian federation": ["russia"],
-      "vietnam": ["viet nam"],
-      "viet nam": ["vietnam"],
-      "iran": ["iran, islamic republic of"],
-      "iran, islamic republic of": ["iran"],
-      "syria": ["syrian arab republic"],
-      "syrian arab republic": ["syria"],
+    const getAliases = (name) => {
+      const aliases = {
+        "united states": ["united states of america", "usa", "us"],
+        "united states of america": ["united states", "usa", "us"],
+        "united kingdom": ["united kingdom of great britain and northern ireland", "uk", "great britain"],
+        "united kingdom of great britain and northern ireland": ["united kingdom", "uk", "great britain"],
+        "south korea": ["korea, republic of", "korea", "republic of korea", "korea, south"],
+        "korea, republic of": ["south korea", "korea", "republic of korea", "korea, south"],
+        "republic of korea": ["south korea", "korea", "korea, republic of", "korea, south"],
+        "russia": ["russian federation"],
+        "russian federation": ["russia"],
+        "vietnam": ["viet nam"],
+        "viet nam": ["vietnam"],
+        "iran": ["iran, islamic republic of"],
+        "iran, islamic republic of": ["iran"],
+        "syria": ["syrian arab republic"],
+        "syrian arab republic": ["syria"],
+      };
+      return aliases[name] || [];
     };
 
-    if (aliases[n1] && aliases[n1].includes(n2)) return true;
-    if (aliases[n2] && aliases[n2].includes(n1)) return true;
-    return n1.includes(n2) || n2.includes(n1);
+    // Split filterCountry by common separators: "/", "and", "(", ")", ","
+    const parts = n2.split(/[\/\(\),\-]+|and/g).map(p => p.trim()).filter(Boolean);
+    
+    for (const part of parts) {
+      if (n1 === part) return true;
+      if (getAliases(n1).includes(part)) return true;
+      if (getAliases(part).includes(n1)) return true;
+      if (n1.includes(part) || part.includes(n1)) return true;
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -183,15 +201,15 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       }
 
       if (isFocused) {
-        ent.polygon.material = c.withAlpha(0.25);
+        ent.polygon.material = new Cesium.ColorMaterialProperty(c.withAlpha(0.25));
         ent.polygon.outline = true;
-        ent.polygon.outlineColor = c.withAlpha(0.9);
+        ent.polygon.outlineColor = new Cesium.ColorMaterialProperty(c.withAlpha(0.9));
       } else if (isActiveFilter) {
-        ent.polygon.material = goldColor.withAlpha(0.18);
+        ent.polygon.material = new Cesium.ColorMaterialProperty(goldColor.withAlpha(0.18));
         ent.polygon.outline = true;
-        ent.polygon.outlineColor = goldColor.withAlpha(0.85);
+        ent.polygon.outlineColor = new Cesium.ColorMaterialProperty(goldColor.withAlpha(0.85));
       } else {
-        ent.polygon.material = Cesium.Color.TRANSPARENT;
+        ent.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.TRANSPARENT);
         ent.polygon.outline = false;
       }
     });
