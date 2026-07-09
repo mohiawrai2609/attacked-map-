@@ -62,7 +62,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
         if (!viewer.isDestroyed()) {
           viewer.camera.flyHome(0);
           if (viewer.camera.frustum && typeof viewer.camera.frustum.width === "number") {
-            viewer.camera.frustum.width *= 1.7;
+            viewer.camera.frustum.width *= 2.2;
           }
         }
       });
@@ -480,7 +480,7 @@ function resolveCoords(inc) {
         viewer.scene.morphTo2D(0);
         viewer.camera.flyHome(0);
         if (viewer.camera.frustum && typeof viewer.camera.frustum.width === "number") {
-          viewer.camera.frustum.width *= 1.7;
+          viewer.camera.frustum.width *= 2.2;
         }
       }
 
@@ -729,6 +729,42 @@ function resolveCoords(inc) {
 
   return (
     <div style={{ position: "absolute", inset: 0, background: "#000", overflow: "hidden" }}>
+      <style>{`
+        .nav-btn {
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(20, 20, 20, 0.85);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(245, 184, 0, 0.15);
+          color: #F5B800;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          padding: 0;
+          outline: none;
+        }
+        .nav-btn:hover {
+          background: rgba(245, 184, 0, 0.15);
+          color: #FFF;
+          border-color: #F5B800;
+        }
+        .nav-btn:active {
+          transform: scale(0.92);
+          background: rgba(245, 184, 0, 0.25);
+        }
+        .nav-btn-top {
+          border-radius: 8px 8px 0 0;
+          border-bottom: none;
+        }
+        .nav-btn-mid {
+          border-bottom: none;
+        }
+        .nav-btn-bot {
+          border-radius: 0 0 8px 8px;
+        }
+      `}</style>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
       {/* Hover tooltip — handles both blast nodes and incident pins */}
@@ -788,12 +824,26 @@ function resolveCoords(inc) {
         </div>
       )}
 
-      {/* Zoom controls — big, obvious, always work (wheel zoom optional). */}
+      {/* Zoom and navigation controls — vertically centered on the right hand side. */}
       {ready && !failed && (
-        <div style={{ position: "absolute", right: 24, bottom: 170, zIndex: 25, display: "flex", flexDirection: "column", gap: 1, borderRadius: 8, overflow: "hidden", boxShadow: "0 6px 20px rgba(0,0,0,0.5)" }}>
-          <button title="Zoom in" onClick={() => zoomStep(0.5)} style={{ ...zBtn, borderRadius: "8px 8px 0 0" }}>＋</button>
-          <button title="Zoom out" onClick={() => zoomStep(2)} style={zBtn}>−</button>
-          <button title="Reset view" onClick={resetView} style={{ ...zBtn, fontSize: 15, borderRadius: "0 0 8px 8px" }}>⌂</button>
+        <div style={{ position: "absolute", right: 24, top: "50%", transform: "translateY(-50%)", zIndex: 25, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+          <button className="nav-btn nav-btn-top" title="Zoom in" onClick={() => zoomStep(0.5)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button className="nav-btn nav-btn-mid" title="Zoom out" onClick={() => zoomStep(2)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button className="nav-btn nav-btn-bot" title="Reset view" onClick={resetView}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </button>
         </div>
       )}
       {!ready && !failed && (
