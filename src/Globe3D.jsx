@@ -20,12 +20,60 @@ const SEV_COLOR = {
   1: "#8E8E93", // MINIMAL
 };
 
+// Longitude roughly under the user's local timezone (UTC offset × 15°/hour).
+// The globe opens over the user's part of the world, so its day/night state
+// always matches the laptop's local time (day hours → lit, night → dark).
+const LOCAL_LON = Math.max(-180, Math.min(180, (-new Date().getTimezoneOffset() / 60) * 15));
+
 const ARCGIS_WORLD_IMAGERY =
   "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
 const ARCGIS_LABELS =
   "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer";
 
-export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, hoveredId, activeCountries = new Set(), onSelect, onHover, showBlastRadius = false, showLabels = false, world = null }) {
+// ISO-2 code → country name (Natural-Earth-friendly, so it bridges to the
+// world-atlas polygon `properties.name` via the token/substring matcher).
+// `inc.country` in the data is mixed: sometimes a code ("BE","CN","KR"),
+// sometimes a full name ("Belgium","China") — this normalises the codes.
+const ISO2_NAME = {
+  US: "United States", GB: "United Kingdom", KR: "South Korea", KP: "North Korea",
+  RU: "Russia", CN: "China", JP: "Japan", IN: "India", DE: "Germany", FR: "France",
+  IT: "Italy", ES: "Spain", PT: "Portugal", NL: "Netherlands", BE: "Belgium",
+  LU: "Luxembourg", IE: "Ireland", CH: "Switzerland", AT: "Austria", SE: "Sweden",
+  NO: "Norway", FI: "Finland", DK: "Denmark", IS: "Iceland", PL: "Poland",
+  CZ: "Czechia", SK: "Slovakia", HU: "Hungary", RO: "Romania", BG: "Bulgaria",
+  GR: "Greece", HR: "Croatia", SI: "Slovenia", RS: "Serbia", BA: "Bosnia and Herz.",
+  ME: "Montenegro", MK: "North Macedonia", AL: "Albania", UA: "Ukraine", BY: "Belarus",
+  MD: "Moldova", LT: "Lithuania", LV: "Latvia", EE: "Estonia", TR: "Turkey",
+  CY: "Cyprus", MT: "Malta", CA: "Canada", MX: "Mexico", BR: "Brazil", AR: "Argentina",
+  CL: "Chile", CO: "Colombia", PE: "Peru", VE: "Venezuela", EC: "Ecuador",
+  BO: "Bolivia", PY: "Paraguay", UY: "Uruguay", CR: "Costa Rica", PA: "Panama",
+  GT: "Guatemala", HN: "Honduras", NI: "Nicaragua", SV: "El Salvador", DO: "Dominican Rep.",
+  CU: "Cuba", JM: "Jamaica", HT: "Haiti", AU: "Australia", NZ: "New Zealand",
+  ID: "Indonesia", MY: "Malaysia", SG: "Singapore", TH: "Thailand", VN: "Vietnam",
+  PH: "Philippines", KH: "Cambodia", LA: "Laos", MM: "Myanmar", BD: "Bangladesh",
+  PK: "Pakistan", LK: "Sri Lanka", NP: "Nepal", BT: "Bhutan", BN: "Brunei",
+  TW: "Taiwan", HK: "Hong Kong", MN: "Mongolia", KZ: "Kazakhstan", UZ: "Uzbekistan",
+  TM: "Turkmenistan", KG: "Kyrgyzstan", TJ: "Tajikistan", AF: "Afghanistan", IR: "Iran",
+  IQ: "Iraq", SY: "Syria", LB: "Lebanon", JO: "Jordan", IL: "Israel", PS: "Palestine",
+  SA: "Saudi Arabia", AE: "United Arab Emirates", QA: "Qatar", KW: "Kuwait", BH: "Bahrain",
+  OM: "Oman", YE: "Yemen", GE: "Georgia", AM: "Armenia", AZ: "Azerbaijan",
+  EG: "Egypt", LY: "Libya", TN: "Tunisia", DZ: "Algeria", MA: "Morocco", SD: "Sudan",
+  SS: "S. Sudan", ET: "Ethiopia", ER: "Eritrea", SO: "Somalia", KE: "Kenya",
+  UG: "Uganda", TZ: "Tanzania", RW: "Rwanda", BI: "Burundi", CD: "Dem. Rep. Congo",
+  CG: "Congo", GA: "Gabon", CM: "Cameroon", NG: "Nigeria", GH: "Ghana", CI: "Côte d'Ivoire",
+  SN: "Senegal", ML: "Mali", BF: "Burkina Faso", NE: "Niger", TD: "Chad", MR: "Mauritania",
+  ZA: "South Africa", NA: "Namibia", BW: "Botswana", ZW: "Zimbabwe", ZM: "Zambia",
+  MZ: "Mozambique", AO: "Angola", MW: "Malawi", MG: "Madagascar", MU: "Mauritius",
+};
+
+function resolveCountryName(v) {
+  if (!v) return v;
+  const up = String(v).trim().toUpperCase();
+  if (up.length === 2 && ISO2_NAME[up]) return ISO2_NAME[up];
+  return String(v);
+}
+
+export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, hoveredId, activeCountries = new Set(), onSelect, onHover, showBlastRadius = false, blastRadius = null, showLabels = false, world = null }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const labelsLayerRef = useRef(null);
@@ -55,15 +103,20 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     const viewer = viewerRef.current;
     const scene = viewer.scene;
     const Cesium = window.Cesium;
+    // FLAT = a static, single-frame world map (no pan / zoom / scroll);
+    // GLOBE = fully interactive. Toggle every camera input accordingly.
+    scene.screenSpaceCameraController.enableInputs = mapMode !== "flat";
     if (mapMode === "flat") {
       scene.morphTo2D(1.2);
       const done = scene.morphComplete.addEventListener(() => {
         done();
         if (!viewer.isDestroyed()) {
-          viewer.camera.flyHome(0);
-          if (viewer.camera.frustum && typeof viewer.camera.frustum.width === "number") {
-            viewer.camera.frustum.width *= 2.2;
-          }
+          // Frame the WHOLE world, vertically centred and filling the viewport —
+          // not the old north-shifted, over-zoomed strip.
+          viewer.camera.setView({ destination: Cesium.Rectangle.fromDegrees(-180, -82, 180, 84) });
+          // Lock AFTER the morph completes — Cesium restores enableInputs on
+          // morphComplete, so setting it earlier gets overwritten.
+          scene.screenSpaceCameraController.enableInputs = false;
         }
       });
     } else {
@@ -72,12 +125,31 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
         done();
         if (!viewer.isDestroyed()) {
           viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(-45, 15, 2.4e7),
+            destination: Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 2.4e7),
             duration: 0.8,
           });
+          // Re-enable interaction AFTER the morph completes (globe is live).
+          scene.screenSpaceCameraController.enableInputs = true;
         }
       });
     }
+  }, [mapMode]);
+
+  // ── Belt-and-braces: force camera inputs to match the mode AFTER the morph
+  //    window, immune to morphComplete-event timing/races. FLAT → locked,
+  //    GLOBE → interactive. ─────────────────────────────────────────────────
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    const apply = () => {
+      if (!viewer.isDestroyed()) {
+        viewer.scene.screenSpaceCameraController.enableInputs = mapMode !== "flat";
+      }
+    };
+    apply();
+    const t1 = setTimeout(apply, 1400);
+    const t2 = setTimeout(apply, 2200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [mapMode]);
 
   // ── Toggle country/city label overlay based on showLabels ──────────────
@@ -105,6 +177,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
   const [highlightedCountry, setHighlightedCountry] = useState(null);
   const highlightSevRef = useRef(3);
   const [geoLoaded, setGeoLoaded] = useState(false);
+  const [viewerReady, setViewerReady] = useState(false);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -129,53 +202,89 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
         if (ent.polygon) {
           ent.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.TRANSPARENT);
           ent.polygon.outline = false;
+          // Force GEODESIC subdivision (NOT the default RHUMB). Some country
+          // polygons (USA/Alaska, Russia, Fiji, NZ…) cross the antimeridian,
+          // and Cesium's rhumb tessellation then explodes with
+          // "RangeError: Too many properties to enumerate" and stops rendering.
+          // Coarse granularity keeps a country fill cheap.
+          ent.polygon.arcType = Cesium.ArcType.GEODESIC;
+          ent.polygon.granularity = Cesium.Math.toRadians(2.0);
         }
+        // Keep every country HIDDEN until it is highlighted. Rendering all ~285
+        // clamped polygons at once overflows Cesium's ground-classification
+        // batch on real GPUs ("RangeError: Too many properties to enumerate"),
+        // so only the handful that are highlighted are ever shown/built.
+        ent.show = false;
       });
       setGeoLoaded(true);
       viewer.scene.requestRender();
     }).catch(err => {
       console.error("Cesium: GeoJSON load failed with error:", err);
     });
-  }, [world, ready]);
+  }, [world, ready, viewerReady]);
 
-  // Case-insensitive, alias-tolerant & composite tokenizer country matching helper
+  // STRICT country matcher. Exact-name or curated-alias matches ONLY.
+  // The previous version split the filter on the letters "and" anywhere in
+  // the word ("Netherlands" → ["netherl","s"]) and then substring-matched,
+  // so picking ONE region lit up dozens of countries. No substring matching
+  // here — a missed highlight is better than a wrong one.
+  const CANON_ALIASES = {
+    // canonical → every accepted spelling (all lowercase)
+    "united states of america": ["united states", "usa", "us", "america"],
+    "united kingdom": ["united kingdom of great britain and northern ireland", "uk", "great britain", "britain"],
+    "south korea": ["korea, republic of", "republic of korea", "korea, south", "korea (south)"],
+    "north korea": ["korea, democratic people's republic of", "dprk", "korea, north"],
+    "russia": ["russian federation"],
+    "vietnam": ["viet nam"],
+    "iran": ["iran, islamic republic of"],
+    "syria": ["syrian arab republic"],
+    "czechia": ["czech republic"],
+    "türkiye": ["turkey", "turkiye"],
+    "myanmar": ["burma"],
+    "côte d'ivoire": ["ivory coast", "cote d'ivoire"],
+    "dem. rep. congo": ["democratic republic of the congo", "dr congo", "drc", "congo-kinshasa"],
+    "congo": ["republic of the congo", "congo-brazzaville"],
+    "s. sudan": ["south sudan"],
+    "central african rep.": ["central african republic"],
+    "dominican rep.": ["dominican republic"],
+    "eq. guinea": ["equatorial guinea"],
+    "w. sahara": ["western sahara"],
+    "bosnia and herz.": ["bosnia and herzegovina", "bosnia"],
+    "north macedonia": ["macedonia"],
+    "eswatini": ["swaziland"],
+    "timor-leste": ["east timor"],
+    "united arab emirates": ["uae"],
+    "solomon is.": ["solomon islands"],
+    "falkland is.": ["falkland islands"],
+    "laos": ["lao pdr", "lao people's democratic republic"],
+    "netherlands": ["the netherlands", "holland"],
+  };
+  // name → canonical key (covers canonical names and every alias)
+  const CANON_LOOKUP = (() => {
+    const m = {};
+    for (const [canon, aliases] of Object.entries(CANON_ALIASES)) {
+      m[canon] = canon;
+      for (const a of aliases) m[a] = canon;
+    }
+    return m;
+  })();
+  const canon = (s) => {
+    const n = resolveCountryName(String(s)).toLowerCase().trim();
+    return CANON_LOOKUP[n] || n;
+  };
   const isSameCountry = (mapCountry, filterCountry) => {
     if (!mapCountry || !filterCountry) return false;
-    const n1 = mapCountry.toLowerCase().trim();
-    const n2 = filterCountry.toLowerCase().trim();
-    if (n1 === n2) return true;
-    
-    const getAliases = (name) => {
-      const aliases = {
-        "united states": ["united states of america", "usa", "us"],
-        "united states of america": ["united states", "usa", "us"],
-        "united kingdom": ["united kingdom of great britain and northern ireland", "uk", "great britain"],
-        "united kingdom of great britain and northern ireland": ["united kingdom", "uk", "great britain"],
-        "south korea": ["korea, republic of", "korea", "republic of korea", "korea, south"],
-        "korea, republic of": ["south korea", "korea", "republic of korea", "korea, south"],
-        "republic of korea": ["south korea", "korea", "korea, republic of", "korea, south"],
-        "russia": ["russian federation"],
-        "russian federation": ["russia"],
-        "vietnam": ["viet nam"],
-        "viet nam": ["vietnam"],
-        "iran": ["iran, islamic republic of"],
-        "iran, islamic republic of": ["iran"],
-        "syria": ["syrian arab republic"],
-        "syrian arab republic": ["syria"],
-      };
-      return aliases[name] || [];
-    };
-
-    // Split filterCountry by common separators: "/", "and", "(", ")", ","
-    const parts = n2.split(/[\/\(\),\-]+|and/g).map(p => p.trim()).filter(Boolean);
-    
-    for (const part of parts) {
-      if (n1 === part) return true;
-      if (getAliases(n1).includes(part)) return true;
-      if (getAliases(part).includes(n1)) return true;
-      if (n1.includes(part) || part.includes(n1)) return true;
-    }
-    return false;
+    const n1 = canon(mapCountry);
+    // A filter value can legitimately name several countries
+    // ("United States / Israel", "India, Pakistan"). Split ONLY on real
+    // separators — "/", ",", "&", parentheses, or the WORD "and"
+    // (word-boundaried, so "Netherlands"/"Rwanda" never get cut).
+    const parts = String(filterCountry)
+      .split(/\s*(?:[/,()&]|\band\b)\s*/i)
+      .map(p => p.trim())
+      .filter(p => p.length >= 3);
+    const candidates = [String(filterCountry), ...parts];
+    return candidates.some(p => canon(p) === n1);
   };
 
   useEffect(() => {
@@ -201,16 +310,19 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       }
 
       if (isFocused) {
-        ent.polygon.material = new Cesium.ColorMaterialProperty(c.withAlpha(0.25));
-        ent.polygon.outline = true;
-        ent.polygon.outlineColor = new Cesium.ColorMaterialProperty(c.withAlpha(0.9));
+        // Selected/hovered incident's country — bold severity-coloured surface.
+        ent.polygon.material = new Cesium.ColorMaterialProperty(c.withAlpha(0.8));
+        ent.polygon.outline = false;
+        ent.show = true;
       } else if (isActiveFilter) {
-        ent.polygon.material = new Cesium.ColorMaterialProperty(goldColor.withAlpha(0.18));
-        ent.polygon.outline = true;
-        ent.polygon.outlineColor = new Cesium.ColorMaterialProperty(goldColor.withAlpha(0.85));
+        // Region-filter selection — bold near-solid gold surface (reference look).
+        ent.polygon.material = new Cesium.ColorMaterialProperty(goldColor.withAlpha(0.85));
+        ent.polygon.outline = false;
+        ent.show = true;
       } else {
         ent.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.TRANSPARENT);
         ent.polygon.outline = false;
+        ent.show = false;   // hidden → not built → no ground-batch overflow
       }
     });
     if (viewerRef.current) viewerRef.current.scene.requestRender();
@@ -342,15 +454,17 @@ function resolveCoords(inc) {
         mapMode2D: Cesium.MapMode2D.CLAMP,
       });
       viewerRef.current = viewer;
+      setViewerReady(true);   // signals the boundary-GeoJSON loader that the viewer now exists
 
-      // ── Photogenic "Google Earth" look, with a real day/night terminator ──
-      // Lighting is ON (so there are day + night hemispheres like the
-      // reference), but the sun is FROZEN at equinox-noon over the prime
-      // meridian and the camera starts on the lit side — so it opens bright
-      // with the terminator toward one edge, never a black face.
-      viewer.scene.globe.enableLighting = true;
+      // ── Photogenic "Google Earth" look, BINARY day/night by LOCAL time ──
+      // No physical terminator (lighting off → never a half-dark globe).
+      // The WHOLE globe switches visual by the laptop's clock:
+      //   local 06:00–18:59 → bright satellite "day" earth (ArcGIS base layer)
+      //   local night hours → the real NASA "Earth at night" image (dark planet
+      //                        with glowing city lights) laid over the top.
+      // Re-checked every minute so it flips at dusk/dawn without a reload.
+      viewer.scene.globe.enableLighting = false;
       viewer.scene.skyAtmosphere.show = true;
-      viewer.scene.skyAtmosphere.brightnessShift = 0.15;
       viewer.scene.globe.showGroundAtmosphere = true;
       viewer.scene.fog.enabled = true;
       viewer.scene.fog.density = 0.00008;
@@ -359,10 +473,32 @@ function resolveCoords(inc) {
       viewer.scene.backgroundColor = Cesium.Color.BLACK;
       if (viewer.scene.skyBox) viewer.scene.skyBox.show = true; // starfield
 
-      // Freeze the sun (sub-solar point on the prime meridian) → stable terminator.
-      viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2025-03-20T12:00:00Z");
-      viewer.clock.shouldAnimate = false;
-      viewer.clock.multiplier = 0;
+      // Night imagery layer — NASA black-marble city-lights, opaque, sits ON TOP
+      // of the day layer and is only shown at night (so it fully replaces the
+      // day view with a real dark, city-lit earth).
+      const nightLayer = viewer.imageryLayers.addImageryProvider(
+        new Cesium.SingleTileImageryProvider({
+          url: "/textures/earth-night.jpg",
+          rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90),
+        })
+      );
+      nightLayer.show = false;
+      nightLayer.brightness = 1.35;   // make the city lights pop
+      viewer._nightLayer = nightLayer;
+
+      const applyDayNight = () => {
+        const hr = new Date().getHours();
+        // URL overrides for testing: ?map&night forces night, ?map&day forces day.
+        const qs = new URLSearchParams(window.location.search);
+        const isDay = qs.has("night") ? false
+                    : qs.has("day")   ? true
+                    : (hr >= 6 && hr < 19);
+        nightLayer.show = !isDay;                                  // swap the whole earth
+        viewer.scene.skyAtmosphere.brightnessShift = isDay ? 0.15 : -0.25;  // dark night sky
+        viewer.scene.requestRender();
+      };
+      applyDayNight();
+      viewer._dayNightTimer = setInterval(applyDayNight, 60000);
 
       // Easy zoom: get right down to street level.
       const cc = viewer.scene.screenSpaceCameraController;
@@ -382,7 +518,7 @@ function resolveCoords(inc) {
         // Will be overridden by morphTo2D(0) + flyHome below
       } else {
         viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(-45, 15, 24000000),
+          destination: Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 24000000),
         });
       }
 
@@ -406,6 +542,8 @@ function resolveCoords(inc) {
       // Custom trackpad precision zoom & pinch handler
       function onWheel(e) {
         e.preventDefault(); // prevent browser from scrolling the webpage!
+        // No wheel-zoom in FLAT (2D) — the flat map is static & non-interactive.
+        if (viewer.scene.mode !== Cesium.SceneMode.SCENE3D) return;
         onInteractStart();
         
         const camera = viewer.camera;
@@ -478,10 +616,10 @@ function resolveCoords(inc) {
       // Handle initial mapMode
       if (mapMode === "flat") {
         viewer.scene.morphTo2D(0);
-        viewer.camera.flyHome(0);
-        if (viewer.camera.frustum && typeof viewer.camera.frustum.width === "number") {
-          viewer.camera.frustum.width *= 2.2;
-        }
+        // Whole world, vertically centred, filling the viewport.
+        viewer.camera.setView({ destination: Cesium.Rectangle.fromDegrees(-180, -82, 180, 84) });
+        // Static one-frame map — lock out all camera interaction.
+        viewer.scene.screenSpaceCameraController.enableInputs = false;
       }
 
       buildEntities(viewer, incidentsRef.current);
@@ -494,11 +632,14 @@ function resolveCoords(inc) {
 
     return () => {
       try {
+        if (viewer._dayNightTimer) clearInterval(viewer._dayNightTimer);
         if (viewer._stopAutoRotate) viewer._stopAutoRotate();
         viewer._clickHandler && viewer._clickHandler.destroy();
       } catch (_) {}
       try { viewer.destroy(); } catch (_) {}
       viewerRef.current = null;
+      setViewerReady(false);
+      setViewerReady(false);
     };
   }, [ready]);
 
@@ -517,6 +658,8 @@ function resolveCoords(inc) {
     // Stop rotation when an incident is selected, resume when deselected
     viewer._forceStopRotate = !!selectedId;
     if (!selectedId) return;
+    // In FLAT the map is static — never move the camera on selection.
+    if (mapMode === "flat") return;
     const ent = viewer.entities.getById(String(selectedId));
     if (ent && ent.position) {
       const Cesium = window.Cesium;
@@ -526,7 +669,70 @@ function resolveCoords(inc) {
         duration: 1.2,
       });
     }
-  }, [selectedId]);
+  }, [selectedId, mapMode]);
+
+  // ── Selection "ping": pulsing halo + expanding sonar rings on the tapped
+  //    incident — restores the old tap-to-expand animation. Always shows on
+  //    selection (independent of the BLAST toggle). ─────────────────────────
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !window.Cesium) return;
+    const Cesium = window.Cesium;
+
+    // Remove any previous ping entities.
+    viewer.entities.values.filter(e => e._isSelPing).forEach(e => viewer.entities.remove(e));
+
+    if (!selectedId) { viewer.scene.requestRender(); return; }
+    const inc = incidentsRef.current.find(i => String(i._id) === String(selectedId));
+    if (!inc) return;
+    const coords = resolveCoords(inc);
+    if (!coords) return;
+    const [lng, lat] = coords;
+    const color = Cesium.Color.fromCssColorString(SEV_COLOR[inc.severity] || SEV_COLOR[3]);
+    const pos = Cesium.Cartesian3.fromDegrees(lng, lat, 15000);
+
+    // Pulsing halo — the marker "breathes"/expands.
+    const halo = viewer.entities.add({
+      position: pos,
+      ellipse: {
+        semiMajorAxis: new Cesium.CallbackProperty(() => 42000 + 16000 * (0.5 + 0.5 * Math.sin(Date.now() / 420)), false),
+        semiMinorAxis: new Cesium.CallbackProperty(() => 42000 + 16000 * (0.5 + 0.5 * Math.sin(Date.now() / 420)), false),
+        material: new Cesium.ColorMaterialProperty(color.withAlpha(0.30)),
+        outline: true,
+        outlineColor: color.withAlpha(0.9),
+        outlineWidth: 2,
+        height: 11000, fill: true,
+      },
+    });
+    halo._isSelPing = true;
+
+    // Two expanding sonar rings that ripple outward and fade.
+    [0, 0.5].forEach((phase) => {
+      const ring = viewer.entities.add({
+        position: pos,
+        ellipse: {
+          semiMajorAxis: new Cesium.CallbackProperty(() => { const t = ((Date.now() / 1900) + phase) % 1; return 45000 + t * 230000; }, false),
+          semiMinorAxis: new Cesium.CallbackProperty(() => { const t = ((Date.now() / 1900) + phase) % 1; return 45000 + t * 230000; }, false),
+          material: new Cesium.ColorMaterialProperty(new Cesium.CallbackProperty(() => { const t = ((Date.now() / 1900) + phase) % 1; return color.withAlpha(Math.max(0, 0.20 * (1 - t))); }, false)),
+          outline: true,
+          outlineColor: new Cesium.CallbackProperty(() => { const t = ((Date.now() / 1900) + phase) % 1; return color.withAlpha(Math.max(0, 0.85 * (1 - t))); }, false),
+          outlineWidth: 2,
+          height: 11000, fill: true,
+        },
+      });
+      ring._isSelPing = true;
+    });
+
+    viewer.scene.requestRender();
+
+    return () => {
+      try {
+        if (!viewer.isDestroyed()) {
+          viewer.entities.values.filter(e => e._isSelPing).forEach(e => viewer.entities.remove(e));
+        }
+      } catch (_) {}
+    };
+  }, [selectedId, visibleIncidents]);
 
   // ── Blast-radius arcs for selected incident ──────────────────────────────
   useEffect(() => {
@@ -545,7 +751,11 @@ function resolveCoords(inc) {
     // Only draw if BLAST toggle is ON
     if (!selectedId || !showBlastRadius) return;
     const inc = incidentsRef.current.find(i => String(i._id) === String(selectedId));
-    if (!inc || !inc.blast_radius || typeof inc.latitude !== "number" || typeof inc.longitude !== "number") return;
+    if (!inc || typeof inc.latitude !== "number" || typeof inc.longitude !== "number") return;
+    // Prefer the lazily-fetched blast data passed from the parent; fall back to
+    // whatever the incident already carries.
+    const radius = (blastRadius && Object.keys(blastRadius).length) ? blastRadius : (inc.blast_radius || {});
+    if (!Object.keys(radius).length) return;
 
     const channelDefs = {
       internal:              { color: "#F5B800", width: 3, opacity: 0.75 },
@@ -556,7 +766,7 @@ function resolveCoords(inc) {
       financial_market:      { color: "#7BD693", width: 2.5, opacity: 0.65 },
     };
 
-    Object.entries(inc.blast_radius).forEach(([channel, entities]) => {
+    Object.entries(radius).forEach(([channel, entities]) => {
       const def = channelDefs[channel] || { color: "#888888", width: 2, opacity: 0.55 };
       if (!Array.isArray(entities)) return;
       entities.forEach(ent => {
@@ -699,7 +909,7 @@ function resolveCoords(inc) {
       try { hoverHandler.destroy(); } catch (_) {}
       viewer._blastHoverHandler = null;
     };
-  }, [selectedId, showBlastRadius]);
+  }, [selectedId, showBlastRadius, blastRadius]);
 
 
   // ── Zoom / reset controls (reliable, cursor-independent) ────────────────
@@ -715,7 +925,7 @@ function resolveCoords(inc) {
     const viewer = viewerRef.current;
     if (!viewer || !window.Cesium) return;
     viewer.camera.flyTo({
-      destination: window.Cesium.Cartesian3.fromDegrees(-45, 15, 24000000),
+      destination: window.Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 24000000),
       duration: 1.1,
     });
   };
@@ -824,9 +1034,9 @@ function resolveCoords(inc) {
         </div>
       )}
 
-      {/* Zoom and navigation controls — vertically centered on the left hand side. */}
-      {ready && !failed && (
-        <div style={{ position: "absolute", left: 24, top: "50%", transform: "translateY(-50%)", zIndex: 25, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+      {/* Zoom and navigation controls — bottom-left; hidden in FLAT (static one-frame map). */}
+      {ready && !failed && mapMode !== "flat" && (
+        <div style={{ position: "absolute", left: 24, bottom: 56, zIndex: 25, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
           <button className="nav-btn nav-btn-top" title="Zoom in" onClick={() => zoomStep(0.5)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />

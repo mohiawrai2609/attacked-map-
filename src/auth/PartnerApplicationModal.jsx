@@ -209,7 +209,6 @@ export function PartnerApplicationModal({ open, onClose, defaultEmail }) {
             <div style={{
               marginTop: 22, padding: "12px 14px",
               background: "rgba(245,184,0,0.06)", borderRadius: 4,
-              borderLeft: `2px solid ${BRAND.gold}`,
               fontSize: 12.5, color: BRAND.white, lineHeight: 1.55,
             }}>
               <b>What's next:</b> sign in (or stay signed in) with this same email

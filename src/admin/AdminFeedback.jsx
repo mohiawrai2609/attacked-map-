@@ -256,7 +256,6 @@ export function AdminFeedback() {
                             whiteSpace: "pre-wrap",
                             padding: "10px 12px",
                             background: BRAND.obsidianDeep, borderRadius: 4,
-                            borderLeft: `2px solid ${BRAND.gold}`,
                           }}>{ans}</div>
                         </div>
                       );

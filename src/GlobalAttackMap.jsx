@@ -141,8 +141,7 @@ function AccountChip({ onOpenAuth }) {
                 <div style={{
                   padding: "10px 10px", margin: "0 0 4px", background: "rgba(245,184,0,0.08)",
                   borderRadius: 3, fontSize: 11, color: "#F5B800", lineHeight: 1.45,
-                  borderLeft: "2px solid #F5B800",
-                }}>
+                                  }}>
                   You're on the free tier. Apply for <b>Design Partner</b> access to unlock the full product.
                 </div>
                 <button onClick={() => { setMenuOpen(false); openPartnerModal(); }}
@@ -4034,7 +4033,7 @@ function GateBlock({ title, sub, count, countLabel }) {
       )}
       <div style={{ filter: "blur(5px)", userSelect: "none", pointerEvents: "none", display: "flex", flexDirection: "column", gap: 8, opacity: 0.7 }}>
         {[0, 1, 2].map(i => (
-          <div key={i} style={{ padding: "10px 12px", background: "rgba(36,36,36,0.7)", borderLeft: "2px solid #F5B800", borderRadius: 3 }}>
+          <div key={i} style={{ padding: "10px 12px", background: "rgba(36,36,36,0.7)", borderRadius: 3 }}>
             <div style={{ height: 9, width: `${62 - i * 9}%`, background: "rgba(255,255,255,0.5)", borderRadius: 2, marginBottom: 6 }} />
             <div style={{ height: 7, width: "85%", background: "rgba(255,255,255,0.22)", borderRadius: 2 }} />
           </div>
@@ -4131,8 +4130,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
           <div key={i} style={{
             padding: "8px 10px",
             background: "rgba(36,36,36,0.7)",
-            borderLeft: "2px solid #F5B800",
-            borderRadius: 3,
+                        borderRadius: 3,
           }}>
             <div style={{ height: 8, width: `${65 - i * 10}%`, background: "rgba(255,255,255,0.5)", borderRadius: 2, marginBottom: 5 }} />
             <div style={{ height: 6, width: "85%", background: "rgba(255,255,255,0.22)", borderRadius: 2 }} />
@@ -4727,8 +4725,54 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
 // Internal row staggering uses CSS keyframes defined in CASCADE_STYLES.
 // ─────────────────────────────────────────────────────────────────────────────
 // ───── 0. INCIDENT IMAGE ─────
+// Pull an 11-char YouTube id out of a full URL or a bare id.
+function toYouTubeId(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s;
+  const m = s.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 function MapIncidentImage({ incident, height = 150 }) {
   const [failed, setFailed] = useState(false);
+
+  // ── Tier 1: real news-channel video. A curated video wins over any image.
+  //    Sourced from incident.video_url when present, else a small curated map
+  //    keyed by headline substring (same pattern as the image overrides below).
+  //    DEMO: two incidents wired to Reuters footage. ──
+  let videoId = toYouTubeId(incident.video_url);
+  if (!videoId && incident.headline) {
+    if (incident.headline.includes("Cruise Robotaxi Exit")) {
+      videoId = "zEwvIpr5lns"; // Reuters — GM gives up on loss-making Cruise robotaxi business
+    } else if (incident.headline.includes("When the Balance Sheet Is the Breach")) {
+      videoId = "YJqbDPkYQuQ"; // Reuters — Swedish battery maker Northvolt files for bankruptcy
+    }
+  }
+
+  if (videoId) {
+    return (
+      <div style={{ position: "relative", height, overflow: "hidden", borderRadius: 6, marginBottom: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`}
+          title={incident.headline || "Incident news video"}
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          style={{ width: "100%", height: "100%", border: "none", display: "block", background: "#000" }}
+        />
+        <span style={{
+          position: "absolute", top: 8, left: 8, zIndex: 2, pointerEvents: "none",
+          background: "rgba(0,0,0,0.66)", color: "#fff", fontSize: 9, fontWeight: 700,
+          letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", borderRadius: 4,
+          display: "inline-flex", alignItems: "center", gap: 5,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: 1, background: "#F5B800" }} />
+          News video
+        </span>
+      </div>
+    );
+  }
 
   // AI-generated image based on the exact incident headline
   const aiPrompt = encodeURIComponent(`${incident.headline || ""}, realistic news photography, editorial`);
@@ -4842,21 +4886,42 @@ function ClassificationBody({ incident, sev, cat }) {
     return [];
   }, [incident]);
 
+  // Long dossier summaries are clamped to a few lines with a Read-more
+  // toggle so the card stays compact instead of a wall of text.
+  const [showFullSummary, setShowFullSummary] = useState(false);
+  const summaryText = toText(incident.summary) || "";
+
   return (
     <>
       <div style={{
         fontFamily: "'Inter', sans-serif",
         fontWeight: 700, letterSpacing: "-0.005em",
-        fontSize: 23, lineHeight: 1.2, marginBottom: 10,
+        fontSize: 18, lineHeight: 1.25, marginBottom: 8,
       }}>
         {toText(incident.headline) || "—"}
       </div>
       {incident.summary && (
-        <div style={{
-          fontSize: 12, color: "rgba(255,255,255,0.7)",
-          fontStyle: "italic", lineHeight: 1.45, marginBottom: 14,
-        }}>
-          "{toText(incident.summary)}"
+        <div style={{ marginBottom: 12 }}>
+          <div style={{
+            fontSize: 11, color: "rgba(255,255,255,0.68)",
+            fontStyle: "italic", lineHeight: 1.5,
+            ...(showFullSummary ? {} : {
+              display: "-webkit-box", WebkitLineClamp: 5,
+              WebkitBoxOrient: "vertical", overflow: "hidden",
+            }),
+          }}>
+            "{summaryText}"
+          </div>
+          {summaryText.length > 320 && (
+            <button onClick={() => setShowFullSummary(s => !s)} style={{
+              marginTop: 5, padding: 0, background: "transparent", border: "none",
+              color: BRAND.gold, fontFamily: "Inter, sans-serif", fontSize: 9.5,
+              fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+              cursor: "pointer",
+            }}>
+              {showFullSummary ? "▲ Show less" : "▼ Read more"}
+            </button>
+          )}
         </div>
       )}
 
@@ -5249,8 +5314,7 @@ function BlastRadiusBody({ incident, channels }) {
                           <div style={{
                             padding: "6px 9px",
                             background: "rgba(245,184,0,0.06)",
-                            borderLeft: "2px solid rgba(245,184,0,0.40)",
-                            borderRadius: 2,
+                                                        borderRadius: 2,
                             fontSize: 10.5, lineHeight: 1.5,
                           }}>
                             <div style={{
@@ -5401,8 +5465,7 @@ function PeerWatchlistBody({ peers }) {
             <div key={i} style={{
               padding: "11px 13px",
               background: "rgba(36,36,36,0.6)",
-              borderLeft: "2px solid #F5B800",
-              borderRadius: 3,
+                            borderRadius: 3,
               opacity: 0,
               animation: `rowIn 500ms cubic-bezier(0.16,1,0.3,1) ${rowDelay}ms forwards`,
             }}>
@@ -5454,8 +5517,7 @@ function PeerWatchlistBody({ peers }) {
               {showAction && (
                 <div style={{
                   marginTop: 6, marginBottom: 6, paddingLeft: 8,
-                  borderLeft: "2px solid rgba(245,184,0,0.35)",
-                }}>
+                                  }}>
                   <div style={{
                     fontFamily: "'Inter', sans-serif", fontSize: 8,
                     color: "#F5B800", letterSpacing: "0.10em",
@@ -5828,8 +5890,7 @@ function HistoricalBody({ items }) {
               padding: "10px 12px",
               background: "rgba(36,36,36,0.7)",
               border: "1px solid rgba(255,255,255,0.08)",
-              borderLeft: "3px solid #F5B800",
-              borderRadius: 6,
+                            borderRadius: 6,
               opacity: 0,
               animation: `rowInLeft 400ms cubic-bezier(0.4,0,0.2,1) ${rowDelay}ms forwards`,
             }}>
@@ -5954,8 +6015,7 @@ function VendorRichCard({ v, idx, badge }) {
       padding: "14px 16px",
       background: "rgba(20,20,20,0.85)",
       border: "1px solid rgba(245,184,0,0.22)",
-      borderLeft: "3px solid #F5B800",
-      borderRadius: 4,
+            borderRadius: 4,
       opacity: 0,
       animation: `rowIn 400ms cubic-bezier(0.4,0,0.2,1) ${rowDelay}ms forwards`,
       display: "flex", flexDirection: "column", gap: 12,
@@ -6381,8 +6441,7 @@ function OutreachBody({ channels }) {
               padding: 13,
               background: "rgba(36,36,36,0.7)",
               border: "1px solid rgba(255,255,255,0.08)",
-              borderLeft: "3px solid #F5B800",
-              borderRadius: 6,
+                            borderRadius: 6,
               opacity: 0,
               animation: `rowIn 500ms cubic-bezier(0.16,1,0.3,1) ${rowDelay}ms forwards`,
             }}>
@@ -6909,8 +6968,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
               <div style={{
                 padding: "9px 12px",
                 background: BRAND.goldTint,
-                borderLeft: `2px solid ${BRAND.gold}`,
-                borderRadius: "0 3px 3px 0",
+                                borderRadius: "0 3px 3px 0",
                 marginBottom: (Array.isArray(incident.related_cve_ids) && incident.related_cve_ids.length > 0) ? 10 : 0,
               }}>
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 8, color: BRAND.gold, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 3, fontWeight: 600 }}>
@@ -7031,8 +7089,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
               padding: "16px 16px 18px 16px", marginBottom: 16,
               background: BRAND.obsidianElevated,
               border: `1px solid ${BRAND.borderSubtle}`,
-              borderLeft: `3px solid ${BRAND.gold}`,
-              borderRadius: 4,
+                            borderRadius: 4,
             }}>
               <div style={{
                 fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold,
@@ -7174,7 +7231,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         )}
                         {/* Recommended action — italic */}
                         {ent.recommended_action_for_them && (
-                          <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(245,184,0,0.05)", borderLeft: `1px solid ${BRAND.borderGold}`, borderRadius: 2 }}>
+                          <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(245,184,0,0.05)", borderRadius: 2 }}>
                             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 8, color: BRAND.gold, letterSpacing: "0.10em", textTransform: "uppercase", marginRight: 6 }}>ACTION</span>
                             <span style={{ color: BRAND.white, fontSize: 11, fontStyle: "italic", lineHeight: 1.45 }}>
                               {ent.recommended_action_for_them}
@@ -7337,7 +7394,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
               <div style={{
                 marginBottom: 14, padding: "12px 14px",
                 background: BRAND.goldTint,
-                borderLeft: `3px solid ${BRAND.gold}`, borderRadius: "0 3px 3px 0",
+                borderRadius: 3,
               }}>
                 <div style={{
                   fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold,
@@ -7378,7 +7435,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                   gap: 10, marginBottom: 16,
                 }}>
                   {v && typeof v === "object" && (
-                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 3, borderLeft: `2px solid ${BRAND.gold}` }}>
+                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 3 }}>
                       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6 }}>
                         Velocity Signal
                       </div>
@@ -7411,7 +7468,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     </div>
                   )}
                   {e && (
-                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 3, borderLeft: `2px solid #FF8C5A` }}>
+                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 3 }}>
                       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF8C5A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6 }}>
                         Emerging Risk
                       </div>
@@ -7442,8 +7499,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       padding: "10px 12px",
                       background: BRAND.obsidianElevated,
                       borderRadius: 3,
-                      borderLeft: `2px solid ${BRAND.gold}`,
-                    }}>
+                                          }}>
                       <div style={{
                         fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.gold,
                         letterSpacing: "0.04em", marginBottom: 5, fontWeight: 600,
@@ -7474,8 +7530,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       padding: "10px 12px",
                       background: BRAND.obsidianElevated,
                       borderRadius: 3,
-                      borderLeft: `2px solid ${BRAND.goldDim}`,
-                      marginLeft: 12, // indented to show implementation of objectives
+                                            marginLeft: 12, // indented to show implementation of objectives
                     }}>
                       <div style={{
                         fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.goldDim,
@@ -8412,8 +8467,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
       top: 73, right: 0, bottom: 0,   // start below the sticky SiteNav (incl. signed-in avatar row) so it never covers the navbar
       width: 440,
       background: BRAND.obsidianDeep,
-      borderLeft: `1px solid ${BRAND.borderGold}`,
-      zIndex: 1000,
+            zIndex: 1000,
       display: "flex",
       flexDirection: "column",
       boxShadow: "-8px 0 24px rgba(0,0,0,0.6)",
@@ -8422,10 +8476,10 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BRAND.borderSubtle}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.gold, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
-            ◇ Sweep Archive
+            ◇ Threat Timeline
           </div>
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, color: BRAND.white, lineHeight: 1.1 }}>
-            {archiveIndex.length} {archiveIndex.length === 1 ? "day" : "days"} stored
+            {archiveIndex.length} {archiveIndex.length === 1 ? "day" : "days"} of intelligence
           </div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
@@ -8452,7 +8506,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
           <span style={{ flex: 1, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textSecondary, letterSpacing: "0.08em", lineHeight: 1.5 }}>
             {persistsAcrossSessions
               ? "PERSISTENT · SWEEPS SURVIVE RELOAD"
-              : "SESSION ONLY · DATA WILL BE LOST ON RELOAD"}
+              : "LIVE SESSION · RE-SYNCS FROM CLOUD ON RELOAD"}
           </span>
           <button onClick={() => setShowDiag(s => !s)}
             style={{ padding: "2px 6px", background: "transparent", color: BRAND.textMuted, fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2, cursor: "pointer" }}>
@@ -8480,60 +8534,8 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
         )}
       </div>
 
-      {/* Time-window aggregation toggle — Day / Week / Month / All.
-          "Day" renders one archived sweep; the others merge the relevant
-          archived days into one rolled-up view (dedupe across days, highest
-          severity wins per incident), computed BACKWARD from the anchor date. */}
-      {archiveIndex.length > 0 && (
-        <div style={{ padding: "12px 16px", borderBottom: `1px solid ${BRAND.borderSubtle}` }}>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
-            ◇ Time Window {windowInfo && windowInfo.kind !== "day" && windowInfo.days > 0 ? `· merged ${windowInfo.days} day${windowInfo.days === 1 ? "" : "s"}` : ""}
-          </div>
-          <div style={{ display: "flex", gap: 4 }}>
-            {[
-              { k: "day", label: "DAY" },
-              { k: "week", label: "WEEK" },
-              { k: "month", label: "MONTH" },
-              { k: "all", label: "ALL" },
-            ].map(({ k, label }) => {
-              const active = (timeWindow || "day") === k;
-              return (
-                <button
-                  key={k}
-                  onClick={() => !busy && onWindow && onWindow(k)}
-                  disabled={busy}
-                  title={
-                    k === "day" ? "Single day — the anchored sweep" :
-                    k === "week" ? "Roll up the anchor day + 6 days before it" :
-                    k === "month" ? "Roll up the anchor day + ~29 days before it" :
-                    "Roll up every archived day"
-                  }
-                  style={{
-                    flex: 1, padding: "7px 0",
-                    background: active ? BRAND.gold : "transparent",
-                    color: active ? BRAND.obsidian : BRAND.textSecondary,
-                    fontFamily: "Inter, sans-serif", fontSize: 10,
-                    fontWeight: 600, letterSpacing: "0.10em",
-                    border: `1px solid ${active ? BRAND.gold : BRAND.borderSubtle}`,
-                    borderRadius: 3,
-                    cursor: busy ? "wait" : "pointer",
-                    transition: "background 120ms, color 120ms, border 120ms",
-                  }}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          {windowInfo && windowInfo.kind !== "day" && windowInfo.from && (
-            <div style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.06em", lineHeight: 1.5 }}>
-              {windowInfo.from} → {windowInfo.to}
-              {windowInfo.requested != null && windowInfo.days !== windowInfo.requested && (
-                <span style={{ color: "#FF8C5A" }}> · {windowInfo.requested - windowInfo.days} day(s) unreadable</span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Time-window toggle (Day/Week/Month/All) removed — the archive now
+          exposes only the calendar range + play controls below. */}
 
       {/* Date range → auto-play. Pick From→To; the range renders and then the
           map steps through the days automatically at the chosen interval. */}
@@ -8611,90 +8613,22 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
         );
       })()}
 
-      {/* List */}
+      {/* Day-wise list removed — the archive is driven by the calendar range +
+          play controls above. Spacer keeps the footer pinned to the bottom. */}
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
         {archiveIndex.length === 0 && (
           <div style={{ padding: "40px 20px", textAlign: "center", color: BRAND.textMuted }}>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, color: BRAND.white, marginBottom: 8 }}>No archived sweeps yet</div>
             <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: BRAND.textSecondary, lineHeight: 1.5 }}>
-              Upload a GUARD daily intelligence file (JSON). It will be stored by its date and listed here automatically. Future uploads accumulate; tomorrow's upload doesn't replace today's.
+              Upload a GUARD daily intelligence file (JSON). It will be stored by its date automatically. Future uploads accumulate; tomorrow's upload doesn't replace today's.
             </div>
           </div>
         )}
-        {groups.map(([monthKey, entries]) => (
-          <div key={monthKey} style={{ marginBottom: 18 }}>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>
-              {formatMonth(monthKey)}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {entries.map(e => {
-                const isCurrent = e.date === currentDate;
-                return (
-                  <div key={e.date}
-                    style={{
-                      padding: "10px 12px",
-                      background: isCurrent ? BRAND.goldTint : BRAND.obsidianCard,
-                      border: `1px solid ${isCurrent ? BRAND.gold : BRAND.borderSubtle}`,
-                      borderRadius: 4,
-                      cursor: busy ? "wait" : "pointer",
-                      opacity: busy ? 0.6 : 1,
-                      transition: "background 120ms, border 120ms",
-                    }}
-                    onClick={() => !busy && !isCurrent && onLoad(e.date)}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                      <div>
-                        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: isCurrent ? BRAND.gold : BRAND.white, letterSpacing: "0.08em", fontWeight: 600 }}>
-                          {e.date}
-                        </div>
-                        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.textMuted, marginTop: 2 }}>
-                          {formatDate(e.date)}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        {isCurrent && (
-                          <span style={{ padding: "2px 6px", fontFamily: "Inter, sans-serif", fontSize: 8, color: BRAND.obsidian, background: BRAND.gold, borderRadius: 2, letterSpacing: "0.08em" }}>
-                            CURRENT
-                          </span>
-                        )}
-                        <button
-                          onClick={ev => {
-                            ev.stopPropagation();
-                            if (busy) return;
-                            if (window.confirm(`Delete archived sweep for ${e.date}? This cannot be undone.`)) {
-                              onDelete(e.date);
-                            }
-                          }}
-                          title={`Delete ${e.date}`}
-                          style={{ width: 22, height: 22, padding: 0, background: "transparent", color: BRAND.textMuted, fontFamily: "Inter, sans-serif", fontSize: 11, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2, cursor: "pointer" }}>
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.textSecondary }}>
-                      <span><strong style={{ color: BRAND.white }}>{e.incidentCount}</strong> incidents</span>
-                      {[5, 4, 3, 2, 1].map(level => e.sevCounts?.[level] > 0 && (
-                        <span key={level} style={{ color: SEVERITY[level].color }}>
-                          S{level}·{e.sevCounts[level]}
-                        </span>
-                      ))}
-                    </div>
-                    {e.fileName && (
-                      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {e.fileName}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Footer hint */}
       <div style={{ padding: "12px 20px", borderTop: `1px solid ${BRAND.borderSubtle}`, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.08em", lineHeight: 1.55 }}>
-        Click any date to render that day's incidents on the map. Re-uploading a JSON for an existing date overwrites it.
+        Pick a From → To range and press play — the map steps through each archived day automatically.
       </div>
     </div>
   );
@@ -8902,6 +8836,7 @@ export default function GlobalAttackMap() {
   const [regionPanelOpen, setRegionPanelOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false); // top-left Filters drawer
   const [showBlastRadius, setShowBlastRadius] = useState(true);
+  const [selBlast, setSelBlast] = useState(null);   // blast_radius (grouped) for the selected incident, lazily fetched on tap
   const [showHeat, setShowHeat] = useState(false);  // off by default — heat halos compete with the cinematic pin bloom; user can toggle on for analytical density view
   const [showLabels, setShowLabels] = useState(false);  // country + city labels off by default
   // v2 additions
@@ -9152,6 +9087,39 @@ export default function GlobalAttackMap() {
   }, [incidents, activeCats, activeReporters, activeSeverities, activeConfidences, activeIndustries, activeCountries, searchQuery, reporters]);
 
   const visibleCats = useMemo(() => new Set(visibleIncidents.map(i => i._cat)), [visibleIncidents]);
+
+  // Lazily fetch the selected incident's blast_radius on tap. The fast map
+  // loader omits blast_radius (it's heavy), so incidents arrive without it and
+  // the globe's blast arcs have nothing to draw. On selection we fetch the
+  // rows for that incident, group them by bucket, cache the result on the
+  // incident object (so the flat view sees it too) and feed the globe via
+  // `selBlast`. Skipped when the incident already carries blast data.
+  useEffect(() => {
+    if (!selectedId) { setSelBlast(null); return; }
+    const inc = visibleIncidents.find(i => String(i._id) === String(selectedId));
+    if (!inc) { setSelBlast(null); return; }
+    if (inc.blast_radius && Object.keys(inc.blast_radius).length) { setSelBlast(inc.blast_radius); return; }
+    const dbId = inc.id;
+    if (dbId == null || dbId === "") { setSelBlast(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+        const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
+        if (!url || !key) return;
+        const res = await fetch(`${url}/rest/v1/blast_radius?select=*&incident_id=eq.${encodeURIComponent(dbId)}`, {
+          headers: { apikey: key, Authorization: `Bearer ${key}` },
+        });
+        const rows = await res.json();
+        if (cancelled || !Array.isArray(rows) || !rows.length) return;
+        const grouped = {};
+        for (const br of rows) { const b = br.bucket || "internal"; (grouped[b] = grouped[b] || []).push(br); }
+        inc.blast_radius = grouped;   // also feeds the flat MapCanvas view
+        setSelBlast(grouped);
+      } catch (_) { /* noop */ }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedId, visibleIncidents]);
 
   const selectedIncident = useMemo(() => incidents.find(i => i._id === selectedId) || null, [incidents, selectedId]);
   const selectedReporter = useMemo(() => selectedIncident ? reporterForCat(selectedIncident._cat, reporters) : null, [selectedIncident, reporters]);
@@ -9577,7 +9545,7 @@ export default function GlobalAttackMap() {
           {[
             { k: "filters", label: "Filters", active: filtersOpen, on: () => { setFiltersOpen(o => !o); setShowLayers(false); setShowArchive(false); } },
             { k: "layers", label: "Layers", active: showLayers, on: () => { setShowLayers(o => !o); setFiltersOpen(false); setShowArchive(false); } },
-            { k: "archive", label: "Days", active: showArchive, on: () => { setShowArchive(o => !o); setFiltersOpen(false); setShowLayers(false); } },
+            { k: "archive", label: "Timeline", active: showArchive, on: () => { setShowArchive(o => !o); setFiltersOpen(false); setShowLayers(false); } },
           ].map(b => (
             <button key={b.k} onClick={b.on} style={{
               flexShrink: 0, padding: "7px 12px", borderRadius: 6, cursor: "pointer",
@@ -9806,9 +9774,11 @@ export default function GlobalAttackMap() {
                 visibleIncidents={visibleIncidents}
                 selectedId={selectedId}
                 hoveredId={hoveredId}
+                activeCountries={activeCountries}
                 onSelect={setSelectedId}
                 onHover={setHoveredId}
                 showBlastRadius={showBlastRadius}
+                blastRadius={selBlast}
                 showLabels={showLabels}
                 world={world}
               />
@@ -9841,9 +9811,9 @@ export default function GlobalAttackMap() {
                     }}>
                     ⛃ Filters{fCount > 0 ? ` · ${fCount}` : ""}
                   </button>
-                  {/* Archive — grouped with Filters (both scope "what you're viewing"). */}
+                  {/* Threat Timeline — grouped with Filters (both scope "what you're viewing"). */}
                   <button onClick={() => setShowArchive(true)}
-                    title={`${archiveIndex.length} day${archiveIndex.length === 1 ? "" : "s"} stored`}
+                    title={`${archiveIndex.length} day${archiveIndex.length === 1 ? "" : "s"} of intelligence`}
                     style={{
                       padding: "6px 14px", borderRadius: 4,
                       background: "rgba(36,36,36,0.85)", backdropFilter: "blur(12px)",
@@ -9852,7 +9822,7 @@ export default function GlobalAttackMap() {
                       color: BRAND.textSecondary, textTransform: "uppercase", cursor: "pointer",
                       display: "flex", alignItems: "center", gap: 6,
                     }}>
-                    ◇ Archive
+                    ◇ Timeline
                     {archiveIndex.length > 0 && (
                       <span style={{ padding: "1px 5px", background: BRAND.gold, color: BRAND.obsidian, borderRadius: 2, fontSize: 9 }}>{archiveIndex.length}</span>
                     )}

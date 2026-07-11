@@ -488,7 +488,7 @@ export function LandingPage() {
                 borderRadius: 12, overflow: "hidden",
                 transition: "border-color 160ms ease",
               }}>
-              <div style={{ flex: "1 1 240px", minWidth: 0, padding: "16px 18px", borderLeft: `2px solid ${BRAND.gold}` }}>
+              <div style={{ flex: "1 1 240px", minWidth: 0, padding: "16px 18px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.t2 }}>
                     <span style={{ width: 6, height: 6, borderRadius: 3, background: BRAND.gold }} />

@@ -294,7 +294,7 @@ export function OnboardingWizard() {
         <div style={{ marginTop: "auto" }}>
           <p style={{
             fontSize: 13, lineHeight: 1.7, color: BRAND.t2, fontStyle: "italic",
-            borderLeft: `2px solid ${BRAND.borderGold}`, paddingLeft: 14, margin: 0,
+            paddingLeft: 14, margin: 0,
           }}>
             "We don't send you everything. We send you what's yours —
             your industry, your risks, every day."
