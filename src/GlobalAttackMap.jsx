@@ -4743,10 +4743,14 @@ function MapIncidentImage({ incident, height = 150 }) {
   //    DEMO: two incidents wired to Reuters footage. ──
   let videoId = toYouTubeId(incident.video_url);
   if (!videoId && incident.headline) {
-    if (incident.headline.includes("Cruise Robotaxi Exit")) {
-      videoId = "zEwvIpr5lns"; // Reuters — GM gives up on loss-making Cruise robotaxi business
+    if (incident.headline.includes("Cuba's national power grid collapses")) {
+      videoId = "60zKwesD9s4"; // WPLG Local 10 — Cuba hit by massive, nationwide blackout
+    } else if (incident.headline.includes("Strait of Hormuz tanker traffic grinds to a halt")) {
+      videoId = "WwS0CsblyVI"; // Bloomberg — Oil climbs as fresh tanker strike highlights Hormuz risks
+    } else if (incident.headline.includes("Cruise Robotaxi Exit")) {
+      videoId = "zEwvIpr5lns"; // Reuters — GM gives up on loss-making Cruise robotaxi business (archived sweep)
     } else if (incident.headline.includes("When the Balance Sheet Is the Breach")) {
-      videoId = "YJqbDPkYQuQ"; // Reuters — Swedish battery maker Northvolt files for bankruptcy
+      videoId = "YJqbDPkYQuQ"; // Reuters — Swedish battery maker Northvolt files for bankruptcy (archived sweep)
     }
   }
 
@@ -9044,6 +9048,19 @@ export default function GlobalAttackMap() {
   }, [showArchive, showAuditDrawer, selectedId, showFilterPopover, showListPanel]);
 
   const { incidents, meta } = useMemo(() => parseSweep(sweep), [sweep]);
+
+  // Deep-link: ?incident=<_id> auto-opens that incident's card once the sweep
+  // has loaded, so a specific incident can be shared by direct URL. Fires once.
+  const deepLinkDone = useRef(false);
+  useEffect(() => {
+    if (deepLinkDone.current || !incidents.length) return;
+    let want = null;
+    try { want = new URLSearchParams(window.location.search).get("incident"); } catch { /* noop */ }
+    if (!want) { deepLinkDone.current = true; return; }
+    const hit = incidents.find(i => String(i._id) === String(want));
+    if (hit) { setSelectedId(hit._id); }
+    deepLinkDone.current = true;
+  }, [incidents]);
 
   const reporters = meta.newsroom || DEFAULT_REPORTERS;
 

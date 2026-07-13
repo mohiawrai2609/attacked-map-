@@ -463,7 +463,7 @@ function resolveCoords(inc) {
       //   local night hours → the real NASA "Earth at night" image (dark planet
       //                        with glowing city lights) laid over the top.
       // Re-checked every minute so it flips at dusk/dawn without a reload.
-      viewer.scene.globe.enableLighting = false;
+      viewer.scene.globe.enableLighting = true;   // real sun-position day/night terminator
       viewer.scene.skyAtmosphere.show = true;
       viewer.scene.globe.showGroundAtmosphere = true;
       viewer.scene.fog.enabled = true;
@@ -493,8 +493,8 @@ function resolveCoords(inc) {
         const isDay = qs.has("night") ? false
                     : qs.has("day")   ? true
                     : (hr >= 6 && hr < 19);
-        nightLayer.show = !isDay;                                  // swap the whole earth
-        viewer.scene.skyAtmosphere.brightnessShift = isDay ? 0.15 : -0.25;  // dark night sky
+        nightLayer.show = false;   // don't swap the whole earth — enableLighting gives the real day/night terminator
+        viewer.scene.skyAtmosphere.brightnessShift = 0.15;
         viewer.scene.requestRender();
       };
       applyDayNight();
