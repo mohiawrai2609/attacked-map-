@@ -580,8 +580,14 @@ function resolveCoords(inc) {
       window.addEventListener("touchend", onInteractEnd);
       viewer._autoRotateListeners = { canvas2, onInteractStart, onInteractEnd, onWheel };
 
-      // Use postRender to rotate camera every frame
+      // Auto-rotation DISABLED — the globe must stay fixed so it opens on the
+      // day side during local daytime and the night side after dark (driven by
+      // the laptop clock + real sun lighting via enableLighting). Manual drag
+      // still spins it. The handler stays registered (no-op) so the existing
+      // cleanup path keeps working.
+      const AUTO_ROTATE = false;
       viewer._autoRotateHandler = viewer.scene.postRender.addEventListener(() => {
+        if (!AUTO_ROTATE) return;
         if (viewer.scene.mode !== Cesium.SceneMode.SCENE3D) return;
         if (!isUserInteracting && !viewer._forceStopRotate && viewer && !viewer.isDestroyed()) {
           viewer.scene.camera.rotate(
