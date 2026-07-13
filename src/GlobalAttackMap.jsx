@@ -8466,15 +8466,15 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
   const orphans = diag ? Math.max(0, diag.storedSweepCount - archiveIndex.length) : 0;
 
   return (
-    <div className="r-mapdrawer" style={{
-      position: "fixed",
-      top: 73, right: 0, bottom: 0,   // start below the sticky SiteNav (incl. signed-in avatar row) so it never covers the navbar
-      width: 440,
-      background: BRAND.obsidianDeep,
-            zIndex: 1000,
-      display: "flex",
-      flexDirection: "column",
-      boxShadow: "-8px 0 24px rgba(0,0,0,0.6)",
+    <div className="r-mappanel" style={{
+      // Compact floating card — same look/placement as the Filters panel
+      // (top-left), not a full-height right drawer.
+      position: "fixed", top: 108, left: 24, width: 340,
+      maxHeight: "72vh", overflowY: "auto",
+      background: "rgba(20,20,22,0.96)", backdropFilter: "blur(20px)",
+      border: `1px solid ${BRAND.borderGold}`, borderRadius: 10,
+      boxShadow: "0 18px 50px rgba(0,0,0,0.6)", zIndex: 30,
+      display: "flex", flexDirection: "column",
     }}>
       {/* Header */}
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BRAND.borderSubtle}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -8579,23 +8579,14 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
         );
       })()}
 
-      {/* Day-wise list removed — the archive is driven by the calendar range +
-          play controls above. Spacer keeps the footer pinned to the bottom. */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
-        {archiveIndex.length === 0 && (
-          <div style={{ padding: "40px 20px", textAlign: "center", color: BRAND.textMuted }}>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, color: BRAND.white, marginBottom: 8 }}>No archived sweeps yet</div>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: BRAND.textSecondary, lineHeight: 1.5 }}>
-              Upload a GUARD daily intelligence file (JSON). It will be stored by its date automatically. Future uploads accumulate; tomorrow's upload doesn't replace today's.
-            </div>
+      {archiveIndex.length === 0 && (
+        <div style={{ padding: "24px 16px", textAlign: "center", color: BRAND.textMuted }}>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: BRAND.white, marginBottom: 6 }}>No archived days yet</div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: BRAND.textSecondary, lineHeight: 1.5 }}>
+            Upload a GUARD daily JSON — it's stored by date automatically.
           </div>
-        )}
-      </div>
-
-      {/* Footer hint */}
-      <div style={{ padding: "12px 20px", borderTop: `1px solid ${BRAND.borderSubtle}`, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.08em", lineHeight: 1.55 }}>
-        Pick a From → To range and press play — the map steps through each archived day automatically.
-      </div>
+        </div>
+      )}
     </div>
   );
 }
