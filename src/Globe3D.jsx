@@ -487,14 +487,12 @@ function resolveCoords(inc) {
       viewer._nightLayer = nightLayer;
 
       const applyDayNight = () => {
-        // DEMO preview only: add ?citylights (or ?night) to the URL to see the
-        // NASA "Earth at night" city-lights globe. WITHOUT the flag the globe is
-        // unchanged — the normal sun-lit day/night view (enableLighting).
-        const qs = new URLSearchParams(window.location.search);
-        const preview = qs.has("citylights") || qs.has("night");
-        nightLayer.show = preview;
-        viewer.scene.globe.enableLighting = !preview;   // preview = full city-lit night earth
-        viewer.scene.skyAtmosphere.brightnessShift = preview ? -0.25 : 0.15;
+        // Normal sun-lit day/night globe. City-lights swap removed — enableLighting
+        // gives the real day/night terminator; the globe opens fixed on the day
+        // side by day and the night side after dark (per local time).
+        nightLayer.show = false;
+        viewer.scene.globe.enableLighting = true;
+        viewer.scene.skyAtmosphere.brightnessShift = 0.15;
         viewer.scene.requestRender();
       };
       applyDayNight();
