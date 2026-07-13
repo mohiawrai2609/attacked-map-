@@ -8478,13 +8478,9 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
     }}>
       {/* Header */}
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BRAND.borderSubtle}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.gold, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
-            ◇ Threat Timeline
-          </div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, color: BRAND.white, lineHeight: 1.1 }}>
-            {archiveIndex.length} {archiveIndex.length === 1 ? "day" : "days"} of intelligence
-          </div>
+        <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: BRAND.gold, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          ◇ Timeline
+          <span style={{ color: BRAND.textMuted, fontWeight: 500, marginLeft: 8 }}>{archiveIndex.length} days</span>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={onRefresh}
@@ -8497,45 +8493,6 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
             ×
           </button>
         </div>
-      </div>
-
-      {/* Persistence-status banner — colour-coded and expandable to diagnostics */}
-      <div style={{
-        padding: "12px 20px",
-        background: persistsAcrossSessions ? "rgba(52,199,89,0.08)" : "rgba(245,184,0,0.08)",
-        borderBottom: `1px solid ${persistsAcrossSessions ? "rgba(52,199,89,0.2)" : "rgba(245,184,0,0.25)"}`,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ width: 7, height: 7, borderRadius: 4, background: persistsAcrossSessions ? "#34C759" : "#F5B800", flexShrink: 0 }} />
-          <span style={{ flex: 1, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textSecondary, letterSpacing: "0.08em", lineHeight: 1.5 }}>
-            {persistsAcrossSessions
-              ? "PERSISTENT · SWEEPS SURVIVE RELOAD"
-              : "LIVE SESSION · RE-SYNCS FROM CLOUD ON RELOAD"}
-          </span>
-          <button onClick={() => setShowDiag(s => !s)}
-            style={{ padding: "2px 6px", background: "transparent", color: BRAND.textMuted, fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2, cursor: "pointer" }}>
-            {showDiag ? "HIDE" : "DIAG"}
-          </button>
-        </div>
-        {/* Inline warning if any orphan sweeps were detected (will be auto-recovered on next list) */}
-        {orphans > 0 && (
-          <div style={{ marginTop: 8, fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF8C5A", letterSpacing: "0.06em" }}>
-            ⚠ {orphans} orphan sweep{orphans === 1 ? "" : "s"} detected · click ↻ to recover
-          </div>
-        )}
-        {showDiag && diag && (
-          <div style={{ marginTop: 10, padding: 10, background: BRAND.obsidianDeep, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, lineHeight: 1.6 }}>
-            <div>substrate · <span style={{ color: persistsAcrossSessions ? "#34C759" : "#F5B800" }}>{diag.substrate}</span></div>
-            <div>stored keys · <span style={{ color: BRAND.white }}>{diag.storedSweepCount}</span></div>
-            <div>index entries · <span style={{ color: BRAND.white }}>{archiveIndex.length}</span></div>
-            {diag.verifiedAt && (
-              <div>verified · <span style={{ color: BRAND.textSecondary }}>{new Date(diag.verifiedAt).toLocaleTimeString()}</span></div>
-            )}
-            {storageCanaryError && (
-              <div style={{ marginTop: 4, color: "#FF8C5A", wordBreak: "break-word" }}>error · {storageCanaryError}</div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Time-window toggle (Day/Week/Month/All) removed — the archive now
@@ -8552,15 +8509,20 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
         const cur = timeline.playDates[timeline.playPos];
         return (
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${BRAND.borderSubtle}` }}>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
               ◇ Date Range · Auto-play
             </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <input type="date" value={timeline.rangeFrom} disabled={busy}
-                onChange={e => timeline.setRangeFrom(e.target.value)} style={inStyle} title="From" />
-              <span style={{ color: BRAND.textMuted, fontSize: 12 }}>→</span>
-              <input type="date" value={timeline.rangeTo} disabled={busy}
-                onChange={e => timeline.setRangeTo(e.target.value)} style={inStyle} title="To" />
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <label style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 8.5, color: BRAND.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>From</div>
+                <input type="date" value={timeline.rangeFrom} disabled={busy}
+                  onChange={e => timeline.setRangeFrom(e.target.value)} style={{ ...inStyle, width: "100%" }} />
+              </label>
+              <label style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "Inter, sans-serif", fontSize: 8.5, color: BRAND.textMuted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>To</div>
+                <input type="date" value={timeline.rangeTo} disabled={busy}
+                  onChange={e => timeline.setRangeTo(e.target.value)} style={{ ...inStyle, width: "100%" }} />
+              </label>
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8 }}>
               <button
@@ -9156,6 +9118,11 @@ export default function GlobalAttackMap() {
   // open incidents themselves (tap a dot or "Browse incidents").
   useEffect(() => {
     if (tourStartedRef.current) return;
+    // A ?incident= deep-link means "show me THIS incident" — suppress the tour
+    // so it doesn't step the selection away from the linked incident.
+    let deepLink = null;
+    try { deepLink = new URLSearchParams(window.location.search).get("incident"); } catch { /* noop */ }
+    if (deepLink) { tourStartedRef.current = true; return; }
     if (tourIncident && !booting && !isMobile) {
       tourStartedRef.current = true;
       setTourActive(true);
@@ -9168,6 +9135,9 @@ export default function GlobalAttackMap() {
   // deck, and any touch hands control to the user.
   useEffect(() => {
     if (mobilePreviewStartedRef.current) return;
+    let deepLink = null;
+    try { deepLink = new URLSearchParams(window.location.search).get("incident"); } catch { /* noop */ }
+    if (deepLink) { mobilePreviewStartedRef.current = true; return; }  // deep-link wins over the preview
     if (isMobile && tourIncident && !booting) {
       mobilePreviewStartedRef.current = true;
       setSelectedId(tourIncident._id);

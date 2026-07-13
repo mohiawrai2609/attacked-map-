@@ -179,6 +179,14 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
   const [geoLoaded, setGeoLoaded] = useState(false);
   const [viewerReady, setViewerReady] = useState(false);
 
+  // Admin-1 (state/province) highlight layer — lets us fill "Delhi", not all of
+  // India, when the incident's location resolves to a state. Point tier fills
+  // nothing (the pin marks the exact spot); country tier is the existing fill.
+  const statesDataSourceRef = useRef(null);
+  const [statesLoaded, setStatesLoaded] = useState(false);
+  const [highlightedState, setHighlightedState] = useState(null);   // { name, country }
+  const [highlightedPoint, setHighlightedPoint] = useState(null);   // { lng, lat } — exact tier
+
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer || !window.Cesium || !world || !world.features) return;
@@ -222,6 +230,43 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       console.error("Cesium: GeoJSON load failed with error:", err);
     });
   }, [world, ready, viewerReady]);
+
+  // ── Load admin-1 (state/province) boundaries for finer-grained highlights.
+  //    Lazy-fetched from /admin1_states.json (NOT bundled) so it costs nothing
+  //    until the globe is up. Same hidden-until-highlighted discipline as the
+  //    country layer, so only the one selected state is ever built/shown. ─────
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !window.Cesium) return;
+    if (statesDataSourceRef.current) return;
+    const Cesium = window.Cesium;
+    let cancelled = false;
+    fetch("/admin1_states.json")
+      .then(r => (r.ok ? r.json() : null))
+      .then(geojson => (geojson && !cancelled) ? Cesium.GeoJsonDataSource.load(geojson, { clampToGround: true }) : null)
+      .then(ds => {
+        if (!ds || cancelled) return;
+        viewer.dataSources.add(ds);
+        statesDataSourceRef.current = ds;
+        ds.entities.values.forEach(ent => {
+          const props = ent.properties;
+          const getP = (k) => (props && props[k]) ? (typeof props[k].getValue === "function" ? props[k].getValue() : props[k]) : null;
+          ent._stateName = getP("name");
+          ent._stateAdmin = getP("admin");
+          if (ent.polygon) {
+            ent.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.TRANSPARENT);
+            ent.polygon.outline = false;
+            ent.polygon.arcType = Cesium.ArcType.GEODESIC;
+            ent.polygon.granularity = Cesium.Math.toRadians(1.0);
+          }
+          ent.show = false;
+        });
+        setStatesLoaded(true);
+        viewer.scene.requestRender();
+      })
+      .catch(err => console.error("Cesium: admin-1 states load failed:", err));
+    return () => { cancelled = true; };
+  }, [ready, viewerReady]);
 
   // STRICT country matcher. Exact-name or curated-alias matches ONLY.
   // The previous version split the filter on the letters "and" anywhere in
@@ -287,6 +332,38 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     return candidates.some(p => canon(p) === n1);
   };
 
+  // ── Admin-1 (state) matcher. Finds the state/province polygon an incident
+  //    sits in by matching a WHOLE-WORD state name inside location_name, gated
+  //    to the incident's country (so "Georgia" the US state never matches a
+  //    Georgia-the-country incident). Returns the polygon name, or null. ──────
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const matchState = (inc) => {
+    const ds = statesDataSourceRef.current;
+    if (!ds || !inc) return null;
+    const loc = String(inc.location_name || "").toLowerCase();
+    if (!loc) return null;
+    let best = null;
+    for (const ent of ds.entities.values) {
+      const nm = ent._stateName;
+      if (!nm || !isSameCountry(ent._stateAdmin, inc.country)) continue;
+      const nml = String(nm).toLowerCase();
+      if (nml.length < 3) continue;
+      const re = new RegExp(`(^|[^a-z])${escapeRe(nml)}([^a-z]|$)`, "i");
+      // Prefer the longest matching name (so "West Bengal" beats "Bengal").
+      if (re.test(loc) && (!best || nml.length > best.len)) best = { name: nm, len: nml.length };
+    }
+    return best ? best.name : null;
+  };
+
+  // Prototype precision tags — until the GUARD pipeline emits a `geo_precision`
+  // field, a couple of incidents are hand-tagged so the exact-point tier is
+  // demoable. Real data should set inc.geo_precision instead.
+  const demoPrecision = (inc) => {
+    const h = inc.headline || "";
+    if (h.includes("Oxin Palayesh")) return "exact"; // specific refinery → exact point
+    return null;
+  };
+
   useEffect(() => {
     const ds = geoDataSourceRef.current;
     if (!ds || !window.Cesium) return;
@@ -328,14 +405,77 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     if (viewerRef.current) viewerRef.current.scene.requestRender();
   }, [highlightedCountry, activeCountries, geoLoaded]);
 
+  // ── Resolve which precision tier to highlight for the focused incident:
+  //    exact point → state/province → country (fallback chain). ──────────────
   useEffect(() => {
+    const clearAll = () => { setHighlightedCountry(null); setHighlightedState(null); setHighlightedPoint(null); };
     const focusId = selectedId || hoveredId;
-    if (!focusId) { setHighlightedCountry(null); return; }
+    if (!focusId) { clearAll(); return; }
     const inc = visibleIncidents.find(i => i._id === focusId);
-    if (!inc || !inc.country) { setHighlightedCountry(null); return; }
+    if (!inc) { clearAll(); return; }
     highlightSevRef.current = inc.severity || 3;
-    setHighlightedCountry(inc.country);
-  }, [selectedId, hoveredId, visibleIncidents]);
+
+    const prec = String(inc.geo_precision || demoPrecision(inc) || "").toLowerCase();
+    const wantPoint = /exact|point|site|rooftop|address|facility|city|town/.test(prec);
+    const wantCountry = /country|national|nation/.test(prec);
+
+    // Tier 1 — exact location: no big fill, just a tight disc on the spot.
+    if (wantPoint) {
+      const coords = resolveCoords(inc);
+      if (coords) { setHighlightedPoint({ lng: coords[0], lat: coords[1] }); setHighlightedState(null); setHighlightedCountry(null); return; }
+    }
+    // Tier 2 — state/province known: fill that admin-1 polygon only.
+    const stateName = wantCountry ? null : matchState(inc);
+    if (stateName) { setHighlightedState({ name: stateName, country: inc.country }); setHighlightedCountry(null); setHighlightedPoint(null); return; }
+    // Tier 3 — fall back to the whole country.
+    setHighlightedCountry(inc.country || null); setHighlightedState(null); setHighlightedPoint(null);
+  }, [selectedId, hoveredId, visibleIncidents, statesLoaded]);
+
+  // ── Fill the highlighted admin-1 (state/province) polygon. ────────────────
+  useEffect(() => {
+    const ds = statesDataSourceRef.current;
+    if (!ds || !window.Cesium) return;
+    const Cesium = window.Cesium;
+    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#F5B800");
+    ds.entities.values.forEach(ent => {
+      if (!ent.polygon) return;
+      const focused = highlightedState
+        && ent._stateName && String(ent._stateName).toLowerCase() === String(highlightedState.name).toLowerCase()
+        && isSameCountry(ent._stateAdmin, highlightedState.country);
+      if (focused) {
+        ent.polygon.material = new Cesium.ColorMaterialProperty(c.withAlpha(0.8));
+        ent.polygon.outline = false;
+        ent.show = true;
+      } else {
+        ent.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.TRANSPARENT);
+        ent.show = false;
+      }
+    });
+    if (viewerRef.current) viewerRef.current.scene.requestRender();
+  }, [highlightedState, statesLoaded]);
+
+  // ── Exact-location tier: a tight severity-coloured disc on the precise spot
+  //    (instead of shading a whole region we already know is pinpoint). ───────
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !window.Cesium) return;
+    const Cesium = window.Cesium;
+    viewer.entities.values.filter(e => e._isExactHi).forEach(e => viewer.entities.remove(e));
+    if (!highlightedPoint) { viewer.scene.requestRender(); return; }
+    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#F5B800");
+    const disc = viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(highlightedPoint.lng, highlightedPoint.lat, 5000),
+      ellipse: {
+        semiMajorAxis: 20000, semiMinorAxis: 20000,
+        material: new Cesium.ColorMaterialProperty(c.withAlpha(0.55)),
+        outline: true, outlineColor: c.withAlpha(0.95), outlineWidth: 2,
+        height: 4000,
+      },
+    });
+    disc._isExactHi = true;
+    viewer.scene.requestRender();
+    return () => { try { if (!viewer.isDestroyed()) viewer.entities.values.filter(e => e._isExactHi).forEach(e => viewer.entities.remove(e)); } catch (_) {} };
+  }, [highlightedPoint]);
 
 // Country centroid fallback — used when an incident has no lat/lng
 // but has a country ISO-2 code. Covers the most common countries in the data.
