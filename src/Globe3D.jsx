@@ -948,56 +948,46 @@ function resolveCoords(inc) {
         if (typeof ent.latitude !== "number" || typeof ent.longitude !== "number") return;
 
         // Blast entities very often carry the incident's OWN coordinates (an
-        // internal team, an on-site depot, co-located allied personnel). That
-        // makes a zero-length arc, and a ground-clamped polyline whose points
-        // are all identical crashes the whole scene:
-        //   TypeError: Cannot read properties of undefined (reading 'surfaceDistance')
-        // — GroundPolylinePrimitive builds an EllipsoidGeodesic per segment and a
-        // point-to-itself geodesic has no surface distance. (Unclamped polylines
-        // tolerated the degenerate case, which is why this only appeared once the
-        // arcs were correctly clamped to the ground.) A zero-length arc conveys
-        // nothing anyway: skip the line and let the dot mark the spot.
+        // internal team, an on-site depot, co-located allied personnel), giving a
+        // zero-length arc. A ground-clamped polyline needs two DISTINCT points, and
+        // a zero-length arc conveys nothing anyway — skip the line, the dot still
+        // marks the spot.
         const sameSpot =
           Math.abs(ent.latitude - inc.latitude) < 1e-6 &&
           Math.abs(ent.longitude - inc.longitude) < 1e-6;
 
         if (!sameSpot) {
-          // Great-circle polyline, draped on the surface — NOT lifted to altitude.
-          // These used to be built at 20 km with clampToGround:false while the
-          // incident pin is CLAMP_TO_GROUND, so the arcs hung 20 km above their own
-          // origin. Zoomed into a city that offset is larger than the map itself
-          // (Bahrain is ~50 km end to end), so every arc appeared to sprout from a
-          // point well away from the pin — reading as "the blast radius comes out of
-          // the wrong dot". Clamping ties both ends to the ground the pin sits on.
-          const geodesic = new Cesium.EllipsoidGeodesic(
-            Cesium.Cartographic.fromDegrees(inc.longitude, inc.latitude),
-            Cesium.Cartographic.fromDegrees(ent.longitude, ent.latitude)
-          );
-          const positions = [];
-          const N = 80;
-          for (let k = 0; k <= N; k++) {
-            const c = geodesic.interpolateUsingFraction(k / N);
-            const p = Cesium.Cartesian3.fromRadians(c.longitude, c.latitude);
-            // Guard again at the segment level: consecutive duplicates would hit
-            // the same degenerate-geodesic path inside the ground primitive.
-            const prev = positions[positions.length - 1];
-            if (!prev || !Cesium.Cartesian3.equalsEpsilon(p, prev, Cesium.Math.EPSILON7)) positions.push(p);
-          }
-          if (positions.length >= 2) {
-            const arcEnt = viewer.entities.add({
-              polyline: {
-                positions,
-                width: def.width,
-                material: new Cesium.PolylineGlowMaterialProperty({
-                  glowPower: 0.25,
-                  color: Cesium.Color.fromCssColorString(def.color).withAlpha(def.opacity),
-                }),
-                arcType: Cesium.ArcType.NONE,
-                clampToGround: true,
-              },
-            });
-            arcEnt._isBlastArc = true;
-          }
+          // Draped on the surface — NOT lifted to altitude. These used to be built at
+          // 20 km with clampToGround:false while the incident pin is CLAMP_TO_GROUND,
+          // so the arcs hung 20 km above their own origin. Zoomed into a city that
+          // offset is larger than the map itself (Bahrain is ~50 km end to end), so
+          // every arc appeared to sprout from a point well away from the pin —
+          // "the blast radius comes out of the wrong dot".
+          //
+          // Pass the two ENDPOINTS and let Cesium subdivide. clampToGround builds a
+          // GroundPolylineGeometry, which accepts ONLY ArcType.GEODESIC or RHUMB —
+          // never ArcType.NONE. With NONE the release build (debug asserts stripped)
+          // silently skips both subdivision branches, leaving its per-segment
+          // EllipsoidGeodesic array empty, and the scene dies on the next frame with
+          //   TypeError: Cannot read properties of undefined (reading 'surfaceDistance')
+          // Hand-interpolating the great circle ourselves and passing NONE is exactly
+          // that trap: the geodesic drape is the ground primitive's job.
+          const arcEnt = viewer.entities.add({
+            polyline: {
+              positions: Cesium.Cartesian3.fromDegreesArray([
+                inc.longitude, inc.latitude,
+                ent.longitude, ent.latitude,
+              ]),
+              width: def.width,
+              material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.25,
+                color: Cesium.Color.fromCssColorString(def.color).withAlpha(def.opacity),
+              }),
+              arcType: Cesium.ArcType.GEODESIC,
+              clampToGround: true,
+            },
+          });
+          arcEnt._isBlastArc = true;
         }
 
         // Destination dot
