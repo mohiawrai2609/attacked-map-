@@ -1007,9 +1007,12 @@ function resolveCoords(inc) {
           incidentName: inc.title || inc.name || inc.headline || "",
         };
 
-        // Pulsing concentric rings — 2 rings, offset phase so they ripple outward
+        // Pulsing concentric rings — 2 rings, offset phase so they ripple outward.
+        // Ground-clamped for the same reason as the arcs and dots above: at 20 km
+        // altitude the ripple detached from the entity it belongs to, drifting
+        // further from it the closer you zoom.
         const dotColor = Cesium.Color.fromCssColorString(def.color);
-        const ringPos = Cesium.Cartesian3.fromDegrees(ent.longitude, ent.latitude, 20000);
+        const ringPos = Cesium.Cartesian3.fromDegrees(ent.longitude, ent.latitude);
         [0, 0.5].forEach((phaseOffset) => {
           const ring = viewer.entities.add({
             position: ringPos,
@@ -1035,7 +1038,7 @@ function resolveCoords(inc) {
               }, false),
               outlineWidth: 2,
               fill: true,
-              height: 20000,
+              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             },
           });
           ring._isBlastArc = true;
