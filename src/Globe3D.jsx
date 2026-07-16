@@ -436,7 +436,21 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     // Tier 2 — state/province known: fill that admin-1 polygon only.
     const stateFeat = wantCountry ? null : matchState(inc);
     if (stateFeat) { setHighlightedState(stateFeat); setHighlightedCountry(null); setHighlightedPoint(null); return; }
-    // Tier 3 — fall back to the whole country.
+
+    // Tier 3 — country fill. Filling a country asserts the WHOLE country is the
+    // affected area, so it has to be earned rather than fallen into. Anything
+    // that fails to match a state used to land here: "Strait of Hormuz, Persian
+    // Gulf" matches no admin-1 region, so it filled all of Iran off
+    // country:"IR" — the Strait is Iran/Oman shared transit and the incident is
+    // one ship, not a nation. Unless the data explicitly says country-scoped,
+    // prefer the exact coordinates we already have; open water never fills.
+    const loc = String(inc.location_name || "");
+    const maritime = /\b(strait|gulf|sea|ocean|channel|bay|waters|high seas)\b/i.test(loc);
+    if (!wantCountry) {
+      const coords = resolveCoords(inc);
+      if (coords) { setHighlightedPoint({ lng: coords[0], lat: coords[1] }); setHighlightedState(null); setHighlightedCountry(null); return; }
+    }
+    if (maritime) { clearAll(); return; }
     setHighlightedCountry(inc.country || null); setHighlightedState(null); setHighlightedPoint(null);
   }, [selectedId, hoveredId, visibleIncidents, statesLoaded]);
 
@@ -938,11 +952,18 @@ function resolveCoords(inc) {
           Cesium.Cartographic.fromDegrees(inc.longitude, inc.latitude),
           Cesium.Cartographic.fromDegrees(ent.longitude, ent.latitude)
         );
+        // Draped on the surface — NOT lifted to altitude. These used to be built
+        // at 20 km with clampToGround:false while the incident pin is
+        // CLAMP_TO_GROUND, so the arcs hung 20 km above their own origin. Zoomed
+        // into a city that offset is larger than the map itself (Bahrain is ~50 km
+        // end to end), so every arc appeared to sprout from a point well away from
+        // the pin — reading as "the blast radius comes out of the wrong dot".
+        // Clamping ties both ends to the ground the pin sits on at any zoom.
         const positions = [];
         const N = 80;
         for (let k = 0; k <= N; k++) {
           const c = geodesic.interpolateUsingFraction(k / N);
-          positions.push(Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, 20000));
+          positions.push(Cesium.Cartesian3.fromRadians(c.longitude, c.latitude));
         }
         const arcEnt = viewer.entities.add({
           polyline: {
@@ -953,7 +974,7 @@ function resolveCoords(inc) {
               color: Cesium.Color.fromCssColorString(def.color).withAlpha(def.opacity),
             }),
             arcType: Cesium.ArcType.NONE,
-            clampToGround: false,
+            clampToGround: true,
           },
         });
         arcEnt._isBlastArc = true;
@@ -964,14 +985,16 @@ function resolveCoords(inc) {
           customer_counterparty: "Customer", competitive_peer: "Peer",
           regulatory: "Regulator", financial_market: "Capital",
         };
+        // Same ground reference as the incident pin (see the arc note above), so
+        // a destination dot sits on the place it refers to at every zoom.
         const dotEnt = viewer.entities.add({
-          position: Cesium.Cartesian3.fromDegrees(ent.longitude, ent.latitude, 20000),
+          position: Cesium.Cartesian3.fromDegrees(ent.longitude, ent.latitude),
           point: {
             pixelSize: 18,
             color: Cesium.Color.fromCssColorString(def.color).withAlpha(0.9),
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 1.5,
-            heightReference: Cesium.HeightReference.NONE,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
           },
         });
         dotEnt._isBlastArc = true;
