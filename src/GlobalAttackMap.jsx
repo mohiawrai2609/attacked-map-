@@ -12,6 +12,59 @@ import Globe3D from "./Globe3D.jsx";
 import { feature as topoFeature } from "topojson-client";
 import worldCountries110m from "world-atlas/countries-110m.json";
 
+// ── Daily Brief — turn a day's incidents into a fast, news-bulletin script.
+//    Structure mirrors a TV headlines roundup: cold-open → headline stack →
+//    ranked lead stories (with anchor transitions) → "also today" quick-hits →
+//    sign-off. Returns ordered segments; a segment carrying `id` is a lead
+//    story the map flies to + highlights as it's read. Data-driven, so it works
+//    for every day and every future daily sweep — no per-incident authoring.
+const BRIEF_CAT = {
+  CYB: "cyber", DAT: "data-breach", TEC: "technology", INF: "infrastructure",
+  OPS: "operational", GEO: "geopolitical", PHY: "physical-security", ENV: "environmental",
+  FIN: "financial", REG: "regulatory", REP: "reputational", STR: "strategic", SUP: "supply-chain",
+};
+
+// The specific place an incident happened, for the on-map focus label.
+// location_name is ordered most-specific-first ("Strait of Hormuz, Persian
+// Gulf"; "Naval Support Activity Bahrain, Juffair, Manama, Bahrain"), so the
+// leading segment is the place a reader recognises. country is only a fallback:
+// it is coarse (a point event is not a whole nation) and inconsistently coded
+// across the dataset — both "US" and "United States" occur.
+function placeLabelFor(inc) {
+  if (!inc) return "";
+  const first = String(inc.location_name || "").split(",")[0].trim();
+  if (first) return first;
+  return String(inc.entity || inc.country || "").trim();
+}
+function buildDailyBrief(incidents, niceDate) {
+  const inc = (incidents || []).filter(Boolean);
+  if (!inc.length) return [{ text: `This is your daily attack brief for ${niceDate}. No incidents on the board today — all quiet across the map.` }];
+  const list = [...inc].sort((a, b) => (b.severity || 0) - (a.severity || 0));
+  const N = list.length;
+  const clip = (s, n) => { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1).replace(/[\s,;:.\-]+\S*$/, "") + "…" : s; };
+  const phrase = (i) => {
+    const h = clip(i.headline, 96);
+    if (h) return h;
+    const cat = BRIEF_CAT[i._cat] || "an"; const ent = i.entity || i.primary_entity || "a major organisation";
+    return `a ${cat} incident at ${ent}`;
+  };
+  const city = (i) => { const c = String(i.location_name || "").split(",")[0].trim(); return c || i.country || "an undisclosed location"; };
+  const med = (i) => clip(i.headline, 66) || phrase(i);   // MEDIUM heading — punchy + fast to read
+  const segs = [];
+  segs.push({ text: `This is your daily attack brief for ${niceDate}. ${N} incident${N === 1 ? "" : "s"} across the globe — here's the rundown.` });
+  // ONE line per incident, and EVERY line syncs the map + card to that incident,
+  // so what you hear is always what you see. Top 3 get an anchor lead-in; the
+  // rest are rapid-fire (medium headings, faster rate) so all are covered fast.
+  const openers = ["We begin in", "Turning to", "Meanwhile, in"];
+  list.forEach((i, idx) => {
+    const text = idx < 3 ? `${openers[idx]} ${city(i)}: ${med(i)}.` : `In ${city(i)}: ${med(i)}.`;
+    segs.push({ id: i._id, text, fast: idx >= 3 });
+  });
+  const sectors = new Set(list.map(i => i._cat).filter(Boolean)).size;
+  segs.push({ text: `${N} event${N === 1 ? "" : "s"}${sectors ? `, across ${sectors} sector${sectors === 1 ? "" : "s"}` : ""}. That's your brief.` });
+  return segs;
+}
+
 // Globally-mounted partner modal. Any GateBlock click anywhere in the map
 // opens the same modal via this window-level event. Keeps the modal a
 // single source of truth and avoids prop-drilling through 7 components.
@@ -1124,20 +1177,30 @@ function _reshapeIncident(row) {
   inc.adaptive_master_controls = (row.adaptive_master_controls || []).map(c => ({
     ...c, id: c.control_id || c.id,
   }));
-  // adaptive_controls — incidents.adaptive_controls_codes holds either:
-  //   (a) short semantic codes ("AC-MC-001") — use as id
-  //   (b) full statement sentences ("Mandate a quarterly SAR filing…")
-  //       — wrap as statement, synthesize a short id so the row renders
-  //         "AC-1  Mandate a quarterly…" instead of dumping JSON.
-  inc.adaptive_controls = Array.isArray(row.adaptive_controls_codes)
-    ? row.adaptive_controls_codes.map((code, i) => {
-        const s = typeof code === "string" ? code : "";
-        const looksLikeStatement = s.length > 30 || /\s/.test(s.trim());
-        return looksLikeStatement
-          ? { id: `AC-${String(i + 1).padStart(2, "0")}`, statement: s }
-          : { id: s || `AC-${i + 1}` };
-      })
-    : [];
+  // adaptive_controls — PREFER the real adapted controls (AC-*) from the
+  // adaptive_controls table: incident-specific, executable, with real semantic
+  // ids + rationale + provenance back to the parent master control.
+  // Fall back to the legacy incidents.adaptive_controls_codes column only when
+  // the table has nothing for this incident (that column holds raw sentences,
+  // not codes, so it needs the synthesize-an-id hack below).
+  inc.adaptive_controls = (Array.isArray(row.adaptive_controls_rows) && row.adaptive_controls_rows.length)
+    ? row.adaptive_controls_rows.map(c => ({
+        id: c.control_id || c.id,
+        statement: c.statement,
+        rationale: c.rationale,
+        parent_mc_id: c.parent_mc_id,
+        layer: c.layer,
+        control_kind: c.kind,   // 'direct' | 'indirect' — from the parent MC's framework capability
+      }))
+    : Array.isArray(row.adaptive_controls_codes)
+      ? row.adaptive_controls_codes.map((code, i) => {
+          const s = typeof code === "string" ? code : "";
+          const looksLikeStatement = s.length > 30 || /\s/.test(s.trim());
+          return looksLikeStatement
+            ? { id: `AC-${String(i + 1).padStart(2, "0")}`, statement: s }
+            : { id: s || `AC-${i + 1}` };
+        })
+      : [];
 
   // vendors, sources, peer_watchlist, historical_analogues, best_practices,
   // secondary_mappings are already shaped correctly by the embed.
@@ -1243,7 +1306,7 @@ async function loadFromSupabase() {
   ].join(",");
   const [
     regularRows, viRows, reporterRows,
-    brRows, vendorRows, sourceRows, objRows, masterRows,
+    brRows, vendorRows, sourceRows, objRows, masterRows, adaptiveRows,
     peerRows, histRows, bpRows, secMapRows,
     viBrRows, viVendorRows, viSourceRows, viCoRows, viMcRows, viAcRows,
     viPeerRows, viHistRows, viBpRows, viSecMapRows, viCtxRows,
@@ -1259,6 +1322,9 @@ async function loadFromSupabase() {
     _fetchSupabaseTable(url, key, "sources", `select=*&${q}`),
     _fetchSupabaseTable(url, key, "adaptive_objectives", `select=*&${q}`),
     _fetchSupabaseTable(url, key, "adaptive_master_controls", `select=*&${q}`),
+    // adaptive_controls = the incident-specific ADAPTED controls (AC-*) — customer-facing.
+    // adaptive_master_controls above is the raw framework library (MC-*) — internal only.
+    _fetchSupabaseTable(url, key, "adaptive_controls", `select=*&${q}`),
     _fetchSupabaseTable(url, key, "peer_watchlist", `select=*&${q}`),
     _fetchSupabaseTable(url, key, "historical_analogues", `select=*&${q}`),
     _fetchSupabaseTable(url, key, "best_practices", `select=*&${q}`),
@@ -1308,6 +1374,7 @@ async function loadFromSupabase() {
   const sourceBy = groupBy(sourceRows, "incident_id");
   const objBy = groupBy(objRows, "incident_id");
   const masterBy = groupBy(masterRows, "incident_id");
+  const adaptiveBy = groupBy(adaptiveRows, "incident_id");
   const peerBy = groupBy(peerRows, "incident_id");
   const histBy = groupBy(histRows, "incident_id");
   const bpBy = groupBy(bpRows, "incident_id");
@@ -1334,6 +1401,7 @@ async function loadFromSupabase() {
     row.sources = sourceBy.get(row.id) || [];
     row.adaptive_objectives = objBy.get(row.id) || [];
     row.adaptive_master_controls = masterBy.get(row.id) || [];
+    row.adaptive_controls_rows = adaptiveBy.get(row.id) || [];
     row.peer_watchlist = peerBy.get(row.id) || [];
     row.historical_analogues = histBy.get(row.id) || [];
     row.best_practices = bpBy.get(row.id) || [];
@@ -1968,8 +2036,14 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
       ? visibleIncidents.filter(i => i._id === selectedId)
       : (hoveredId ? visibleIncidents.filter(i => i._id === hoveredId) : []);
     for (const inc of targets) {
-      const origin = project(inc.longitude, inc.latitude);
-      if (!origin) continue;
+      // Must use incidentPos(), NOT the raw projection: when several incidents
+      // share coordinates they are spiderfied onto a ring, so the pin the user
+      // sees is offset from the anchor. Projecting raw made every arc start at
+      // the un-offset anchor — i.e. visually sprouting from a *neighbouring*
+      // pin instead of the selected one.
+      const originPos = incidentPos(inc);
+      if (!originPos) continue;
+      const origin = [originPos.x, originPos.y];
       const radius = inc.blast_radius || {};
       for (const [channel, entities] of Object.entries(radius)) {
         if (!Array.isArray(entities)) continue;
@@ -1991,8 +2065,28 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
         });
       }
     }
+    // Blast entities frequently carry the incident's own coordinates (an
+    // "internal" team, an on-site depot) or duplicate each other. Stacked at
+    // one point they read as a single anonymous dot with no visible arc. Fan
+    // any co-located cluster onto a ring so every entity is separately
+    // hoverable, and so an arc is always visible leaving the pin.
+    const byPoint = new Map();
+    for (const arc of arcs) {
+      const key = `${arc.x2.toFixed(1)},${arc.y2.toFixed(1)}`;
+      if (!byPoint.has(key)) byPoint.set(key, []);
+      byPoint.get(key).push(arc);
+    }
+    for (const group of byPoint.values()) {
+      if (group.length === 1) continue;
+      const ringR = (18 + Math.min(10, group.length)) / k;
+      group.forEach((arc, i) => {
+        const angle = (i / group.length) * Math.PI * 2 - Math.PI / 2;
+        arc.x2 += ringR * Math.cos(angle);
+        arc.y2 += ringR * Math.sin(angle);
+      });
+    }
     return arcs;
-  }, [visibleIncidents, hoveredId, selectedId, showBlastRadius, projection]);
+  }, [visibleIncidents, hoveredId, selectedId, showBlastRadius, projection, spiderfyMap, k]);
 
   // Compute graticule once
   const graticule = useMemo(() => {
@@ -2081,9 +2175,13 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
           {/* Countries — muted earth-green/brown landmasses matching the 
               photorealistic satellite palette. */}
           {(() => {
-            const focusInc = visibleIncidents.find(i => i._id === (selectedId || hoveredId));
-            const focusCountry = focusInc?.country;
-            const focusColor = focusInc ? (SEV_COLOR[focusInc.severity] || BRAND.gold) : BRAND.gold;
+            // Deliberately NO country-wide focus flood. An incident is a point
+            // event — a strike on one base, a tanker seized in a strait. Filling
+            // an entire nation's landmass asserts the whole country is affected,
+            // which is false, and for shared international waters (the Strait of
+            // Hormuz is Iran/Oman transit) it also mis-attributes the event to
+            // one state. The focus highlight now lives at the incident's real
+            // coordinates instead — see the place-highlight block below.
             const tones = [
               "#2d3d1e","#324020","#2a3a1c","#2e3b1d","#304220",
               "#28381b","#334521","#2b3e1e","#2f4122","#263519",
@@ -2091,19 +2189,13 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
             return world && world.features.map((feat, i) => {
               const d = pathGen(feat);
               if (!d) return null;
-              const name = feat.properties?.name;
-              const isFocused = focusCountry && name === focusCountry;
-              const fill = isFocused ? `${focusColor}33` : tones[i % tones.length];
-              const stroke = isFocused ? focusColor : "rgba(60,80,40,0.55)";
-              const strokeWidth = (isFocused ? 1.5 : 0.4) / k;
               return (
                 <path
                   key={i}
                   d={d}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={strokeWidth}
-                  style={{ transition: "fill 0.2s, stroke 0.2s, stroke-width 0.2s" }}
+                  fill={tones[i % tones.length]}
+                  stroke="rgba(60,80,40,0.55)"
+                  strokeWidth={0.4 / k}
                 />
               );
             });
@@ -2114,36 +2206,39 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
               so the user is never lost. When on, all countries label with the
               previous zoom-fade behaviour. */}
           {world && (() => {
-            // When labels are globally off, only label the focused-incident country
+            // When labels are globally off, label the focused incident's PLACE
+            // at its real coordinates (the pin), not its country's centroid.
+            // location_name is the specific place ("Strait of Hormuz",
+            // "Naval Support Activity Bahrain, Juffair"); country is both
+            // coarse and inconsistently coded ("US" vs "United States"), so it
+            // is only a last-resort fallback here.
             if (!showLabels) {
               const focusInc = visibleIncidents.find(i => i._id === (selectedId || hoveredId));
-              if (!focusInc || !focusInc.country) return null;
-              const focusFeat = world.features.find(f => f.properties?.name === focusInc.country);
-              if (!focusFeat) return null;
-              const centroid = d3.geoCentroid(focusFeat);
-              if (!centroid) return null;
-              const p = projection(centroid);
-              if (!p || isNaN(p[0])) return null;
+              if (!focusInc) return null;
+              const pos = incidentPos(focusInc);
+              if (!pos) return null;
+              const place = placeLabelFor(focusInc);
+              if (!place) return null;
               const fontSize = 11 / k;
               return (
                 <text
-                  key="focus-country"
-                  x={p[0]}
-                  y={p[1]}
+                  key="focus-place"
+                  x={pos.x}
+                  y={pos.y - 16 / k}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill={BRAND.gold}
-                  fillOpacity={0.9}
+                  fillOpacity={0.95}
                   stroke={BRAND.obsidianDeep}
                   strokeWidth={3 / k}
-                  strokeOpacity={0.7}
+                  strokeOpacity={0.75}
                   paintOrder="stroke"
                   fontFamily="Inter, sans-serif"
                   fontSize={fontSize}
                   fontWeight={600}
                   letterSpacing={`${0.08 / k}em`}
                   style={{ pointerEvents: "none", textTransform: "uppercase" }}>
-                  {focusInc.country}
+                  {place}
                 </text>
               );
             }
@@ -3192,11 +3287,14 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
         {(() => {
           if (!showLabels) {
             const focusInc = visibleIncidents.find(i => i._id === (selectedId || hoveredId));
-            if (!focusInc || !focusInc.country) return null;
+            if (!focusInc) return null;
             if (typeof focusInc.latitude !== "number" || typeof focusInc.longitude !== "number") return null;
             if (!isVisible(focusInc.longitude, focusInc.latitude)) return null;
             const p = projection([focusInc.longitude, focusInc.latitude]);
             if (!p) return null;
+            // Name the PLACE, not the country — see placeLabelFor().
+            const place = placeLabelFor(focusInc);
+            if (!place) return null;
             return (
               <g pointerEvents="none">
                 <text
@@ -3215,7 +3313,7 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
                   opacity={0.9}
                   style={{ textTransform: "uppercase" }}
                 >
-                  {focusInc.country}
+                  {place}
                 </text>
               </g>
             );
@@ -5671,70 +5769,37 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
       text: o.statement || o.description || (typeof o === "string" ? o : toText(o)),
       fit: o.fit || null,
     }));
-    // MC = Master Control — top-level direct control
-    masters.forEach((m, i) => out.push({
-      kind: "MC", kindLabel: "DIRECT", kindTone: "direct",
-      id: m.id || `MC-${i + 1}`,
-      text: m.statement || m.description || (typeof m === "string" ? m : toText(m)),
-      fit: m.fit || null,
-    }));
-    // AC = Adaptive Controls (inline incidents.adaptive_controls_codes).
-    // INTENTIONALLY SKIPPED — that column carries full statement sentences
-    // (not semantic codes) from the sweep generator. They duplicate the
-    // master_controls table and forced us to synthesize fake "AC-01" labels.
-    // Until the sweep generator emits proper codes (e.g. "AC-CYB-013"), we
-    // rely solely on the structured tables above (objectives + masters)
-    // and best_practices below. Every row that ships now carries its real
-    // DB semantic code.
+    // MC = Master Control — the raw GUARD framework library.
+    // DELIBERATELY NOT RENDERED: this is proprietary IP and generic boilerplate.
+    // The customer sees its ADAPTED form (AC-* below), which is derived from it.
+    // Provenance is preserved on each AC row via parent_mc_id (internal only).
     //
-    // To re-enable later when the upstream is fixed:
-    //   acts.forEach((a, i) => out.push({ kind: "AC", id: a.id, text: a.statement, ... }));
-    // BP = Best Practice — advisory / indirect.
-    // best_practices rows have framework/version/clause/title columns —
-    // compose a SEMANTIC id (e.g. "ISO 28000:2022 §6.1") and use TITLE
-    // for the visible statement. Previously fell through to JSON.stringify
-    // because no `statement` field exists on this table.
-    bps.forEach((b, i) => {
-      // Build COMPACT semantic id. Strategy:
-      //   1. Prefer version (it usually carries framework + year, e.g.
-      //      "ISO/IEC 22301:2019", "NIST SP 800-34 Rev.1"). Drop standalone
-      //      framework if redundant.
-      //   2. Strip "Clause"/"Section"/"Articles"/"Recommendation"/"Appendix"
-      //      prefixes from the clause — keep just the numeric/letter token.
-      //   3. Cap total at ~30 chars so the id column doesn't break the grid.
-      //   4. Anything that gets clipped is fine — full reference still
-      //      surfaces in the dedicated "Reference Standards" panel below.
-      const semanticId = (() => {
-        // Base: prefer version, fall back to framework, fall back to BP-N
-        let base = (b.version || b.framework || "").trim();
-        // Dedup leading "ISO ISO/IEC…" → "ISO/IEC…"
-        base = base.replace(/^(\w+)\s+\1[\s/]/i, "$1/").replace(/\s+/g, " ");
-        // Compact clause — strip verbose prefixes, keep tokens
-        const clauseRaw = b.clause ? String(b.clause).trim() : "";
-        const clauseTok = clauseRaw
-          .replace(/^(Clause|Section|Articles?|Recommendation|Appendix|§|Sec\.?)\s*/i, "")
-          .replace(/^and\s+/i, "")
-          .replace(/,\s+and\s+/g, ",")
-          .replace(/\s+/g, "");
-        const clause = clauseTok ? `§${clauseTok}` : "";
-        // Combine + cap
-        let id = [base, clause].filter(Boolean).join(" ").trim();
-        if (id.length > 30) id = id.slice(0, 28) + "…";
-        return id || `BP-${i + 1}`;
-      })();
-      const text = b.title || b.statement || b.description
-        || (typeof b === "string" ? b : null);
+    // AC = Adaptive Controls — incident-specific, executable, from the
+    // adaptive_controls table (real semantic ids like "AC-REP-020-BCH-01").
+    // These replace the master controls as the DIRECT control the customer acts on.
+    // DIRECT vs INDIRECT comes from the control's own nature, carried on the
+    // row as `kind` (derived from the parent master control's framework
+    // capability): Respond/Recover/Prevent = DIRECT (act on it now),
+    // Detect/Monitor/Govern = INDIRECT (watch it, govern it).
+    acts.forEach((a, i) => {
+      const isIndirect = a.control_kind === "indirect";
       out.push({
-        kind: "BP", kindLabel: "INDIRECT", kindTone: "indirect",
-        id: semanticId,
-        text: text || semanticId,
-        // fit is rendered as a short pill ("STRONG"/"PARTIAL"/etc.) — only
-        // accept it if it's a short tag. b.relevance is usually a full
-        // sentence and would overflow the pill (visual bleed-through). If
-        // we have a long relevance, append it to the text instead.
-        fit: (typeof b.fit === "string" && b.fit.length <= 12) ? b.fit : null,
+        kind: "AC",
+        kindLabel: (isIndirect ? "INDIRECT" : "DIRECT") + (a.layer === "secondary" ? " · SECONDARY" : ""),
+        kindTone: isIndirect ? "indirect" : "direct",
+        id: a.id || `AC-${i + 1}`,
+        text: a.statement || a.description || (typeof a === "string" ? a : toText(a)),
+        fit: a.fit || null,
       });
     });
+    // Fallback: if an incident has no adapted controls yet, show nothing here
+    // rather than leaking the raw master-control library to the customer.
+    // BP = Best Practice (NIST/ISO clauses) — DELIBERATELY NOT RENDERED HERE.
+    // They are generic public standards, not adaptive controls: putting them in
+    // this panel mislabelled them, duplicated the dedicated "Reference standards"
+    // section, and buried the incident-specific controls under boilerplate.
+    // They still render in full in that section.
+    //
     // No row cap — show every control the DB has for this incident. Some
     // incidents have 5, others have 15+; we trust the data + the panel
     // scrolls inside the cascade if it overflows.
@@ -8524,38 +8589,79 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
                   onChange={e => timeline.setRangeTo(e.target.value)} style={{ ...inStyle, width: "100%" }} />
               </label>
             </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8 }}>
-              <button
-                onClick={() => !busy && timeline.onApplyRange(timeline.rangeFrom, timeline.rangeTo)}
-                disabled={busy || !timeline.rangeFrom || !timeline.rangeTo}
-                style={{
-                  flex: 1, padding: "8px 0",
-                  background: (!timeline.rangeFrom || !timeline.rangeTo) ? "transparent" : BRAND.gold,
-                  color: (!timeline.rangeFrom || !timeline.rangeTo) ? BRAND.textMuted : BRAND.obsidian,
-                  border: `1px solid ${(!timeline.rangeFrom || !timeline.rangeTo) ? BRAND.borderSubtle : BRAND.gold}`,
-                  borderRadius: 3, fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700,
-                  letterSpacing: "0.10em", textTransform: "uppercase", cursor: busy ? "wait" : "pointer",
-                }}>
-                Show range &amp; play
-              </button>
-              <select value={timeline.playSpeedMs} onChange={e => timeline.setPlaySpeedMs(Number(e.target.value))}
-                title="Seconds each day is shown before advancing"
-                style={{ flex: "0 0 auto", background: BRAND.obsidian, color: BRAND.white, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, padding: "7px 8px", fontFamily: "Inter, sans-serif", fontSize: 10, colorScheme: "dark" }}>
-                <option value={5000}>5s</option>
-                <option value={10000}>10s</option>
-                <option value={20000}>20s</option>
-                <option value={30000}>30s</option>
-                <option value={35000}>35s</option>
-                <option value={40000}>40s</option>
-                <option value={60000}>60s</option>
-              </select>
-            </div>
+            {/* Two explicit actions. "Show range" holds every incident in
+                From→To on the map so it can be read and briefed; "Play days"
+                animates through the days one at a time. Previously a single
+                button did both, and the animation immediately replaced the
+                range view — so the range could never actually be seen. */}
+            {(() => {
+              const noRange = !timeline.rangeFrom || !timeline.rangeTo;
+              const dis = busy || noRange;
+              const base = {
+                flex: 1, padding: "8px 0", borderRadius: 3, fontFamily: "Inter, sans-serif",
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase",
+                cursor: busy ? "wait" : (noRange ? "not-allowed" : "pointer"),
+              };
+              const sameDay = timeline.rangeFrom && timeline.rangeFrom === timeline.rangeTo;
+              return (
+                <>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8 }}>
+                    <button
+                      onClick={() => !dis && timeline.onApplyRange(timeline.rangeFrom, timeline.rangeTo)}
+                      disabled={dis}
+                      title="Show every incident in this date range on the map at once"
+                      style={{
+                        ...base,
+                        background: dis ? "transparent" : BRAND.gold,
+                        color: dis ? BRAND.textMuted : BRAND.obsidian,
+                        border: `1px solid ${dis ? BRAND.borderSubtle : BRAND.gold}`,
+                      }}>
+                      ◈ Show range
+                    </button>
+                    <button
+                      onClick={() => !dis && timeline.onPlayRange(timeline.rangeFrom, timeline.rangeTo)}
+                      disabled={dis || sameDay}
+                      title={sameDay ? "Pick a From date earlier than To to animate across days" : "Step through the range one day at a time"}
+                      style={{
+                        ...base,
+                        background: "transparent",
+                        color: (dis || sameDay) ? BRAND.textMuted : BRAND.gold,
+                        border: `1px solid ${(dis || sameDay) ? BRAND.borderSubtle : BRAND.gold}`,
+                        cursor: sameDay ? "not-allowed" : base.cursor,
+                      }}>
+                      ▶ Play days
+                    </button>
+                    <select value={timeline.playSpeedMs} onChange={e => timeline.setPlaySpeedMs(Number(e.target.value))}
+                      title="Seconds each day is shown before advancing"
+                      style={{ flex: "0 0 auto", background: BRAND.obsidian, color: BRAND.white, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, padding: "7px 8px", fontFamily: "Inter, sans-serif", fontSize: 10, colorScheme: "dark" }}>
+                      <option value={5000}>5s</option>
+                      <option value={10000}>10s</option>
+                      <option value={20000}>20s</option>
+                      <option value={30000}>30s</option>
+                      <option value={35000}>35s</option>
+                      <option value={40000}>40s</option>
+                      <option value={60000}>60s</option>
+                    </select>
+                  </div>
+                  <div style={{ marginTop: 6, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, lineHeight: 1.5 }}>
+                    {sameDay
+                      ? `Single day — ${timeline.rangeFrom}. Show range, then 📻 Brief reads that day.`
+                      : "Show range = all days at once (Brief reads the whole range). Play days = one day at a time."}
+                  </div>
+                </>
+              );
+            })()}
 
             {timeline.playDates.length > 0 && (
               <div style={{ marginTop: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span style={{ fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 800, color: timeline.playing ? BRAND.gold : BRAND.white }}>{cur || "—"}</span>
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <button onClick={() => timeline.onPlayBrief && timeline.onPlayBrief()}
+                      title={timeline.briefPlaying ? "Stop the news brief" : "Read out every incident currently on the map — the whole range if a range is shown, otherwise this day"}
+                      style={{ background: timeline.briefPlaying ? BRAND.gold : "transparent", border: `1px solid ${BRAND.gold}`, borderRadius: 3, color: timeline.briefPlaying ? BRAND.obsidian : BRAND.gold, padding: "4px 9px", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      {timeline.briefPlaying ? "■ Brief" : "📻 Brief"}
+                    </button>
                     <button onClick={() => timeline.onToggleNarrate()}
                       title={timeline.narrate ? "Mute date narration" : "Enable date narration"}
                       style={{ background: "transparent", border: `1px solid ${timeline.narrate ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 3, color: timeline.narrate ? BRAND.gold : BRAND.textSecondary, padding: "4px 9px", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
@@ -9336,9 +9442,15 @@ export default function GlobalAttackMap() {
     }
   }
 
-  // Show every incident within an arbitrary [from,to] range, then AUTO-PLAY
-  // through the days one at a time (no manual Play button). ISO YYYY-MM-DD
-  // strings compare chronologically, so plain string bounds/sort suffice.
+  // Show every incident within an arbitrary [from,to] range, all at once, and
+  // STAY there. ISO YYYY-MM-DD strings compare chronologically, so plain string
+  // bounds/sort suffice.
+  //
+  // This deliberately does not start playback. It used to: it merged the range
+  // into `sweep` and then immediately setPlaying(true), and the play loop's
+  // first tick overwrote `sweep` with a single-day sweep — so the merged range
+  // it had just built was never actually visible, and the Brief only ever had
+  // one day to read. Stepping through days is now its own button (playRange).
   async function applyRange(from, to) {
     if (!from || !to) return;
     const lo = from <= to ? from : to;
@@ -9369,9 +9481,8 @@ export default function GlobalAttackMap() {
       setHoveredId(null);
       setWindowInfo({ kind: "range", from: lo, to: hi, days: inputs.length, requested: dates.length });
       const totalInc = Object.values(merged.results || {}).reduce((n, c) => n + ((c.incidents || []).length), 0);
-      setArchiveToast({ type: "saved", text: `✓ Range · ${inputs.length} day${inputs.length === 1 ? "" : "s"} · ${totalInc} incidents · auto-playing` });
+      setArchiveToast({ type: "saved", text: `✓ Range · ${inputs.length} day${inputs.length === 1 ? "" : "s"} · ${totalInc} incidents on the map` });
       setTimeout(() => setArchiveToast(null), 3200);
-      if (dates.length > 1) { setPlayPos(0); setPlaying(true); }   // auto-start the day-by-day progression
     } catch (e) {
       console.error("Range apply failed:", e);
       setArchiveToast({ type: "warn", text: `⚠ Range failed: ${e?.message || e}` });
@@ -9381,20 +9492,133 @@ export default function GlobalAttackMap() {
     }
   }
 
+  // Step through the days of [from,to] one at a time. Split out of applyRange
+  // so that showing a range and animating it are two separate, explicit user
+  // actions. Resolves the day list itself, so it works whether or not the user
+  // pressed "Show range" first.
+  async function playRange(from, to) {
+    if (!from || !to) return;
+    const lo = from <= to ? from : to;
+    const hi = from <= to ? to : from;
+    setRangeFrom(lo); setRangeTo(hi);
+    try {
+      setArchiveBusy(true);
+      const idx = await readIndex();
+      setArchiveIndex(idx);
+      const dates = idx.map(e => e.date).filter(Boolean).filter(d => d >= lo && d <= hi).sort();
+      if (!dates.length) {
+        setArchiveToast({ type: "warn", text: `No archived days between ${lo} and ${hi}` });
+        setTimeout(() => setArchiveToast(null), 3200);
+        return;
+      }
+      setPlayDates(dates);
+      setPlayPos(0);
+      setSelectedId(null);
+      setHoveredId(null);
+      await showPlayDay(0, dates); // paint day 1 immediately, don't wait a tick
+      if (dates.length > 1) setPlaying(true);
+      else setArchiveToast({ type: "saved", text: `Only one archived day in range — showing ${dates[0]}` });
+    } catch (e) {
+      console.error("Range play failed:", e);
+      setArchiveToast({ type: "warn", text: `⚠ Play failed: ${e?.message || e}` });
+      setTimeout(() => setArchiveToast(null), 4500);
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
+
   // Render one day of the sequence (shared by the interval and manual scrubbing).
-  const showPlayDay = async (i) => {
-    const d = playDates[i];
+  // `dates` may be passed explicitly by playRange, whose setPlayDates() has not
+  // been committed to state yet on the first paint.
+  const showPlayDay = async (i, dates) => {
+    const list = dates || playDates;
+    const d = list[i];
     if (!d) return;
     let json = playCacheRef.current.get(d);
     if (!json) { json = await readSweep(d); if (json) playCacheRef.current.set(d, json); }
     if (!json) return;
     setSweep(json);
-    setSweepName(`▶ ${d} · day ${i + 1}/${playDates.length}`);
+    setSweepName(`▶ ${d} · day ${i + 1}/${list.length}`);
     setCurrentDate(d);
     setSelectedId(null);
     setHoveredId(null);
     setPlayPos(i);
   };
+
+  // ── Daily Brief (news-bulletin narration for the current day) ────────────
+  const briefActiveRef = useRef(false);
+  const briefVoiceRef = useRef(null);
+  const [briefPlaying, setBriefPlaying] = useState(false);
+  const [briefCaption, setBriefCaption] = useState("");
+
+  // Pick the most natural installed English voice for the anchor read.
+  useEffect(() => {
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
+    if (!synth) return;
+    const pick = () => {
+      const vs = synth.getVoices() || [];
+      briefVoiceRef.current =
+        vs.find(v => /en[-_]US/i.test(v.lang) && /google|natural|samantha|aria|jenny|daniel/i.test(v.name)) ||
+        vs.find(v => /^en[-_]/i.test(v.lang)) || vs[0] || null;
+    };
+    pick();
+    try { synth.addEventListener("voiceschanged", pick); } catch { /* older browsers */ }
+    return () => { try { synth.removeEventListener("voiceschanged", pick); } catch { /* noop */ } };
+  }, []);
+
+  const stopBrief = () => {
+    briefActiveRef.current = false;
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* noop */ }
+    setBriefPlaying(false);
+    setBriefCaption("");
+  };
+
+  const playDailyBrief = () => {
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
+    if (!synth) return;
+    if (briefActiveRef.current) { stopBrief(); return; }   // toggle off
+    briefActiveRef.current = true;                          // set BEFORE stopping autoplay
+    setPlaying(false);                                      // don't fight the fast day-stepping
+    setBriefPlaying(true);
+    // Read whatever is actually on the map. mergeSweeps stamps _windowFrom /
+    // _windowTo, so a merged multi-day range announces itself as a range and
+    // covers every incident in it; a single day still reads as that one date.
+    const fmt = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+    const wFrom = sweep?._windowFrom, wTo = sweep?._windowTo;
+    let nice;
+    try {
+      if (wFrom && wTo && wFrom !== wTo) nice = `${fmt(wFrom)} to ${fmt(wTo)}`;
+      else if (currentDate) nice = fmt(currentDate);
+      else nice = "today";
+    } catch { nice = currentDate || "today"; }
+    const segs = buildDailyBrief(visibleIncidents, nice);
+    try { synth.cancel(); } catch { /* noop */ }
+    let idx = 0;
+    const next = () => {
+      if (!briefActiveRef.current) return;
+      if (idx >= segs.length) { stopBrief(); return; }
+      const seg = segs[idx++];
+      setBriefCaption(seg.text);
+      if (seg.id != null) { try { setSelectedId(String(seg.id)); } catch { /* noop */ } }
+      const u = new SpeechSynthesisUtterance(seg.text);
+      // News-anchor pace. This used to run at 1.28/1.12, which outran the ear —
+      // place names and entity names in particular arrived faster than they
+      // could be parsed. ~1.0 is a natural read; the quick-hits stay marginally
+      // brisker than the lead stories but no longer rush.
+      u.rate = seg.fast ? 1.02 : 0.95; u.pitch = 1; u.volume = 1;
+      if (briefVoiceRef.current) u.voice = briefVoiceRef.current;
+      // Beat between items — long enough to hear where one ends and the next
+      // begins, since each one moves the map.
+      const gap = seg.fast ? 260 : 420;
+      u.onend = () => { if (briefActiveRef.current) setTimeout(next, gap); };
+      u.onerror = () => { if (briefActiveRef.current) setTimeout(next, gap); };
+      try { synth.speak(u); } catch { setTimeout(next, 260); }
+    };
+    next();
+  };
+
+  // Stop the brief if the map unmounts.
+  useEffect(() => () => { briefActiveRef.current = false; try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* noop */ } }, []);
 
   // Sync Voice Narration and text summary to trigger after state renders the new incidents
   useEffect(() => {
@@ -9437,15 +9661,17 @@ export default function GlobalAttackMap() {
       try {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(msg);
-        u.rate = 1.05; u.pitch = 1; u.volume = 1;
+        u.rate = 0.95; u.pitch = 1; u.volume = 1;   // match the Brief's pace
+        if (briefVoiceRef.current) u.voice = briefVoiceRef.current;
         window.speechSynthesis.speak(u);
       } catch { /* noop */ }
     }
   }, [currentDate, playing, narrate, visibleIncidents]);
 
-  // Silence narration the moment playback stops or pauses.
+  // Silence narration the moment playback stops or pauses — but NOT while the
+  // daily brief is intentionally playing (the brief pauses autoplay itself).
   useEffect(() => {
-    if (!playing) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* noop */ } }
+    if (!playing && !briefActiveRef.current) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* noop */ } }
   }, [playing]);
 
   // Auto-playback driver — advances one day every playSpeedMs and swaps the
@@ -10507,7 +10733,7 @@ export default function GlobalAttackMap() {
 
       {/* Auto-play date overlay — the current day, shown large over the map and
           updated in sync as playback steps date-by-date. */}
-      {playing && currentDate && (
+      {(playing || briefPlaying) && currentDate && (
         <div style={{
           position: "fixed", top: 92, left: "50%", transform: "translateX(-50%)", zIndex: 65,
           display: "flex", flexDirection: "column", gap: 8, padding: "12px 20px", width: "min(480px, 90vw)",
@@ -10529,13 +10755,15 @@ export default function GlobalAttackMap() {
               </span>
             )}
           </div>
-          {playSummary && (
+          {(briefPlaying ? briefCaption : playSummary) && (
             <div style={{
-              fontFamily: "Inter, sans-serif", fontSize: 11.5, color: BRAND.textSecondary,
-              lineHeight: 1.4, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8,
+              fontFamily: "Inter, sans-serif", fontSize: briefPlaying ? 13 : 11.5,
+              color: briefPlaying ? BRAND.white : BRAND.textSecondary,
+              lineHeight: 1.45, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8,
               textAlign: "left", letterSpacing: "0.01em"
             }}>
-              {playSummary}
+              {briefPlaying && <span style={{ color: BRAND.gold, fontWeight: 800, marginRight: 6 }}>📻 BRIEF</span>}
+              {briefPlaying ? briefCaption : playSummary}
             </div>
           )}
         </div>
@@ -10558,10 +10786,12 @@ export default function GlobalAttackMap() {
           timeline={{
             rangeFrom, rangeTo, setRangeFrom, setRangeTo,
             onApplyRange: applyRange,
+            onPlayRange: playRange,
             playing, onTogglePlay: () => setPlaying(p => !p),
             playDates, playPos, playSpeedMs, setPlaySpeedMs,
             onScrub: (i) => { setPlaying(false); showPlayDay(i); },
             narrate, onToggleNarrate: () => setNarrate(v => !v),
+            onPlayBrief: playDailyBrief, briefPlaying,
           }}
           onRefresh={async () => {
             setArchiveBusy(true);
