@@ -22,19 +22,12 @@ import { useAuth } from "./AuthProvider";
 import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 import { Globe } from "./Globe";
-
-const BRAND = {
-  gold:       "#F5B800",
-  obsidian:   "#1A1A1A",
-  deep:       "#080808",
-  card:       "#242424",
-  elevated:   "#2E2E2E",
-  white:      "#FFFFFF",
-  t2:         "#A8A8A8",
-  tmuted:     "#585858",
-  border:     "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
-};
+// Design system lives in ONE place now (src/brand.js) — this file used to
+// carry its own copy of BRAND, as 17 other components still do. The shared
+// token set is a superset of the old keys, so every call site below is
+// unchanged; what shifts is the values (blue-black ground, cream paper
+// bands) and the new editorial type/component recipes imported alongside.
+import { BRAND, TYPE, btn, shell, band, LAYOUT } from "../brand.js";
 
 const SEVERITY_LABEL = { 5: "CRITICAL", 4: "HIGH", 3: "MEDIUM", 2: "LOW", 1: "MINIMAL" };
 const SEVERITY_COLOR = { 5: "#FF3B30", 4: "#FF8C5A", 3: BRAND.gold, 2: "#34C759", 1: "#8E8E93" };
@@ -258,22 +251,12 @@ function fmtDay(iso) {
   } catch { return iso; }
 }
 
-// Shared button styles
-const goldBtn = {
-  padding: "14px 28px", background: BRAND.gold, color: BRAND.obsidian,
-  border: "none", borderRadius: 4, cursor: "pointer",
-  fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700,
-  letterSpacing: "0.08em", textTransform: "uppercase",
-  boxShadow: "0 8px 24px rgba(245,184,0,0.18)",
-  transition: "transform 180ms ease, box-shadow 180ms ease",
-};
-const ghostBtn = {
-  padding: "14px 28px", background: "transparent", color: BRAND.white,
-  border: `1px solid ${BRAND.border}`, borderRadius: 4, cursor: "pointer",
-  fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600,
-  letterSpacing: "0.08em", textTransform: "uppercase",
-  transition: "border-color 180ms ease",
-};
+// Shared button styles — now composed from the design-system recipes.
+// Editorial buttons are sentence-case and square: the old uppercase +
+// 0.08em-tracked pills read as generic SaaS, and the rounded corners fought
+// the sharp-cornered structure the rest of the page is built on.
+const goldBtn = { ...btn.base, ...btn.primary };
+const ghostBtn = { ...btn.base, ...btn.ghost };
 
 const eyebrowStyle = {
   fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700,
@@ -410,31 +393,36 @@ export function LandingPage() {
       <main id="main-content" tabIndex={-1} style={{ outline: "none" }}>
       <section aria-label="Introduction" className="r-pad r-pad-y" style={{
         position: "relative",
-        background: `radial-gradient(ellipse 80% 60% at 70% 20%, rgba(245,184,0,0.07), transparent 60%), ${BRAND.deep}`,
-        padding: "84px 36px 72px",
+        background: `radial-gradient(ellipse 80% 60% at 70% 20%, rgba(245,184,0,0.07), transparent 60%), ${BRAND.black}`,
+        padding: "96px 36px 84px",
       }}>
         <div className="r-herogrid" style={{
-          maxWidth: 1180, margin: "0 auto",
+          ...shell,
+          maxWidth: LAYOUT.max,
           display: "grid", gridTemplateColumns: "1.15fr 0.85fr",
           gridTemplateAreas: '"text globe" "text card"',
           columnGap: 56, rowGap: 18,
           alignItems: "center",
         }}>
-          {/* Left — editorial headline */}
+          {/* Left — editorial headline. Display type is deliberately oversized
+              and tightly tracked (see TYPE.hero): sub-1 line-height with heavy
+              negative letter-spacing is what makes this read as a masthead
+              rather than a dashboard title. */}
           <div className="r-herotext" style={{ gridArea: "text" }}>
             <div style={eyebrowStyle}>◇ Global risk intelligence · live daily</div>
             <h1 className="r-h1" style={{
-              margin: "22px 0 0", fontWeight: 800,
-              fontSize: "clamp(40px, 4.6vw, 64px)", lineHeight: 1.04,
-              letterSpacing: "-0.022em", color: BRAND.white,
+              ...TYPE.hero,
+              margin: "24px 0 0",
+              color: BRAND.white,
             }}>
               Every incident.<br />
-              Every <span style={{ color: BRAND.gold, fontStyle: "italic", fontFamily: "Inter, sans-serif" }}>blast radius</span>.<br />
+              Every <span style={{ color: BRAND.gold }}>blast radius</span>.<br />
               Mapped.
             </h1>
             <p style={{
-              margin: "26px 0 0", maxWidth: 520,
-              fontSize: 16.5, lineHeight: 1.6, color: BRAND.t2,
+              ...TYPE.standfirst,
+              margin: "30px 0 0", maxWidth: 600,
+              color: "#D1D5D9",
             }}>
               Cyber, supply-chain, financial, geopolitical and physical incidents —
               classified through the GUARD framework, geolocated, with the blast
@@ -559,7 +547,7 @@ export function LandingPage() {
 
       {/* ───────────────── LIVE FEED — FLOWING CARDS (LIGHT band) ───────────────── */}
       <section className="r-pad" style={{
-        padding: "72px 36px 80px", background: "#FFFFFF", color: "#101010",
+        padding: "72px 36px 80px", background: BRAND.paper, color: BRAND.ink,
         borderTop: "1px solid #E7E7E9", borderBottom: "1px solid #E7E7E9",
       }}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
@@ -611,7 +599,7 @@ export function LandingPage() {
                   onClick={() => setAuthOpen(true)}
                   style={{
                     flex: "0 0 auto", width: 320,
-                    background: "#FAFAFA", border: "1px solid #E7E7E9",
+                    background: "#FFFFFF", border: `1px solid ${BRAND.lineDark}`,
                     borderRadius: 0, overflow: "hidden", cursor: "pointer",
                     display: "flex", flexDirection: "column",
                   }}>
@@ -666,7 +654,7 @@ export function LandingPage() {
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} style={{
                   flex: "0 0 auto", width: 320, height: 240,
-                  background: "#F1F1F3", border: "1px solid #E7E7E9", borderRadius: 0,
+                  background: BRAND.paper2, border: `1px solid ${BRAND.lineDark}`, borderRadius: 0,
                 }} />
               ))}
             </div>
@@ -683,7 +671,7 @@ export function LandingPage() {
 
       {/* ───────── BEYOND HEADLINES — 01/02/03 (DARK band — editorial mix) ───────── */}
       <section id="intelligence" className="r-pad" style={{
-        padding: "84px 36px 80px", background: "#0A0A0A", color: "#FFFFFF",
+        padding: "84px 36px 80px", background: BRAND.black, color: BRAND.text,
         borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)",
       }}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
@@ -744,7 +732,7 @@ export function LandingPage() {
             ].map(c => (
               <div key={c.n} style={{
                 position: "relative", overflow: "hidden",
-                background: "#111113", border: "1px solid rgba(255,255,255,0.10)",
+                background: BRAND.black2, border: `1px solid ${BRAND.line}`,
                 borderRadius: 0, padding: "30px 26px 26px",
                 transition: "border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease",
               }}
@@ -770,7 +758,7 @@ export function LandingPage() {
 
       {/* ───────────────── INTELLIGENCE INBOX (LIGHT band — editorial mix) ───────────────── */}
       <section className="r-pad" style={{
-        padding: "72px 36px", background: "#FFFFFF", color: "#101010",
+        padding: "72px 36px", background: BRAND.paper, color: BRAND.ink,
         borderTop: `1px solid ${BRAND.border}`, borderBottom: `1px solid ${BRAND.border}`,
       }}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
@@ -788,7 +776,7 @@ export function LandingPage() {
           }}>
             {/* Daily Brief — free */}
             <div style={{
-              background: "#FAFAFA", border: `1px solid #E7E7E9`,
+              background: "#FFFFFF", border: `1px solid ${BRAND.lineDark}`,
               borderRadius: 10, padding: "26px 26px 24px",
             }}>
               <div style={{
