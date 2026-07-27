@@ -8610,17 +8610,6 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
                       }}>
                       ▶ Play days
                     </button>
-                    <select value={timeline.playSpeedMs} onChange={e => timeline.setPlaySpeedMs(Number(e.target.value))}
-                      title="Seconds each day is shown before advancing"
-                      style={{ flex: "0 0 auto", background: BRAND.obsidian, color: BRAND.white, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, padding: "7px 8px", fontFamily: "Inter, sans-serif", fontSize: 10, colorScheme: "dark" }}>
-                      <option value={5000}>5s</option>
-                      <option value={10000}>10s</option>
-                      <option value={20000}>20s</option>
-                      <option value={30000}>30s</option>
-                      <option value={35000}>35s</option>
-                      <option value={40000}>40s</option>
-                      <option value={60000}>60s</option>
-                    </select>
                   </div>
                   <div style={{ marginTop: 6, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, lineHeight: 1.5 }}>
                     {sameDay
@@ -9612,25 +9601,48 @@ export default function GlobalAttackMap() {
     if (n === 0) {
       msg = `No incidents reported for ${nice}.`;
     } else {
-      msg = `Showing ${n} incident${n === 1 ? "" : "s"} for ${nice}. `;
       const sevNames = { 5: "critical", 4: "high severity", 3: "medium severity", 2: "low severity", 1: "minimal severity" };
-      const catNames = { CYB: "cyber attack", DAT: "data leak", TEC: "tech risk", INF: "infrastructure issue", OPS: "operational incident" };
+      // All 13 GUARD categories. The old table covered 5 (and one code, INF,
+      // that the pipeline does not emit), so most incidents narrated as the
+      // generic "incident" and the category was lost.
+      const catNames = {
+        CYB: "cyber attack", DAT: "data and privacy breach", ENV: "environmental incident",
+        FIN: "financial event", GEO: "geopolitical event", OPS: "operational incident",
+        PHY: "physical security incident", PPL: "people and workforce incident",
+        REG: "regulatory action", REP: "reputational event", STR: "strategic event",
+        TEC: "technology failure", TPR: "third-party incident",
+      };
 
       const getDesc = (inc) => {
         const sev = sevNames[inc.severity] || "medium severity";
         const cat = catNames[inc._cat] || "incident";
-        const ent = inc.entity ? `on ${inc.entity}` : "";
+        const ent = inc.entity ? `on ${shortEntity(inc.entity)}` : "";
         return `a ${sev} ${cat}${ent ? " " + ent : ""}`;
       };
 
+      // Lead with what matters. Reading the array in its natural order meant a
+      // busy day could open on a minimal-severity item while criticals were
+      // never spoken; rank descending so the worst is always first.
+      const ranked = [...visibleIncidents].sort((a, b) => (b.severity || 0) - (a.severity || 0));
+      const sevCount = (min) => ranked.filter(i => (i.severity || 0) >= min).length;
+      const crit = sevCount(5), high = ranked.filter(i => (i.severity || 0) === 4).length;
+
+      msg = `Showing ${n} incident${n === 1 ? "" : "s"} for ${nice}. `;
+
+      // Severity headline, mirroring how the Brief opens.
+      const parts = [];
+      if (crit) parts.push(`${crit} critical`);
+      if (high) parts.push(`${high} high severity`);
+      if (parts.length) msg += `${parts.join(" and ")} — `;
+
       if (n === 1) {
-        msg += `It is ${getDesc(visibleIncidents[0])}.`;
+        msg += `It is ${getDesc(ranked[0])}.`;
       } else if (n === 2) {
-        msg += `They are ${getDesc(visibleIncidents[0])}, and ${getDesc(visibleIncidents[1])}.`;
+        msg += `Leading: ${getDesc(ranked[0])}, and ${getDesc(ranked[1])}.`;
       } else if (n === 3) {
-        msg += `They are ${getDesc(visibleIncidents[0])}, ${getDesc(visibleIncidents[1])}, and ${getDesc(visibleIncidents[2])}.`;
+        msg += `Leading: ${getDesc(ranked[0])}, ${getDesc(ranked[1])}, and ${getDesc(ranked[2])}.`;
       } else {
-        msg += `They include ${getDesc(visibleIncidents[0])}, ${getDesc(visibleIncidents[1])}, and ${n - 2} other events.`;
+        msg += `Leading: ${getDesc(ranked[0])}, ${getDesc(ranked[1])}, and ${getDesc(ranked[2])}, plus ${n - 3} further event${n - 3 === 1 ? "" : "s"}.`;
       }
     }
 
