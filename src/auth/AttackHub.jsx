@@ -20,7 +20,7 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 import { SEVERITY_INK, SEVERITY_CHIP } from "../brand.js";
 
-const GOLD = "#F5B800", GOLD_D = "#8A6D00", OB = "#1A1A1A";
+const GOLD = "#F5B800", GOLD_D = "#7A6000", OB = "#1A1A1A";  // GOLD_D darkened from #8A6D00: on the cream ground (#F5F3ED) it measured 4.43:1, just under the 4.5 minimum for the 10px kicker labels.
 const SEV_C = { 5: "#FF3B30", 4: "#FF6B35", 3: GOLD, 2: "#34C759", 1: "#8E8E93" };
 const SEV_L = { 5: "CRITICAL", 4: "HIGH", 3: "MEDIUM", 2: "LOW", 1: "MINIMAL" };
 const CAT_NAME = {
@@ -79,10 +79,10 @@ const fmtShort = (iso) => { try { return new Date(iso + "T00:00:00Z").toUTCStrin
 // the rest of the app. Injected once. Hover/zoom/responsive live here; data and
 // layout are React. A single Inter typeface throughout.
 const HUB_CSS = `
-.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#14130F;--sub:#3D3A33;--mut:#6E6A60;--line:#E6E3DB;--rule:#DAD6CC;--ob:${OB};background:#fff;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#14130F;--sub:#3D3A33;--mut:#6E6A60;--line:#E6E3DB;--rule:#DAD6CC;--ob:${OB};--paper:#F5F3ED;--paper-2:#ECE9E1;--paper-warm:#F4F1EA;background:#F5F3ED;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .hubft button,.hubft select,.hubft input,.hubft textarea,.hubft optgroup{font-family:Inter,system-ui,sans-serif}
 .hubft .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,44px)}
-.hubft .kick{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-d)}
+.hubft .kick{font-size:10px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-d)}
 .hubft .sev{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:0;border:1px solid;white-space:nowrap}
 .hubft .by{font-size:11px;color:var(--mut)}
 .hubft img{display:block}
@@ -96,7 +96,7 @@ const HUB_CSS = `
 .hubft .kpis .k:last-child{border-right:none}
 .hubft .kpis .v{font-size:21px;font-weight:700}
 .hubft .kpis .l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-top:2px}
-.hubft .catnav{border-bottom:1px solid var(--line);background:#fff}
+.hubft .catnav{border-bottom:1px solid var(--rule);background:rgba(245,243,237,.94);backdrop-filter:blur(12px)}
 .hubft .catnav .wrap{display:flex;flex-wrap:nowrap;justify-content:safe center;gap:0;overflow-x:auto;scrollbar-width:none}
 .hubft .catnav .wrap::-webkit-scrollbar{display:none}
 .hubft .catnav button{padding:12px 9px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:500;letter-spacing:0;text-transform:uppercase;color:var(--mut);white-space:nowrap;border-bottom:2px solid transparent}
@@ -109,7 +109,7 @@ const HUB_CSS = `
 .hubft .clr{padding:7px 12px;border-radius:0;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
 .hubft .sh{display:flex;align-items:center;gap:18px;margin:8px 0 24px}
 .hubft .sh .ln{flex:1;border-top:1px dotted var(--rule)}
-.hubft .sh h2{font-weight:700;font-size:18px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
+.hubft .sh h2{font-weight:700;font-size:17px;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
 .hubft .sh.l{justify-content:flex-start;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:20px;gap:12px}
 .hubft .sh.l .ln{display:none}.hubft .sh.l h2{font-size:20px;letter-spacing:-.01em;text-transform:none}
 .hubft .sh.l .sq{width:9px;height:9px;border-radius:0}
@@ -197,7 +197,10 @@ const HUB_CSS = `
 .hubft .btn.gh{background:transparent;color:#fff;border:1px solid #444}
 .hubft .crit{display:grid;grid-template-columns:1fr 1fr;gap:0 48px}
 .hubft .latest{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:26px}
-.hubft .card{border:1px solid var(--line);border-radius:0;overflow:hidden;background:#fff;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
+.hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
+.hubft .metric{background:var(--paper-warm);border:1px solid var(--rule);padding:18px}
+.hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
+.hubft .card{border:1px solid var(--rule);border-radius:0;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(20,19,15,.04);cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
 .hubft .card:hover{border-color:var(--gold);box-shadow:0 12px 30px rgba(20,20,20,.10);transform:translateY(-2px)}
 .hubft .card .img{overflow:hidden}
 .hubft .card .img img{width:100%;object-fit:cover;transition:transform .5s}
@@ -380,7 +383,7 @@ function ArticleView({ article, onBack, onMap, user }) {
     </section>
   );
   return (
-    <main className="r-pad" style={{ padding: "44px 36px 80px", background: "#fff", color: "#14130F", fontFamily: "Inter, sans-serif" }}>
+    <main className="r-pad" style={{ padding: "44px 36px 80px", background: "#F5F3ED", color: "#14130F", fontFamily: "Inter, sans-serif" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 0", color: "#6E6A60", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>← Back to the feed</button>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
@@ -424,7 +427,7 @@ function ArticleView({ article, onBack, onMap, user }) {
 // re-rendering. Falls back to ArticleView when no report file exists.
 function ReportFrame({ article, onBack, onMap, user }) {
   return (
-    <main style={{ background: "#fff", fontFamily: "Inter, sans-serif", position: "relative" }}>
+    <main style={{ background: "#F5F3ED", fontFamily: "Inter, sans-serif", position: "relative" }}>
       <button onClick={onBack} style={{
         position: "absolute", top: 12, left: 24, zIndex: 20,
         display: "inline-flex", alignItems: "center", gap: 6,
