@@ -82,7 +82,13 @@ export function SiteFooter() {
         }}>
           {/* LEFT — Subscribe */}
           <div className="r-foot-left" style={{ flex: "1 1 360px", maxWidth: 440 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em" }}>Subscribe</div>
+            {/* Colour MUST be explicit. This heading used to inherit, which is
+                invisible on the Attacked Hub: that page wraps its content in
+                .hubft, which sets color:#14130F for the light newspaper layout,
+                and the footer's own ground is #080808 — near-black on black, a
+                1.08:1 contrast ratio. It only looked correct on the landing
+                page, where the inherited colour happens to be white. */}
+            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.03em", color: BRAND.white }}>Subscribe</div>
             <div style={{ marginTop: 10, fontSize: 14, color: BRAND.t2, lineHeight: 1.55, maxWidth: 360 }}>
               Select topics and stay current with our latest intelligence briefs
             </div>

@@ -18,6 +18,7 @@ import { useAuth } from "./AuthProvider";
 import { AuthModal } from "./AuthModal";
 import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
+import { SEVERITY_INK, SEVERITY_CHIP } from "../brand.js";
 
 const GOLD = "#F5B800", GOLD_D = "#8A6D00", OB = "#1A1A1A";
 const SEV_C = { 5: "#FF3B30", 4: "#FF6B35", 3: GOLD, 2: "#34C759", 1: "#8E8E93" };
@@ -210,7 +211,7 @@ const HUB_CSS = `
 .hubft .pager{margin-top:44px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
 .hubft .pager button{min-width:38px;padding:8px 12px;border-radius:0;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;color:var(--ink);border:1px solid var(--line)}
 .hubft .pager button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.hubft .pager button:disabled{color:#C4BCA8;cursor:default}
+.hubft .pager button:disabled{color:#767061;cursor:default}
 .hubft .cta{margin-top:54px;text-align:center;padding:42px 24px;background:var(--ob);border-radius:0}
 .hubft .cta h3{font-size:30px;font-weight:700;color:#fff}
 .hubft .cta p{max-width:470px;margin:10px auto 0;font-size:13.5px;color:#A8A8A8;line-height:1.6}
@@ -328,7 +329,7 @@ function NewsImage({ a, height, lead }) {
 }
 
 const SevChip = ({ a }) => (
-  <span className="sev" style={{ background: `${SEV_C[a.severity]}1c`, color: SEV_C[a.severity], borderColor: `${SEV_C[a.severity]}55` }}>
+  <span className="sev" style={{ background: SEVERITY_CHIP[a.severity] || "#FBF1D9", color: SEVERITY_INK[a.severity] || "#7A6000", borderColor: `${SEV_C[a.severity]}55` }}>
     {SEV_L[a.severity] || "—"}
   </span>
 );
@@ -694,6 +695,9 @@ export function AttackHub() {
                     <span key={`${a.id}-${i}`} className="hub-ticker-item" onClick={() => openArticle(a)}
                       style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "0 22px", cursor: "pointer", fontSize: 12.5 }}>
                       <span style={{ width: 7, height: 7, borderRadius: 0, background: SEV_C[a.severity] || GOLD, flex: "0 0 auto" }} />
+                      {/* Ticker sits on the DARK bar — keep the bright severity
+                          colour here. SEVERITY_INK is for light grounds only;
+                          using it here made these labels less legible, not more. */}
                       <span style={{ color: SEV_C[a.severity] || GOLD, fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase" }}>{CAT_SHORT[a.primary_category] || a.primary_category || ""}</span>
                       <span className="hti-h" style={{ color: "#eaeaea", fontWeight: 500, transition: "color 120ms" }}>{a.headline}</span>
                       <span style={{ color: "#666" }}>·</span>

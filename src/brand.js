@@ -91,6 +91,38 @@ export const SEVERITY = {
   1: { label: "MINIMAL",  color: "#8E8E93", glow: "rgba(142,142,147,0.25)" },
 };
 
+// Severity colours are tuned for DARK surfaces. Used as text on white — as
+// the Attacked Hub's newspaper layout does — they fail badly: gold #F5B800 on
+// white measures 1.79:1, well under the 4.5:1 minimum, which is why MEDIUM
+// badges were barely legible. These are the same hues darkened to pass on
+// paper. Use SEVERITY[n].color for fills, dots and rules on any background;
+// use SEVERITY_INK[n] only for TEXT sitting on a light background.
+// Measured on the live page: the MEDIUM badge goes from 1.79:1 (unreadable)
+// to 4.92:1 against white with these values. An earlier attempt darkened them
+// further, but that was chasing numbers polluted by the dark LIVE ticker,
+// which had wrongly been switched to this ramp — on a dark ground these read
+// worse, not better. Light grounds only.
+export const SEVERITY_INK = {
+  5: "#B01F16",
+  4: "#A03D12",
+  3: "#7A6000",
+  2: "#1A7430",
+  1: "#57575C",
+};
+
+// Opaque pale grounds for severity chips. A chip that uses a TRANSLUCENT tint
+// inherits whatever is behind it, so the same badge composites light on the
+// newspaper and dark in the article view — which is how CRITICAL ended up at
+// 2.53:1. Pairing an opaque pale ground with SEVERITY_INK makes the chip
+// self-contained and legible on any background, light or dark.
+export const SEVERITY_CHIP = {
+  5: "#FBE7E5",
+  4: "#FBEBE2",
+  3: "#FBF1D9",
+  2: "#E4F6E9",
+  1: "#EEEEEF",
+};
+
 // ── Layout rails ──────────────────────────────────────────────────────────
 export const LAYOUT = {
   max:     1320,   // full content width
@@ -109,11 +141,15 @@ export const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 // negative tracking + sub-1 line-height is what makes the reference read as
 // a magazine rather than a dashboard.
 export const TYPE = {
-  // Hero headline — the biggest thing on any page.
+  // Hero headline. Sized DOWN from the reference on purpose: the reference is
+  // a single-article page where a 110px masthead is the whole view, but the
+  // landing hero sits beside a globe and a live incident card, and at that
+  // scale it swamped them. Keeps the editorial character (tight tracking,
+  // sub-1 leading, weight 600) at a size that sits in the composition.
   hero: {
-    fontSize: "clamp(52px, 7vw, 110px)",
-    lineHeight: 0.91,
-    letterSpacing: "-0.075em",
+    fontSize: "clamp(36px, 4.2vw, 58px)",
+    lineHeight: 1.0,
+    letterSpacing: "-0.04em",
     fontWeight: 600,
     textWrap: "balance",
   },
