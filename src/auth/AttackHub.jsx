@@ -79,7 +79,7 @@ const fmtShort = (iso) => { try { return new Date(iso + "T00:00:00Z").toUTCStrin
 // the rest of the app. Injected once. Hover/zoom/responsive live here; data and
 // layout are React. A single Inter typeface throughout.
 const HUB_CSS = `
-.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#14130F;--sub:#3D3A33;--mut:#6E6A60;--line:#E6E3DB;--rule:#DAD6CC;--ob:${OB};--paper:#F5F3ED;--paper-2:#ECE9E1;--paper-warm:#F4F1EA;background:#F5F3ED;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#14130F;--sub:#3D4146;--mut:#6E6A60;--line:#E6E3DB;--rule:#DAD6CC;--ob:${OB};--paper:#F5F3ED;--paper-2:#ECE9E1;--paper-warm:#F4F1EA;background:#F5F3ED;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .hubft button,.hubft select,.hubft input,.hubft textarea,.hubft optgroup{font-family:Inter,system-ui,sans-serif}
 .hubft .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,44px)}
 .hubft .kick{font-size:10px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-d)}
@@ -107,14 +107,14 @@ const HUB_CSS = `
 .hubft select{appearance:none;-webkit-appearance:none;padding:7px 28px 7px 11px;border-radius:0;cursor:pointer;outline:none;background:#fff;border:1px solid var(--line);color:var(--sub);font-family:inherit;font-size:11px;font-weight:500;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6A60' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center}
 .hubft select.act{background-color:rgba(245,184,0,.12);border-color:rgba(245,184,0,.4);color:var(--gold-d)}
 .hubft .clr{padding:7px 12px;border-radius:0;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
-.hubft .sh{display:flex;align-items:center;gap:18px;margin:8px 0 24px}
+.hubft .sh{display:flex;align-items:center;gap:18px;margin:4px 0 16px}
 .hubft .sh .ln{flex:1;border-top:1px dotted var(--rule)}
 .hubft .sh h2{font-weight:700;font-size:17px;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
 .hubft .sh.l{justify-content:flex-start;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:20px;gap:12px}
 .hubft .sh.l .ln{display:none}.hubft .sh.l h2{font-size:20px;letter-spacing:-.01em;text-transform:none}
 .hubft .sh.l .sq{width:9px;height:9px;border-radius:0}
 .hubft .sh.l .more{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--gold-d);background:none;border:none;cursor:pointer;font-family:inherit;text-transform:uppercase}
-.hubft .sec{padding:46px 0 0}
+.hubft .sec{padding:30px 0 0}
 .hubft .hero{display:grid;grid-template-columns:.92fr 1.5fr .92fr;gap:34px;padding:30px 0 0;align-items:start}
 .hubft .col{display:flex;flex-direction:column}
 .hubft .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -128,7 +128,7 @@ const HUB_CSS = `
 .hubft .lead:hover h2{color:var(--gold-d)}
 .hubft .lead .dek{margin-top:13px;font-size:15px;line-height:1.66;color:var(--sub);-webkit-line-clamp:4;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .side{cursor:pointer;padding-bottom:18px}
-.hubft .side h3{font-size:21px;font-weight:700;line-height:1.1;margin:9px 0 0}
+.hubft .side h3{font-size:21px;font-weight:600;line-height:1.08;letter-spacing:-.034em;margin:9px 0 0}
 .hubft .side:hover h3{color:var(--gold-d)}
 .hubft .side .dek{margin-top:9px;font-size:13px;line-height:1.55;color:var(--sub);-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .side+.side{border-top:1px solid var(--line);padding-top:18px}
@@ -145,7 +145,7 @@ const HUB_CSS = `
 .hubft .story .img{border:1px solid var(--line);overflow:hidden;margin-bottom:11px}
 .hubft .story .img img{width:100%;object-fit:cover;transition:transform .5s}
 .hubft .story:hover .img img{transform:scale(1.05)}
-.hubft .story h3{font-size:20px;font-weight:600;line-height:1.16;margin-top:7px;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.hubft .story h3{font-size:20px;font-weight:600;line-height:1.1;letter-spacing:-.032em;margin-top:7px;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .story:hover h3{color:var(--gold-d)}
 .hubft .spot{display:grid;grid-template-columns:1.7fr 1fr;gap:30px;align-items:start}
 .hubft .spot .big,.hubft .spot .aside{cursor:pointer}
@@ -200,15 +200,15 @@ const HUB_CSS = `
 .hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
 .hubft .metric{background:var(--paper-warm);border:1px solid var(--rule);padding:18px}
 .hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
-.hubft .card{border:1px solid var(--rule);border-radius:0;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(20,19,15,.04);cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
-.hubft .card:hover{border-color:var(--gold);box-shadow:0 12px 30px rgba(20,20,20,.10);transform:translateY(-2px)}
+.hubft .card{border:1px solid #D8D3C8;border-radius:0;overflow:hidden;background:#fff;box-shadow:0 10px 34px rgba(18,20,24,.07);cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
+.hubft .card:hover{border-color:var(--gold);box-shadow:0 24px 70px rgba(18,20,24,.14);transform:translateY(-3px)}
 .hubft .card .img{overflow:hidden}
 .hubft .card .img img{width:100%;object-fit:cover;transition:transform .5s}
 .hubft .card:hover .img img{transform:scale(1.05)}
-.hubft .card .bd{padding:0 17px 17px}
-.hubft .card .crow{display:flex;align-items:center;gap:7px;margin:14px 0 8px;flex-wrap:wrap}
+.hubft .card .bd{padding:0 17px 19px}
+.hubft .card .crow{display:flex;align-items:center;gap:7px;margin:13px 0 7px;flex-wrap:wrap}
 .hubft .card .day{margin-left:auto;font-size:10px;color:var(--mut)}
-.hubft .card h3{font-size:18px;font-weight:700;line-height:1.14;letter-spacing:-.01em;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.hubft .card h3{font-size:19px;font-weight:600;line-height:1.12;letter-spacing:-.032em;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .card:hover h3{color:var(--gold-d)}
 .hubft .card p{margin-top:9px;font-size:12.5px;line-height:1.55;color:var(--sub);-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .pager{margin-top:44px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
@@ -584,8 +584,7 @@ export function AttackHub() {
     </span>
   );
   const Card = (a) => (
-    <article key={a._key || a.id} className="card" onClick={() => openArticle(a)}
-      style={{ borderTop: `3px solid ${SEV_C[a.severity] || GOLD}` }}>
+    <article key={a._key || a.id} className="card" onClick={() => openArticle(a)}>
       <div className="img"><NewsImage a={a} height={165} /></div>
       <div className="bd">
         <div className="crow"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick><span className="day">{fmtShort(a.incident_day)}</span></div>
