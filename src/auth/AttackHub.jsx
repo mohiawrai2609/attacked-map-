@@ -450,6 +450,9 @@ export function AttackHub() {
   const [authOpen, setAuthOpen] = useState(false);
   const [reportIds, setReportIds] = useState(null);  // Set of incident ids with a baked report
   const [articles, setArticles] = useState([]);
+  // Total rows in the incidents table. Distinct from articles.length,
+  // which PostgREST caps at 1000 — see the fetch below.
+  const [totalIncidents, setTotalIncidents] = useState(null);
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("ALL");
   const [indFilter, setIndFilter] = useState("ALL");
@@ -483,9 +486,24 @@ export function AttackHub() {
         // /reports/<id>.html file, for the 310 incidents that originated in
         // the Attacked Hub — the other ~621 have no baked report and open via
         // the normal live ArticleView instead.
+        // ORDER BY is REQUIRED here, not cosmetic. PostgREST caps every request
+        // at 1000 rows regardless of .limit(), so .limit(5000) never returned
+        // 5000 — it returned an arbitrary 1000. Without an ORDER BY, Postgres
+        // is free to return rows in physical order, which is effectively
+        // oldest-first, so the newest incidents were silently dropped: the DB
+        // held 1092 rows through 14 Jul while the Hub showed nothing after
+        // 9 Jul. Ordering newest-first guarantees the most recent briefings are
+        // always in the window we do get back.
         const incRes = await supabase.from("incidents")
           .select("id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,reporter,image_url,event_date,incident_day,hub_ref:raw->>hub_id")
-          .limit(5000);
+          .order("incident_day", { ascending: false, nullsFirst: false })
+          .order("severity", { ascending: false })
+          .limit(1000);
+
+        // True table size, for the counter in the gold strip. The rows we hold
+        // are capped at 1000, so articles.length under-reports the corpus.
+        const totalRes = await supabase.from("incidents")
+          .select("id", { count: "exact", head: true });
 
         const mapped = (incRes.data || []).map(r => {
           const day = r.incident_day || r.event_date || null;
@@ -517,7 +535,10 @@ export function AttackHub() {
         const sorted = mapped
           .filter(a => a.headline)
           .sort((a, b) => (a.sortDay || "") < (b.sortDay || "") ? 1 : (a.sortDay || "") > (b.sortDay || "") ? -1 : (b.severity || 0) - (a.severity || 0));
-        if (!cancelled) setArticles(sorted);
+        if (!cancelled) {
+          setArticles(sorted);
+          if (typeof totalRes?.count === "number") setTotalIncidents(totalRes.count);
+        }
       } catch { /* graceful empty */ }
       finally { if (!cancelled) setLoading(false); }
     })();
@@ -825,7 +846,7 @@ export function AttackHub() {
                         <section className="goldband">
                           <div className="in">
                             <div className="c"><div className="lede">Every incident classified through GUARD, geolocated, and traced to the companies inside its blast radius.</div></div>
-                            <div className="c"><strong>{articles.length}</strong><em>Briefings in view</em></div>
+                            <div className="c"><strong>{(totalIncidents ?? articles.length).toLocaleString()}</strong><em>Briefings classified</em></div>
                             <div className="c"><strong>{crit}</strong><em>Critical &amp; high severity</em></div>
                             <div className="c"><strong>{countries || cats}</strong><em>{countries ? "Countries affected" : "GUARD categories live"}</em></div>
                           </div>

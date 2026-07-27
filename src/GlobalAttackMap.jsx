@@ -5813,7 +5813,10 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
     };
     if (tone === "direct")   return { ...base, background: "#F5B800" };
     if (tone === "indirect") return { ...base, background: "rgba(245,184,0,0.55)" };
-    return { ...base, background: "rgba(255,255,255,0.35)", color: "#1A1A1A" }; // objective
+    // Opaque, NOT translucent: rgba(255,255,255,0.35) composited against
+    // the dark panel behind this pill and left the dark label at 1.04:1 —
+    // effectively invisible. An opaque ground makes the chip self-contained.
+    return { ...base, background: "#C9C9CE", color: "#1A1A1A" }; // objective
   };
 
   const tier = useAccess();
@@ -9800,7 +9803,10 @@ export default function GlobalAttackMap() {
                       <button key={b.id} onClick={b.on} style={{
                         flex: 1, padding: "11px 8px", borderRadius: 0, cursor: "pointer",
                         background: b.active ? "rgba(245,184,0,0.14)" : "transparent",
-                        color: b.active ? BRAND.gold : BRAND.textMuted,
+                        // Inactive toggles used BRAND.textMuted (#585858), which on the
+                    // #080808 map chrome is 2.82:1 — an off state should read as quiet,
+                    // not unreadable. #8C8C8C keeps it clearly secondary at ~4.7:1.
+                    color: b.active ? BRAND.gold : "#8C8C8C",
                         border: `1px solid ${b.active ? BRAND.borderGold : BRAND.borderSubtle}`,
                         fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, textTransform: "uppercase",
                       }}>{b.t}</button>
@@ -10616,7 +10622,8 @@ export default function GlobalAttackMap() {
                   style={{
                     padding: "5px 10px",
                     background: b.active ? "rgba(245,184,0,0.12)" : "transparent",
-                    color: b.active ? BRAND.gold : BRAND.textMuted,
+                    color: b.active ? BRAND.gold : "#8C8C8C",   // was BRAND.textMuted (#585858) = 2.82:1 on the #080808 chrome
+
                     border: `1px solid ${b.active ? BRAND.borderGold : BRAND.borderSubtle}`,
                     borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
