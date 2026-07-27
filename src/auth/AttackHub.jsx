@@ -108,14 +108,14 @@ const HUB_CSS = `
 .hubft select.act{background-color:rgba(245,184,0,.12);border-color:rgba(245,184,0,.4);color:var(--gold-d)}
 .hubft .clr{padding:7px 12px;border-radius:0;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
 .hubft .sh{display:flex;align-items:center;gap:18px;margin:4px 0 16px}
-.hubft .sh .ln{flex:1;border-top:1px dotted var(--rule)}
+.hubft .sh .ln{flex:1;border-top:1px solid rgba(245,184,0,.42)}
 .hubft .sh h2{font-weight:700;font-size:17px;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
-.hubft .sh.l{justify-content:flex-start;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:20px;gap:12px}
+.hubft .sh.l{justify-content:flex-start;border-bottom:2px solid var(--gold);padding-bottom:8px;margin-bottom:18px;gap:12px}
 .hubft .sh.l .ln{display:none}.hubft .sh.l h2{font-size:20px;letter-spacing:-.01em;text-transform:none}
-.hubft .sh.l .sq{width:9px;height:9px;border-radius:0}
+.hubft .sh.l .sq{width:9px;height:9px;border-radius:0;box-shadow:0 0 0 3px rgba(245,184,0,.16)}
 .hubft .sh.l .more{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--gold-d);background:none;border:none;cursor:pointer;font-family:inherit;text-transform:uppercase}
-.hubft .sec{padding:30px 0 0}
-.hubft .hero{display:grid;grid-template-columns:.92fr 1.5fr .92fr;gap:34px;padding:30px 0 0;align-items:start}
+.hubft .sec{padding:20px 0 0}
+.hubft .hero{display:grid;grid-template-columns:.92fr 1.5fr .92fr;gap:28px;padding:18px 0 0;align-items:start}
 .hubft .col{display:flex;flex-direction:column}
 .hubft .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .hubft .rm{font-size:11px;font-weight:600;color:var(--gold-d);letter-spacing:.06em;text-transform:uppercase}
@@ -201,7 +201,7 @@ const HUB_CSS = `
 .hubft .metric{background:var(--paper-warm);border:1px solid var(--rule);padding:18px}
 .hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
 .hubft .card{border:1px solid #D8D3C8;border-radius:0;overflow:hidden;background:#fff;box-shadow:0 10px 34px rgba(18,20,24,.07);cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
-.hubft .card:hover{border-color:var(--gold);box-shadow:0 24px 70px rgba(18,20,24,.14);transform:translateY(-3px)}
+.hubft .card:hover{border-color:var(--gold);border-top:3px solid var(--gold);margin-top:-2px;box-shadow:0 24px 70px rgba(18,20,24,.14);transform:translateY(-3px)}
 .hubft .card .img{overflow:hidden}
 .hubft .card .img img{width:100%;object-fit:cover;transition:transform .5s}
 .hubft .card:hover .img img{transform:scale(1.05)}
@@ -383,7 +383,7 @@ function ArticleView({ article, onBack, onMap, user }) {
     </section>
   );
   return (
-    <main className="r-pad" style={{ padding: "44px 36px 80px", background: "#F5F3ED", color: "#14130F", fontFamily: "Inter, sans-serif" }}>
+    <main className="r-pad" style={{ padding: "28px 36px 56px", background: "#F5F3ED", color: "#14130F", fontFamily: "Inter, sans-serif" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 0", color: "#6E6A60", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>← Back to the feed</button>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
