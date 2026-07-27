@@ -9516,6 +9516,9 @@ export default function GlobalAttackMap() {
   // ── Daily Brief (news-bulletin narration for the current day) ────────────
   const briefActiveRef = useRef(false);
   const briefVoiceRef = useRef(null);
+  // Bumped each time the day narration restarts, so a chain left over from
+  // a previous day stops speaking instead of interleaving with the new one.
+  const daySegTokenRef = useRef(0);
   const [briefPlaying, setBriefPlaying] = useState(false);
   const [briefCaption, setBriefCaption] = useState("");
 
@@ -9598,8 +9601,10 @@ export default function GlobalAttackMap() {
     const n = visibleIncidents.length;
     
     let msg = "";
+    const segs = [];   // {text, id?} — id opens that incident while it is spoken
     if (n === 0) {
       msg = `No incidents reported for ${nice}.`;
+      segs.push({ text: msg });
     } else {
       const sevNames = { 5: "critical", 4: "high severity", 3: "medium severity", 2: "low severity", 1: "minimal severity" };
       // All 13 GUARD categories. The old table covered 5 (and one code, INF,
@@ -9635,27 +9640,52 @@ export default function GlobalAttackMap() {
       if (high) parts.push(`${high} high severity`);
       if (parts.length) msg += `${parts.join(" and ")} — `;
 
-      if (n === 1) {
-        msg += `It is ${getDesc(ranked[0])}.`;
-      } else if (n === 2) {
-        msg += `Leading: ${getDesc(ranked[0])}, and ${getDesc(ranked[1])}.`;
-      } else if (n === 3) {
-        msg += `Leading: ${getDesc(ranked[0])}, ${getDesc(ranked[1])}, and ${getDesc(ranked[2])}.`;
-      } else {
-        msg += `Leading: ${getDesc(ranked[0])}, ${getDesc(ranked[1])}, and ${getDesc(ranked[2])}, plus ${n - 3} further event${n - 3 === 1 ? "" : "s"}.`;
-      }
+      // Each named incident becomes its OWN segment carrying its id, so the
+      // narration can select it — the card opens as it is spoken, then the
+      // next one takes over. Previously this was a single utterance: the
+      // incidents were named but never shown, so the voice described things
+      // the map never pointed at.
+      const named = ranked.slice(0, Math.min(3, n));
+      segs.push({ text: msg.trim() });
+      named.forEach((inc, i) => {
+        const lead = i === 0 ? (n === 1 ? "It is " : "Leading: ") : "";
+        const tail = i === named.length - 1 && n <= 3 ? "." : ",";
+        segs.push({ text: `${lead}${getDesc(inc)}${tail}`, id: inc._id });
+      });
+      if (n > 3) segs.push({ text: `plus ${n - 3} further event${n - 3 === 1 ? "" : "s"}.` });
+      msg += named.map((inc, i) => `${i === 0 ? (n === 1 ? "It is " : "Leading: ") : ""}${getDesc(inc)}`).join(", ")
+           + (n > 3 ? `, plus ${n - 3} further event${n - 3 === 1 ? "" : "s"}.` : ".");
     }
 
     setPlaySummary(msg);
 
     if (narrate && typeof window !== "undefined" && window.speechSynthesis) {
-      try {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(msg);
+      const synth = window.speechSynthesis;
+      try { synth.cancel(); } catch { /* noop */ }
+      // Token guards against an older day's chain still speaking after the
+      // timeline has advanced — without it two days could interleave.
+      const myToken = ++daySegTokenRef.current;
+      let idx = 0;
+      const next = () => {
+        if (myToken !== daySegTokenRef.current) return;   // superseded
+        if (idx >= segs.length) {
+          // Close the last preview so the map is clean before the next day.
+          try { setSelectedId(null); } catch { /* noop */ }
+          return;
+        }
+        const seg = segs[idx++];
+        // Open this incident's card while its line is spoken.
+        if (seg.id != null) { try { setSelectedId(String(seg.id)); } catch { /* noop */ } }
+        else if (idx === 1) { try { setSelectedId(null); } catch { /* noop */ } }
+        const u = new SpeechSynthesisUtterance(seg.text);
         u.rate = 0.95; u.pitch = 1; u.volume = 1;   // match the Brief's pace
         if (briefVoiceRef.current) u.voice = briefVoiceRef.current;
-        window.speechSynthesis.speak(u);
-      } catch { /* noop */ }
+        const gap = seg.id != null ? 240 : 160;     // let the card land before moving on
+        u.onend = () => setTimeout(next, gap);
+        u.onerror = () => setTimeout(next, gap);
+        try { synth.speak(u); } catch { setTimeout(next, 300); }
+      };
+      next();
     }
   }, [currentDate, playing, narrate, visibleIncidents]);
 
