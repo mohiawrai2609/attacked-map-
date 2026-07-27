@@ -55,9 +55,9 @@ export const BRAND = {
   text:       "#EDEFF1",
   muted:      "#9EA3A9",
   t2:         "#A8A8A8",
-  tmuted:     "#585858",
+  tmuted:     "#8A8A8A",
   textSecondary: "#A8A8A8",
-  textMuted:     "#585858",
+  textMuted:     "#8A8A8A",
 
   // ── Lines ───────────────────────────────────────────────────────────────
   line:         "rgba(255,255,255,.13)",
