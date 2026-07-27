@@ -197,7 +197,7 @@ const HUB_CSS = `
 .hubft .btn.gh{background:transparent;color:#fff;border:1px solid #444}
 .hubft .crit{display:grid;grid-template-columns:1fr 1fr;gap:0 48px}
 .hubft .latest{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:26px}
-.hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
+.hubft .goldband{background:var(--gold);color:#14130F;margin:34px 0 10px}.hubft .goldband .in{display:grid;grid-template-columns:1.5fr repeat(3,1fr)}.hubft .goldband .c{padding:26px 26px;border-left:1px solid rgba(20,19,15,.18)}.hubft .goldband .c:first-child{border-left:none}.hubft .goldband .lede{font-size:18px;font-weight:600;line-height:1.28;letter-spacing:-.03em;max-width:30ch}.hubft .goldband strong{display:block;font-size:36px;line-height:1;font-weight:600;letter-spacing:-.05em}.hubft .goldband em{font-style:normal;display:block;margin-top:9px;font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;font-weight:700;opacity:.72;line-height:1.35}@media(max-width:860px){.hubft .goldband .in{grid-template-columns:1fr 1fr}.hubft .goldband .c:nth-child(3){border-left:none}}.hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
 .hubft .metric{background:var(--paper-warm);border:1px solid var(--rule);padding:18px}
 .hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
 .hubft .card{border:1px solid #D8D3C8;border-radius:0;overflow:hidden;background:#fff;box-shadow:0 10px 34px rgba(18,20,24,.07);cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
@@ -810,6 +810,28 @@ export function AttackHub() {
                         <aside className="col"><div className="picks-h">Editor's picks</div><div className="rail">{picks.map(a => RailItem(a))}</div></aside>
                       )}
                     </section>
+
+                    {/* Gold evidence strip — the reference's single most
+                        striking element, rebuilt against live sweep data.
+                        Full-bleed gold with dark ink is the one place the
+                        brand colour carries a whole block rather than an
+                        accent, and it breaks the newspaper grid exactly where
+                        the page would otherwise start to feel uniform. */}
+                    {articles.length > 0 && (() => {
+                      const crit = articles.filter(a => (a.severity || 0) >= 4).length;
+                      const countries = new Set(articles.map(a => a.country).filter(Boolean)).size;
+                      const cats = new Set(articles.map(a => a.primary_category).filter(Boolean)).size;
+                      return (
+                        <section className="goldband">
+                          <div className="in">
+                            <div className="c"><div className="lede">Every incident classified through GUARD, geolocated, and traced to the companies inside its blast radius.</div></div>
+                            <div className="c"><strong>{articles.length}</strong><em>Briefings in view</em></div>
+                            <div className="c"><strong>{crit}</strong><em>Critical &amp; high severity</em></div>
+                            <div className="c"><strong>{countries || cats}</strong><em>{countries ? "Countries affected" : "GUARD categories live"}</em></div>
+                          </div>
+                        </section>
+                      );
+                    })()}
 
                     {top.length > 0 && (
                       <section className="sec"><SecHead>Top Stories</SecHead><div className="g4">{top.map(Story)}</div></section>
