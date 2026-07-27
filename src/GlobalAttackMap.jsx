@@ -11,6 +11,7 @@ import Globe3D from "./Globe3D.jsx";
 // continents always render — a blocked/slow CDN used to leave the map empty.
 import { feature as topoFeature } from "topojson-client";
 import worldCountries110m from "world-atlas/countries-110m.json";
+import { BRAND, SEVERITY } from "./brand.js";
 
 // ── Daily Brief — turn a day's incidents into a fast, news-bulletin script.
 //    Structure mirrors a TV headlines roundup: cold-open → headline stack →
@@ -130,7 +131,7 @@ function AccountChip({ onOpenAuth }) {
           padding: "6px 14px",
           background: "#F5B800", color: "#1A1A1A",
           fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.12em",
-          border: "1px solid #F5B800", borderRadius: 4,
+          border: "1px solid #F5B800", borderRadius: 0,
           cursor: "pointer", textTransform: "uppercase", fontWeight: 700,
         }}>
         Sign in
@@ -147,7 +148,7 @@ function AccountChip({ onOpenAuth }) {
           padding: "6px 12px",
           background: "transparent", color,
           fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.08em",
-          border: `1px solid ${color}55`, borderRadius: 4,
+          border: `1px solid ${color}55`, borderRadius: 0,
           cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
           textTransform: "uppercase", fontWeight: 600,
         }}>
@@ -162,7 +163,7 @@ function AccountChip({ onOpenAuth }) {
                style={{ position: "fixed", inset: 0, zIndex: 99 }} />
           <div style={{
             position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 100,
-            background: "#242424", border: "1px solid #333", borderRadius: 4,
+            background: "#242424", border: "1px solid #333", borderRadius: 0,
             minWidth: 200, padding: 6, boxShadow: "0 12px 28px rgba(0,0,0,0.5)",
           }}>
             <div style={{
@@ -193,7 +194,7 @@ function AccountChip({ onOpenAuth }) {
               <>
                 <div style={{
                   padding: "10px 10px", margin: "0 0 4px", background: "rgba(245,184,0,0.08)",
-                  borderRadius: 3, fontSize: 11, color: "#F5B800", lineHeight: 1.45,
+                  borderRadius: 0, fontSize: 11, color: "#F5B800", lineHeight: 1.45,
                                   }}>
                   You're on the free tier. Apply for <b>Design Partner</b> access to unlock the full product.
                 </div>
@@ -201,7 +202,7 @@ function AccountChip({ onOpenAuth }) {
                   style={{
                     width: "100%", padding: "8px 10px", marginBottom: 4,
                     background: "#F5B800", color: "#1A1A1A",
-                    border: "1px solid #F5B800", borderRadius: 3,
+                    border: "1px solid #F5B800", borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 10,
                     letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                     fontWeight: 600,
@@ -216,7 +217,7 @@ function AccountChip({ onOpenAuth }) {
               style={{
                 display: "block", width: "100%", padding: "8px 10px", marginBottom: 4, marginTop: 4,
                 background: "transparent", color: "#A8A8A8",
-                border: "1px solid #333", borderRadius: 3,
+                border: "1px solid #333", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 10,
                 letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                 textAlign: "center", textDecoration: "none", boxSizing: "border-box",
@@ -235,7 +236,7 @@ function AccountChip({ onOpenAuth }) {
                   marginBottom: 4, marginTop: 4,
                   background: "rgba(245,184,0,0.07)",
                   color: "#F5B800",
-                  border: "1px solid rgba(245,184,0,0.35)", borderRadius: 3,
+                  border: "1px solid rgba(245,184,0,0.35)", borderRadius: 0,
                   fontFamily: "Inter, sans-serif", fontSize: 11,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   fontWeight: 700, textAlign: "center", textDecoration: "none",
@@ -260,7 +261,7 @@ function AccountChip({ onOpenAuth }) {
               style={{
                 width: "100%", padding: "10px 10px", marginBottom: 4, marginTop: 4,
                 background: "#F5B800", color: "#1A1A1A",
-                border: "1px solid #F5B800", borderRadius: 3,
+                border: "1px solid #F5B800", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 11.5,
                 letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
                 fontWeight: 700,
@@ -274,7 +275,7 @@ function AccountChip({ onOpenAuth }) {
             <div style={{
               marginTop: 8, padding: "10px 10px",
               background: "rgba(255,255,255,0.02)", border: "1px solid #2a2a2a",
-              borderRadius: 3,
+              borderRadius: 0,
             }}>
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
@@ -306,7 +307,7 @@ function AccountChip({ onOpenAuth }) {
                   style={{
                     flexShrink: 0,
                     width: 36, height: 20,
-                    borderRadius: 10,
+                    borderRadius: 0,
                     background: subscribed ? "#34C759" : "#333",
                     border: "none",
                     cursor: prefBusy ? "wait" : "pointer",
@@ -319,7 +320,7 @@ function AccountChip({ onOpenAuth }) {
                     top: 2,
                     left: subscribed ? 18 : 2,
                     width: 16, height: 16,
-                    borderRadius: 16,
+                    borderRadius: 0,
                     background: "#FFF",
                     transition: "left 180ms ease",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
@@ -335,7 +336,7 @@ function AccountChip({ onOpenAuth }) {
               style={{
                 display: "block", width: "100%", padding: "9px 10px", marginTop: 4,
                 background: "rgba(245,184,0,0.06)", color: "#F5B800",
-                border: "1px solid rgba(245,184,0,0.3)", borderRadius: 3,
+                border: "1px solid rgba(245,184,0,0.3)", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
                 textAlign: "center", textDecoration: "none", boxSizing: "border-box",
@@ -349,7 +350,7 @@ function AccountChip({ onOpenAuth }) {
               style={{
                 display: "block", width: "100%", padding: "8px 10px",
                 background: "transparent", color: "#A8A8A8",
-                border: "1px solid #333", borderRadius: 3,
+                border: "1px solid #333", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 10,
                 letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                 marginTop: 4, textDecoration: "none", textAlign: "center",
@@ -361,7 +362,7 @@ function AccountChip({ onOpenAuth }) {
               style={{
                 width: "100%", padding: "8px 10px",
                 background: "transparent", color: "#A8A8A8",
-                border: "1px solid #333", borderRadius: 3,
+                border: "1px solid #333", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 10,
                 letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                 marginTop: 4,
@@ -428,29 +429,8 @@ function AccountChip({ onOpenAuth }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAND TOKENS (Attacked.ai — gold #F5B800, NEVER Replaceable.ai crimson)
 // ─────────────────────────────────────────────────────────────────────────────
-const BRAND = {
-  gold: "#F5B800",
-  goldDim: "#D4A000",
-  goldTint: "rgba(245,184,0,0.12)",
-  obsidian: "#1A1A1A",
-  obsidianDeep: "#080808",
-  obsidianCard: "#242424",
-  obsidianElevated: "#2E2E2E",
-  white: "#FFFFFF",
-  textSecondary: "#A8A8A8",
-  textMuted: "#585858",
-  borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
-};
 
 // 5-tier risk scale (Attacked.ai standard, NOT the 3-tier RPI scale)
-const SEVERITY = {
-  5: { label: "CRITICAL", color: "#FF3B30", glow: "rgba(255,59,48,0.4)" },
-  4: { label: "HIGH",     color: "#FF6B35", glow: "rgba(255,107,53,0.35)" },
-  3: { label: "MEDIUM",   color: "#F5B800", glow: "rgba(245,184,0,0.35)" },
-  2: { label: "LOW",      color: "#34C759", glow: "rgba(52,199,89,0.30)" },
-  1: { label: "MINIMAL",  color: "#8E8E93", glow: "rgba(142,142,147,0.25)" },
-};
 
 // 13 GUARD categories — short labels + colours
 const CATEGORIES = {
@@ -1747,7 +1727,7 @@ function UploadZone({ onLoad, onError }) {
         padding: "64px 48px",
         background: dragOver ? BRAND.goldTint : BRAND.obsidianCard,
         border: `2px dashed ${dragOver ? BRAND.gold : BRAND.borderSubtle}`,
-        borderRadius: 12,
+        borderRadius: 0,
         textAlign: "center",
         cursor: "pointer",
         transition: "all 200ms cubic-bezier(0.4,0,0.2,1)",
@@ -1765,7 +1745,7 @@ function UploadZone({ onLoad, onError }) {
       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 14, color: BRAND.textSecondary, marginBottom: 24 }}>
         or click to browse · accepts GUARD daily exports (JSON)
       </div>
-      <div style={{ display: "inline-block", padding: "8px 20px", background: BRAND.gold, color: BRAND.obsidian, fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", borderRadius: 4 }}>
+      <div style={{ display: "inline-block", padding: "8px 20px", background: BRAND.gold, color: BRAND.obsidian, fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", borderRadius: 0 }}>
         SELECT FILE
       </div>
     </div>
@@ -2095,7 +2075,7 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
   }, [pathGen]);
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", minHeight: 480, background: "#020b1c", borderRadius: 8, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
+    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", minHeight: 480, background: "#020b1c", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
       {/* Deep space starfield behind the map */}
       <canvas style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }}
         ref={el => {
@@ -2714,7 +2694,7 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
             backdropFilter: "blur(8px)",
             color: BRAND.gold,
             border: `1px solid ${BRAND.borderGold}`,
-            borderRadius: 3,
+            borderRadius: 0,
             fontFamily: "Inter, sans-serif",
             fontSize: 18, lineHeight: 1, fontWeight: 500,
             cursor: "pointer",
@@ -2731,7 +2711,7 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
             backdropFilter: "blur(8px)",
             color: BRAND.gold,
             border: `1px solid ${BRAND.borderGold}`,
-            borderRadius: 3,
+            borderRadius: 0,
             fontFamily: "Inter, sans-serif",
             fontSize: 18, lineHeight: 1, fontWeight: 500,
             cursor: "pointer",
@@ -2745,7 +2725,7 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
             backdropFilter: "blur(8px)",
             color: BRAND.textSecondary,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 3,
+            borderRadius: 0,
             fontFamily: "Inter, sans-serif",
             fontSize: 11, lineHeight: 1,
             cursor: "pointer",
@@ -2762,7 +2742,7 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
           background: "rgba(36,36,36,0.92)",
           backdropFilter: "blur(8px)",
           border: `1px solid ${BRAND.borderSubtle}`,
-          borderRadius: 3,
+          borderRadius: 0,
         }}>
           {k.toFixed(1)}×
         </div>
@@ -2803,7 +2783,7 @@ class GlobeErrorBoundary extends React.Component {
       return (
         <div style={{
           position: "relative", width: "100%", minHeight: 480,
-          background: BRAND.obsidianDeep, borderRadius: 8,
+          background: BRAND.obsidianDeep, borderRadius: 0,
           border: `1px solid rgba(255,107,107,0.3)`,
           display: "flex", alignItems: "center", justifyContent: "center",
           padding: 40,
@@ -2819,7 +2799,7 @@ class GlobeErrorBoundary extends React.Component {
               padding: "10px 14px",
               background: BRAND.obsidianCard,
               border: `1px solid ${BRAND.borderSubtle}`,
-              borderRadius: 4,
+              borderRadius: 0,
               fontFamily: "Inter, sans-serif",
               fontSize: 10,
               color: BRAND.textMuted,
@@ -3125,7 +3105,7 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
       height: "100%",
       minHeight: 480,
       background: "#000005",
-      borderRadius: 8,
+      borderRadius: 0,
       overflow: "hidden",
       border: `1px solid ${BRAND.borderSubtle}`,
     }}>
@@ -3801,19 +3781,19 @@ function GlobeCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId,
 // ─────────────────────────────────────────────────────────────────────────────
 function Legend({ visibleCats, showBlastRadius, showHeat, onToggleHeat, onToggleBlast }) {
   return (
-    <div style={{ background: BRAND.obsidianCard, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 6, padding: 16, fontFamily: "Inter, sans-serif" }}>
+    <div style={{ background: BRAND.obsidianCard, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, padding: 16, fontFamily: "Inter, sans-serif" }}>
       {/* Toggles */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <button onClick={onToggleHeat}
           style={{ flex: 1, padding: "6px 10px", fontSize: 10, fontFamily: "Inter, sans-serif", letterSpacing: "0.06em",
             background: showHeat ? BRAND.gold : "transparent", color: showHeat ? BRAND.obsidian : BRAND.textSecondary,
-            border: `1px solid ${showHeat ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 3, cursor: "pointer" }}>
+            border: `1px solid ${showHeat ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 0, cursor: "pointer" }}>
           {showHeat ? "✓ HEAT" : "○ HEAT"}
         </button>
         <button onClick={onToggleBlast}
           style={{ flex: 1, padding: "6px 10px", fontSize: 10, fontFamily: "Inter, sans-serif", letterSpacing: "0.06em",
             background: showBlastRadius ? BRAND.gold : "transparent", color: showBlastRadius ? BRAND.obsidian : BRAND.textSecondary,
-            border: `1px solid ${showBlastRadius ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 3, cursor: "pointer" }}>
+            border: `1px solid ${showBlastRadius ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 0, cursor: "pointer" }}>
           {showBlastRadius ? "✓ BLAST" : "○ BLAST"}
         </button>
       </div>
@@ -3825,7 +3805,7 @@ function Legend({ visibleCats, showBlastRadius, showHeat, onToggleHeat, onToggle
           const s = SEVERITY[level];
           return (
             <div key={level} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
-              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: s.color }} />
+              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 0, background: s.color }} />
               <span style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.textSecondary }}>{level}</span>
               <span style={{ color: BRAND.textSecondary }}>{s.label}</span>
             </div>
@@ -3841,7 +3821,7 @@ function Legend({ visibleCats, showBlastRadius, showHeat, onToggleHeat, onToggle
           if (!c) return null;
           return (
             <div key={cat} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
-              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 5, background: c.color }} />
+              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 0, background: c.color }} />
               <span style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.textSecondary }}>{cat}</span>
               <span style={{ color: BRAND.textSecondary }}>{c.label}</span>
             </div>
@@ -3957,7 +3937,7 @@ const CASCADE_STYLES = `
     background: rgba(22,22,24,0.94);
     backdrop-filter: blur(22px);
     border: 1px solid rgba(245,184,0,0.20);
-    border-radius: 16px;
+    border-radius:0;
     font-family: Inter, sans-serif;
     color: #FFFFFF;
     z-index: 99;
@@ -4062,7 +4042,7 @@ const CASCADE_STYLES = `
     background: rgba(245,184,0,0.08);
     border: 1px solid rgba(245,184,0,0.30);
     color: #F5B800;
-    border-radius: 3px; cursor: pointer;
+    border-radius:0; cursor: pointer;
     font-family: 'Inter', sans-serif; font-size: 14px;
     line-height: 1; padding: 0 8px;
     display: inline-flex; align-items: center; justify-content: center;
@@ -4086,7 +4066,7 @@ const CASCADE_STYLES = `
     background: rgba(245,184,0,0.08);
     border: 1px solid rgba(245,184,0,0.30);
     color: #F5B800;
-    border-radius: 3px; cursor: pointer;
+    border-radius:0; cursor: pointer;
     font-family: 'Inter', sans-serif; font-size: 12px;
     line-height: 1; padding: 0;
     transition: all 220ms cubic-bezier(0.16,1,0.3,1);
@@ -4119,7 +4099,7 @@ function useAccess() { return React.useContext(AccessContext); }
 function GateBlock({ title, sub, count, countLabel }) {
   return (
     <div style={{
-      position: "relative", borderRadius: 4, overflow: "hidden",
+      position: "relative", borderRadius: 0, overflow: "hidden",
       border: "1px solid rgba(245,184,0,0.3)",
       background: "rgba(8,8,8,0.6)", padding: "16px",
     }}>
@@ -4131,9 +4111,9 @@ function GateBlock({ title, sub, count, countLabel }) {
       )}
       <div style={{ filter: "blur(5px)", userSelect: "none", pointerEvents: "none", display: "flex", flexDirection: "column", gap: 8, opacity: 0.7 }}>
         {[0, 1, 2].map(i => (
-          <div key={i} style={{ padding: "10px 12px", background: "rgba(36,36,36,0.7)", borderRadius: 3 }}>
-            <div style={{ height: 9, width: `${62 - i * 9}%`, background: "rgba(255,255,255,0.5)", borderRadius: 2, marginBottom: 6 }} />
-            <div style={{ height: 7, width: "85%", background: "rgba(255,255,255,0.22)", borderRadius: 2 }} />
+          <div key={i} style={{ padding: "10px 12px", background: "rgba(36,36,36,0.7)", borderRadius: 0 }}>
+            <div style={{ height: 9, width: `${62 - i * 9}%`, background: "rgba(255,255,255,0.5)", borderRadius: 0, marginBottom: 6 }} />
+            <div style={{ height: 7, width: "85%", background: "rgba(255,255,255,0.22)", borderRadius: 0 }} />
           </div>
         ))}
       </div>
@@ -4150,7 +4130,7 @@ function GateBlock({ title, sub, count, countLabel }) {
           style={{
             marginTop: 6, padding: "7px 14px",
             background: "#F5B800", color: "#1A1A1A",
-            border: "1px solid #F5B800", borderRadius: 3,
+            border: "1px solid #F5B800", borderRadius: 0,
             fontFamily: "'Inter', sans-serif", fontSize: 9.5,
             letterSpacing: "0.10em", textTransform: "uppercase",
             cursor: "pointer", fontWeight: 700,
@@ -4214,7 +4194,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
     <div style={{
       position: "relative",
       marginTop: 10,
-      borderRadius: 4, overflow: "hidden",
+      borderRadius: 0, overflow: "hidden",
       border: "1px solid rgba(245,184,0,0.3)",
       background: "rgba(8,8,8,0.6)",
       padding: "14px 12px 12px",
@@ -4228,10 +4208,10 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
           <div key={i} style={{
             padding: "8px 10px",
             background: "rgba(36,36,36,0.7)",
-                        borderRadius: 3,
+                        borderRadius: 0,
           }}>
-            <div style={{ height: 8, width: `${65 - i * 10}%`, background: "rgba(255,255,255,0.5)", borderRadius: 2, marginBottom: 5 }} />
-            <div style={{ height: 6, width: "85%", background: "rgba(255,255,255,0.22)", borderRadius: 2 }} />
+            <div style={{ height: 8, width: `${65 - i * 10}%`, background: "rgba(255,255,255,0.5)", borderRadius: 0, marginBottom: 5 }} />
+            <div style={{ height: 6, width: "85%", background: "rgba(255,255,255,0.22)", borderRadius: 0 }} />
           </div>
         ))}
       </div>
@@ -4258,7 +4238,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
           style={{
             padding: "7px 14px",
             background: "#F5B800", color: "#1A1A1A",
-            border: "1px solid #F5B800", borderRadius: 3,
+            border: "1px solid #F5B800", borderRadius: 0,
             fontFamily: "'Inter', sans-serif", fontSize: 9.5,
             letterSpacing: "0.10em", textTransform: "uppercase",
             cursor: "pointer", fontWeight: 700,
@@ -4391,7 +4371,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
   }, [onClose]);
 
   const navBtn = (disabled) => ({
-    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+    width: 40, height: 40, borderRadius: 0, flexShrink: 0,
     background: disabled ? "rgba(255,255,255,0.04)" : "rgba(245,184,0,0.12)",
     border: `1px solid ${disabled ? "rgba(255,255,255,0.10)" : "rgba(245,184,0,0.4)"}`,
     color: disabled ? "rgba(255,255,255,0.25)" : "#F5B800",
@@ -4437,12 +4417,12 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
         {autoPlay && (
           <>
             <button onClick={() => setAuto(a => !a)} aria-label={auto ? "Pause" : "Play"} title={auto ? "Pause" : "Play"} style={{
-              width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+              width: 34, height: 34, borderRadius: 0, flexShrink: 0,
               background: "rgba(245,184,0,0.12)", border: "1px solid rgba(245,184,0,0.4)",
               color: "#F5B800", fontSize: 13, cursor: "pointer",
             }}>{auto ? "⏸" : "▶"}</button>
             <button onClick={() => { setVoiceOn(v => !v); }} aria-label={voiceOn ? "Sound off" : "Sound on"} title={voiceOn ? "Sound off" : "Sound on"} style={{
-              width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+              width: 34, height: 34, borderRadius: 0, flexShrink: 0,
               background: voiceOn ? "rgba(245,184,0,0.12)" : "rgba(255,255,255,0.06)",
               border: `1px solid ${voiceOn ? "rgba(245,184,0,0.4)" : "rgba(255,255,255,0.14)"}`,
               color: voiceOn ? "#F5B800" : "#fff", fontSize: 13, cursor: "pointer",
@@ -4453,7 +4433,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
           <div style={{ fontSize: 11, color: "#A8A8A8", fontWeight: 600, whiteSpace: "nowrap" }}>{idx + 1} / {N}</div>
         )}
         <button onClick={() => (onSkip || onClose)()} aria-label={autoPlay ? "Skip" : "Close"} title={autoPlay ? "Skip" : "Close"} style={{
-          width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+          width: 34, height: 34, borderRadius: 0, flexShrink: 0,
           background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)",
           color: "#fff", fontSize: 18, cursor: "pointer",
         }}>×</button>
@@ -4484,7 +4464,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
         <div style={{
           position: "absolute", left: 12, right: 12, bottom: 66, zIndex: 2,
           background: "rgba(16,16,18,0.94)", backdropFilter: "blur(10px)",
-          border: "1px solid rgba(245,184,0,0.30)", borderRadius: 12,
+          border: "1px solid rgba(245,184,0,0.30)", borderRadius: 0,
           padding: "12px 14px", boxShadow: "0 12px 34px rgba(0,0,0,0.5)",
         }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F5B800", marginBottom: 5 }}>
@@ -4507,7 +4487,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           {cards.map((_, i) => (
             <span key={i} onClick={() => { stopAuto(); goto(i); }} style={{
-              width: i === idx ? 22 : 7, height: 7, borderRadius: 4, cursor: "pointer",
+              width: i === idx ? 22 : 7, height: 7, borderRadius: 0, cursor: "pointer",
               background: i === idx ? "#F5B800" : "rgba(255,255,255,0.25)", transition: "all 180ms ease",
             }} />
           ))}
@@ -4854,7 +4834,7 @@ function MapIncidentImage({ incident, height = 150 }) {
 
   if (videoId) {
     return (
-      <div style={{ position: "relative", height, overflow: "hidden", borderRadius: 6, marginBottom: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+      <div style={{ position: "relative", height, overflow: "hidden", borderRadius: 0, marginBottom: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
         <iframe
           src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`}
           title={incident.headline || "Incident news video"}
@@ -4866,10 +4846,10 @@ function MapIncidentImage({ incident, height = 150 }) {
         <span style={{
           position: "absolute", top: 8, left: 8, zIndex: 2, pointerEvents: "none",
           background: "rgba(0,0,0,0.66)", color: "#fff", fontSize: 9, fontWeight: 700,
-          letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", borderRadius: 4,
+          letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", borderRadius: 0,
           display: "inline-flex", alignItems: "center", gap: 5,
         }}>
-          <span style={{ width: 5, height: 5, borderRadius: 1, background: "#F5B800" }} />
+          <span style={{ width: 5, height: 5, borderRadius: 0, background: "#F5B800" }} />
           News video
         </span>
       </div>
@@ -4931,10 +4911,10 @@ function MapIncidentImage({ incident, height = 150 }) {
         background: "linear-gradient(135deg, #141417, #1A1A1A 70%)",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
         border: "1px solid rgba(255,255,255,0.05)",
-        borderRadius: 6,
+        borderRadius: 0,
         marginBottom: 14,
       }}>
-        <span style={{ width: 6, height: 6, borderRadius: 2, background: "#F5B800" }} />
+        <span style={{ width: 6, height: 6, borderRadius: 0, background: "#F5B800" }} />
         <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase" }}>
           {incident.primary_category || "Incident"}
         </span>
@@ -4943,7 +4923,7 @@ function MapIncidentImage({ incident, height = 150 }) {
   }
 
   return (
-    <div style={{ position: "relative", height, overflow: "hidden", borderRadius: 6, marginBottom: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
+    <div style={{ position: "relative", height, overflow: "hidden", borderRadius: 0, marginBottom: 14, border: "1px solid rgba(255,255,255,0.1)" }}>
       <img
         src={primary}
         alt={incident.headline || ""}
@@ -5032,7 +5012,7 @@ function ClassificationBody({ incident, sev, cat }) {
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
         <span style={{
-          padding: "3px 10px", borderRadius: 3,
+          padding: "3px 10px", borderRadius: 0,
           fontFamily: "'Inter', sans-serif", fontSize: 10,
           fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
           color: "#1A1A1A", background: sev.color,
@@ -5041,7 +5021,7 @@ function ClassificationBody({ incident, sev, cat }) {
         </span>
         {cat && (
           <span style={{
-            padding: "3px 9px", borderRadius: 3,
+            padding: "3px 9px", borderRadius: 0,
             border: "1px solid rgba(245,184,0,0.30)",
             fontFamily: "'Inter', sans-serif", fontSize: 10,
             color: "#F5B800", letterSpacing: "0.06em",
@@ -5051,7 +5031,7 @@ function ClassificationBody({ incident, sev, cat }) {
         )}
         {secondaryCats.map((sc, i) => (
           <span key={i} style={{
-            padding: "3px 9px", borderRadius: 3,
+            padding: "3px 9px", borderRadius: 0,
             border: "1px solid rgba(245,184,0,0.18)",
             fontFamily: "'Inter', sans-serif", fontSize: 10,
             color: "rgba(245,184,0,0.7)", letterSpacing: "0.06em",
@@ -5238,7 +5218,7 @@ function BlastRadiusBody({ incident, channels }) {
                   padding: "8px 4px",
                   borderTop: chIdx === 0 ? "none" : "1px solid rgba(255,255,255,0.04)",
                   cursor: (tier === "public" && chIdx > 0) ? "not-allowed" : "pointer",
-                  borderRadius: 3,
+                  borderRadius: 0,
                   background: isExpanded ? "rgba(245,184,0,0.05)" : "transparent",
                   transition: "background 180ms cubic-bezier(0.16,1,0.3,1)",
                   opacity: 0,
@@ -5321,7 +5301,7 @@ function BlastRadiusBody({ incident, channels }) {
                           fontSize: 12, color: "#FFFFFF",
                           padding: "8px 10px",
                           background: "rgba(36,36,36,0.6)",
-                          borderRadius: 3,
+                          borderRadius: 0,
                         }}>{ent}</div>
                       );
                     }
@@ -5334,7 +5314,7 @@ function BlastRadiusBody({ incident, channels }) {
                       <div key={entIdx} style={{
                         padding: "10px 11px",
                         background: "rgba(36,36,36,0.6)",
-                        borderRadius: 3,
+                        borderRadius: 0,
                       }}>
                         {/* Row 1: name + impact badge */}
                         <div style={{
@@ -5351,7 +5331,7 @@ function BlastRadiusBody({ incident, channels }) {
                           {impactCol && (
                             <span style={{
                               flexShrink: 0,
-                              padding: "1px 6px", borderRadius: 3,
+                              padding: "1px 6px", borderRadius: 0,
                               fontFamily: "'Inter', sans-serif", fontSize: 8.5,
                               fontWeight: 600, letterSpacing: "0.08em",
                               background: impactCol.bg, color: impactCol.fg,
@@ -5389,7 +5369,7 @@ function BlastRadiusBody({ incident, channels }) {
                           }}>
                             {mechanism && (
                               <span style={{
-                                padding: "2px 6px", borderRadius: 3,
+                                padding: "2px 6px", borderRadius: 0,
                                 border: `1px solid ${ch.color}44`,
                                 fontFamily: "'Inter', sans-serif", fontSize: 7.5,
                                 color: ch.color, letterSpacing: "0.10em",
@@ -5400,7 +5380,7 @@ function BlastRadiusBody({ incident, channels }) {
                             )}
                             {horizon && (
                               <span style={{
-                                padding: "2px 6px", borderRadius: 3,
+                                padding: "2px 6px", borderRadius: 0,
                                 border: "1px solid rgba(245,184,0,0.30)",
                                 fontFamily: "'Inter', sans-serif", fontSize: 7.5,
                                 color: "#F5B800", letterSpacing: "0.10em",
@@ -5416,7 +5396,7 @@ function BlastRadiusBody({ incident, channels }) {
                           <div style={{
                             padding: "6px 9px",
                             background: "rgba(245,184,0,0.06)",
-                                                        borderRadius: 2,
+                                                        borderRadius: 0,
                             fontSize: 10.5, lineHeight: 1.5,
                           }}>
                             <div style={{
@@ -5567,7 +5547,7 @@ function PeerWatchlistBody({ peers }) {
             <div key={i} style={{
               padding: "11px 13px",
               background: "rgba(36,36,36,0.6)",
-                            borderRadius: 3,
+                            borderRadius: 0,
               opacity: 0,
               animation: `rowIn 500ms cubic-bezier(0.16,1,0.3,1) ${rowDelay}ms forwards`,
             }}>
@@ -5592,7 +5572,7 @@ function PeerWatchlistBody({ peers }) {
                 {conf && confStyle && (
                   <span style={{
                     flexShrink: 0,
-                    padding: "2px 7px", borderRadius: 3,
+                    padding: "2px 7px", borderRadius: 0,
                     fontFamily: "'Inter', sans-serif", fontSize: 8,
                     fontWeight: 600, letterSpacing: "0.10em",
                     background: confStyle.bg,
@@ -5637,7 +5617,7 @@ function PeerWatchlistBody({ peers }) {
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6, marginBottom: pct != null ? 8 : 0 }}>
                   {mechanism && (
                     <span style={{
-                      padding: "2px 7px", borderRadius: 3,
+                      padding: "2px 7px", borderRadius: 0,
                       border: "1px solid rgba(245,184,0,0.30)",
                       fontFamily: "'Inter', sans-serif", fontSize: 8,
                       color: "#F5B800", letterSpacing: "0.06em",
@@ -5648,7 +5628,7 @@ function PeerWatchlistBody({ peers }) {
                   )}
                   {horizon && (
                     <span style={{
-                      padding: "2px 7px", borderRadius: 3,
+                      padding: "2px 7px", borderRadius: 0,
                       border: "1px solid rgba(157,123,236,0.35)",
                       fontFamily: "'Inter', sans-serif", fontSize: 8,
                       color: "#9D7BEC", letterSpacing: "0.06em",
@@ -5659,7 +5639,7 @@ function PeerWatchlistBody({ peers }) {
                   )}
                   {peerType && (
                     <span style={{
-                      padding: "2px 7px", borderRadius: 3,
+                      padding: "2px 7px", borderRadius: 0,
                       border: "1px solid rgba(255,255,255,0.15)",
                       fontFamily: "'Inter', sans-serif", fontSize: 8,
                       color: "rgba(255,255,255,0.55)", letterSpacing: "0.06em",
@@ -5685,12 +5665,12 @@ function PeerWatchlistBody({ peers }) {
                   <span style={{
                     flex: 1, height: 3,
                     background: "rgba(255,255,255,0.06)",
-                    borderRadius: 2, overflow: "hidden",
+                    borderRadius: 0, overflow: "hidden",
                   }}>
                     <span style={{
                       display: "block", height: "100%",
                       background: barColor,
-                      borderRadius: 2,
+                      borderRadius: 0,
                       width: `${pct}%`,
                       animation: `barFill 800ms cubic-bezier(0.4,0,0.2,1) ${rowDelay + 250}ms both`,
                       ["--bar-w"]: `${pct}%`,
@@ -5708,7 +5688,7 @@ function PeerWatchlistBody({ peers }) {
                   padding: "5px 9px",
                   background: "rgba(245,184,0,0.08)",
                   border: "1px solid rgba(245,184,0,0.25)",
-                  borderRadius: 3,
+                  borderRadius: 0,
                   fontFamily: "'Inter', sans-serif", fontSize: 9,
                   color: "#F5B800", letterSpacing: "0.04em",
                 }}>
@@ -5824,7 +5804,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
   // grey-gold (advisory), OBJECTIVE = neutral grey (goal not action).
   const kindStyle = (tone) => {
     const base = {
-      padding: "3px 9px", borderRadius: 3,
+      padding: "3px 9px", borderRadius: 0,
       fontFamily: "'Inter', sans-serif", fontSize: 9,
       fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase",
       textAlign: "center", border: "none",
@@ -5858,7 +5838,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
           padding: "10px 12px",
           background: "rgba(245,184,0,0.06)",
           border: "1px solid rgba(245,184,0,0.18)",
-          borderRadius: 4, marginBottom: 14,
+          borderRadius: 0, marginBottom: 14,
           fontSize: 11, lineHeight: 1.5,
           fontStyle: "italic", color: "#FFFFFF",
         }}>
@@ -5914,7 +5894,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
                 <span style={kindStyle(r.kindTone)}>{r.kindLabel}</span>
                 {r.fit && (
                   <span style={{
-                    padding: "3px 9px", borderRadius: 3,
+                    padding: "3px 9px", borderRadius: 0,
                     fontFamily: "'Inter', sans-serif", fontSize: 9,
                     fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase",
                     textAlign: "center", color: "#1A1A1A", border: "none",
@@ -5959,7 +5939,7 @@ function HistoricalBody({ items }) {
               padding: "10px 12px",
               background: "rgba(36,36,36,0.7)",
               border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 6,
+                            borderRadius: 0,
               opacity: 0,
               animation: `rowInLeft 400ms cubic-bezier(0.4,0,0.2,1) ${rowDelay}ms forwards`,
             }}>
@@ -6048,7 +6028,7 @@ function ControlChip({ id }) {
       color: "rgba(255,255,255,0.92)",
       background: "rgba(245,184,0,0.06)",
       border: "1px solid rgba(245,184,0,0.28)",
-      borderRadius: 3, letterSpacing: "0.04em",
+      borderRadius: 0, letterSpacing: "0.04em",
     }}>
       <span style={{ color: "#F5B800", fontSize: 8 }}>◇</span>
       {toText(id)}
@@ -6084,7 +6064,7 @@ function VendorRichCard({ v, idx, badge }) {
       padding: "14px 16px",
       background: "rgba(20,20,20,0.85)",
       border: "1px solid rgba(245,184,0,0.22)",
-            borderRadius: 4,
+            borderRadius: 0,
       opacity: 0,
       animation: `rowIn 400ms cubic-bezier(0.4,0,0.2,1) ${rowDelay}ms forwards`,
       display: "flex", flexDirection: "column", gap: 12,
@@ -6102,7 +6082,7 @@ function VendorRichCard({ v, idx, badge }) {
                 padding: "2px 8px",
                 fontFamily: "'Inter', sans-serif", fontSize: 9,
                 color: "#1A1A1A", background: "#F5B800",
-                borderRadius: 2, letterSpacing: "0.08em", fontWeight: 700,
+                borderRadius: 0, letterSpacing: "0.08em", fontWeight: 700,
                 textTransform: "uppercase", whiteSpace: "nowrap",
               }}>+ {badge}</span>
             )}
@@ -6138,7 +6118,7 @@ function VendorRichCard({ v, idx, badge }) {
           <div style={{ flexShrink: 0, textAlign: "right", minWidth: 92 }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 5,
-              padding: "3px 9px", borderRadius: 4,
+              padding: "3px 9px", borderRadius: 0,
               background: "rgba(245,184,0,0.10)", border: "1px solid rgba(245,184,0,0.4)",
             }}>
               <span style={{ fontSize: 11 }}>🔒</span>
@@ -6316,7 +6296,7 @@ function VendorBody({ vendors, vendorIntel }) {
               background: "rgba(36,36,36,0.7)",
               color: "rgba(255,255,255,0.85)",
               border: "1px solid rgba(245,184,0,0.18)",
-              borderRadius: 3,
+              borderRadius: 0,
               fontFamily: "'Inter', sans-serif",
               letterSpacing: "0.04em",
               opacity: 0,
@@ -6510,7 +6490,7 @@ function OutreachBody({ channels }) {
               padding: 13,
               background: "rgba(36,36,36,0.7)",
               border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 6,
+                            borderRadius: 0,
               opacity: 0,
               animation: `rowIn 500ms cubic-bezier(0.16,1,0.3,1) ${rowDelay}ms forwards`,
             }}>
@@ -6529,7 +6509,7 @@ function OutreachBody({ channels }) {
                 {pill && (
                   <span style={{
                     flexShrink: 0,
-                    padding: "2px 8px", borderRadius: 3,
+                    padding: "2px 8px", borderRadius: 0,
                     fontFamily: "'Inter', sans-serif", fontSize: 9,
                     fontWeight: 600, letterSpacing: "0.10em",
                     textTransform: "uppercase",
@@ -6565,11 +6545,11 @@ function OutreachBody({ channels }) {
               {pct != null && (
                 <div style={{
                   height: 3, background: "rgba(255,255,255,0.06)",
-                  borderRadius: 2, overflow: "hidden", marginBottom: 11,
+                  borderRadius: 0, overflow: "hidden", marginBottom: 11,
                 }}>
                   <div style={{
                     height: "100%", background: "#F5B800",
-                    borderRadius: 2, width: `${pct}%`,
+                    borderRadius: 0, width: `${pct}%`,
                     animation: `barFill 800ms cubic-bezier(0.4,0,0.2,1) ${rowDelay + 200}ms both`,
                     ["--bar-w"]: `${pct}%`,
                   }} />
@@ -6678,7 +6658,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
       background: "rgba(26,26,26,0.95)",
       backdropFilter: "blur(20px)",
       border: `1px solid rgba(245,184,0,0.20)`,
-      borderRadius: 14,
+      borderRadius: 0,
       boxShadow: "0 22px 60px rgba(0,0,0,0.6)",
       overflowY: "auto",
       zIndex: 100,
@@ -6690,15 +6670,15 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
       `}</style>
       {/* Gold left edge accent */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: "14px 14px 0 0" }} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: 0 }} />
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, gap: 12 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: sev.color + "22", color: sev.color, border: `1px solid ${sev.color}55`, borderRadius: 3 }}>
+          <span style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: sev.color + "22", color: sev.color, border: `1px solid ${sev.color}55`, borderRadius: 0 }}>
             SEV {incident.severity} · {sev.label}
           </span>
           {cat && (
-            <span style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: cat.color + "22", color: cat.color, border: `1px solid ${cat.color}55`, borderRadius: 3 }}>
+            <span style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: cat.color + "22", color: cat.color, border: `1px solid ${cat.color}55`, borderRadius: 0 }}>
               {incident._cat} · {cat.label.toUpperCase()}
             </span>
           )}
@@ -6710,7 +6690,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             const icon = rep?.icon || "◯";
             return (
               <span title={rep?.desk || incident.desk || ""}
-                style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: color + "22", color: color, border: `1px solid ${color}55`, borderRadius: 3, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: color + "22", color: color, border: `1px solid ${color}55`, borderRadius: 0, display: "inline-flex", alignItems: "center", gap: 5 }}>
                 <span style={{ fontSize: 10, lineHeight: 1 }}>{icon}</span>
                 {(incident.reporter || "—").toUpperCase()}
               </span>
@@ -6725,7 +6705,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             border: `1px solid ${BRAND.borderGold}`,
             color: BRAND.gold,
             width: 32, height: 32,
-            borderRadius: 4, cursor: "pointer",
+            borderRadius: 0, cursor: "pointer",
             fontFamily: "Inter, sans-serif", fontSize: 16,
             lineHeight: 1,
           }}>✕</button>
@@ -6765,7 +6745,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
         marginBottom: 14,
         background: BRAND.obsidianElevated,
         border: `1px solid ${BRAND.borderSubtle}`,
-        borderRadius: 6,
+        borderRadius: 0,
         overflow: "hidden",
       }}>
         {/* ── Top header strip ──
@@ -6808,7 +6788,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 String(incident.confidence).toLowerCase() === "high" ? "#34C75944"
               : String(incident.confidence).toLowerCase() === "medium" ? BRAND.gold + "44"
               : BRAND.borderSubtle}`,
-              borderRadius: 2,
+              borderRadius: 0,
             }}>
               {incident.confidence} conf
             </span>
@@ -6828,7 +6808,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                   background: (cat?.color || BRAND.gold) + "22",
                   color: cat?.color || BRAND.gold,
                   border: `1px solid ${(cat?.color || BRAND.gold)}55`,
-                  borderRadius: 3,
+                  borderRadius: 0,
                 }}>
                   {incident.primary_subcategory_code}
                 </span>
@@ -6864,7 +6844,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         background: mcColor + "15",
                         color: mcColor,
                         border: `1px solid ${mcColor}44`,
-                        borderRadius: 3,
+                        borderRadius: 0,
                       }}>
                       {m.subcategory_code || m.category}
                     </span>
@@ -6882,7 +6862,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       color: BRAND.gold,
                       background: "transparent",
                       border: `1px solid ${BRAND.gold}55`,
-                      borderRadius: 3,
+                      borderRadius: 0,
                       cursor: "pointer",
                       fontWeight: 600,
                     }}>
@@ -6900,7 +6880,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       <div key={i} style={{
                         padding: "8px 10px",
                         background: BRAND.obsidian,
-                        borderRadius: 3,
+                        borderRadius: 0,
                         borderLeft: `2px solid ${mcColor}`,
                       }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: m.why ? 4 : 0, flexWrap: "wrap" }}>
@@ -6983,7 +6963,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     <span style={{
                       display: "inline-block",
                       marginLeft: 8, padding: "1px 7px",
-                      borderRadius: 3,
+                      borderRadius: 0,
                       background: "rgba(245,184,0,0.10)",
                       border: "1px solid rgba(245,184,0,0.30)",
                       fontFamily: "'Inter', sans-serif",
@@ -7067,7 +7047,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       background: BRAND.obsidian,
                       color: BRAND.gold,
                       border: `1px solid ${BRAND.borderGold}`,
-                      borderRadius: 3,
+                      borderRadius: 0,
                       textDecoration: "none",
                     }}>
                     {cveId}
@@ -7103,7 +7083,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             marginBottom: 8,
             background: BRAND.obsidianElevated,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 6,
+            borderRadius: 0,
             overflow: "hidden",
           }}>
             <button
@@ -7126,7 +7106,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 padding: "1px 6px",
                 fontFamily: "Inter, sans-serif", fontSize: 9,
                 color: BRAND.textMuted, letterSpacing: "0.06em",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
               }}>
                 {totalEntities} accounts · {channels.length} rings
               </span>
@@ -7158,7 +7138,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
               padding: "16px 16px 18px 16px", marginBottom: 16,
               background: BRAND.obsidianElevated,
               border: `1px solid ${BRAND.borderSubtle}`,
-                            borderRadius: 4,
+                            borderRadius: 0,
             }}>
               <div style={{
                 fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold,
@@ -7257,7 +7237,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         marginBottom: 8,
                         background: BRAND.obsidianElevated,
                         borderLeft: `2px solid ${ch.color}`,
-                        borderRadius: 3,
+                        borderRadius: 0,
                       }}>
                         {/* Entity name + country + impact badge */}
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
@@ -7274,7 +7254,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                           {typeof ent.impact_score === "number" && (
                             <div style={{
                               flexShrink: 0, alignSelf: "flex-start",
-                              padding: "2px 7px", borderRadius: 3,
+                              padding: "2px 7px", borderRadius: 0,
                               fontFamily: "Inter, sans-serif", fontSize: 9, fontWeight: 600,
                               background: ent.impact_score >= 4 ? "#FF3B3022" : ent.impact_score >= 3 ? "#FF8C5A22" : "#34C75922",
                               color:      ent.impact_score >= 4 ? "#FF6B6B"   : ent.impact_score >= 3 ? "#FF8C5A"   : "#34C759",
@@ -7300,7 +7280,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         )}
                         {/* Recommended action — italic */}
                         {ent.recommended_action_for_them && (
-                          <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(245,184,0,0.05)", borderRadius: 2 }}>
+                          <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(245,184,0,0.05)", borderRadius: 0 }}>
                             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 8, color: BRAND.gold, letterSpacing: "0.10em", textTransform: "uppercase", marginRight: 6 }}>ACTION</span>
                             <span style={{ color: BRAND.white, fontSize: 11, fontStyle: "italic", lineHeight: 1.45 }}>
                               {ent.recommended_action_for_them}
@@ -7314,7 +7294,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                             display: "inline-flex", alignItems: "center", gap: 6,
                             background: `${product.color}15`,
                             border: `1px solid ${product.color}44`,
-                            borderRadius: 3, cursor: "pointer",
+                            borderRadius: 0, cursor: "pointer",
                           }}>
                             <span style={{ color: product.color, fontSize: 12, lineHeight: 1 }}>{product.icon}</span>
                             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: product.color, letterSpacing: "0.08em", fontWeight: 600 }}>
@@ -7378,7 +7358,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             marginBottom: 8,
             background: BRAND.obsidianElevated,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 6,
+            borderRadius: 0,
             overflow: "hidden",
           }}>
             <button
@@ -7401,7 +7381,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 padding: "1px 6px",
                 fontFamily: "Inter, sans-serif", fontSize: 9,
                 color: BRAND.textMuted, letterSpacing: "0.06em",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
               }}>
                 {metaLabel}
               </span>
@@ -7463,7 +7443,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
               <div style={{
                 marginBottom: 14, padding: "12px 14px",
                 background: BRAND.goldTint,
-                borderRadius: 3,
+                borderRadius: 0,
               }}>
                 <div style={{
                   fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold,
@@ -7504,7 +7484,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                   gap: 10, marginBottom: 16,
                 }}>
                   {v && typeof v === "object" && (
-                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 3 }}>
+                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 0 }}>
                       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6 }}>
                         Velocity Signal
                       </div>
@@ -7537,7 +7517,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     </div>
                   )}
                   {e && (
-                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 3 }}>
+                    <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 0 }}>
                       <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF8C5A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6 }}>
                         Emerging Risk
                       </div>
@@ -7567,7 +7547,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     <div key={i} style={{
                       padding: "10px 12px",
                       background: BRAND.obsidianElevated,
-                      borderRadius: 3,
+                      borderRadius: 0,
                                           }}>
                       <div style={{
                         fontFamily: "Inter, sans-serif", fontSize: 10, color: BRAND.gold,
@@ -7598,7 +7578,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     <div key={i} style={{
                       padding: "10px 12px",
                       background: BRAND.obsidianElevated,
-                      borderRadius: 3,
+                      borderRadius: 0,
                                             marginLeft: 12, // indented to show implementation of objectives
                     }}>
                       <div style={{
@@ -7630,7 +7610,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     <div key={i} style={{
                       padding: "8px 12px",
                       background: BRAND.obsidian,
-                      borderRadius: 3,
+                      borderRadius: 0,
                       border: `1px solid ${BRAND.borderSubtle}`,
                       display: "flex", gap: 10,
                     }}>
@@ -7669,13 +7649,13 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       <div key={i} style={{
                         padding: "8px 12px",
                         background: BRAND.obsidian,
-                        borderRadius: 3,
+                        borderRadius: 0,
                         border: `1px solid ${BRAND.borderSubtle}`,
                         borderLeft: `2px solid ${catColor}`,
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                           <span style={{
-                            padding: "2px 6px", borderRadius: 2,
+                            padding: "2px 6px", borderRadius: 0,
                             fontFamily: "Inter, sans-serif", fontSize: 9,
                             fontWeight: 600, letterSpacing: "0.08em",
                             background: catColor + "22", color: catColor,
@@ -7701,7 +7681,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                                 padding: "2px 5px", fontSize: 9,
                                 fontFamily: "Inter, sans-serif", color: BRAND.gold,
                                 background: BRAND.obsidianElevated,
-                                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                               }}>{id}</span>
                             ))}
                           </div>
@@ -7717,7 +7697,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                                 padding: "2px 5px", fontSize: 9,
                                 fontFamily: "Inter, sans-serif", color: BRAND.goldDim,
                                 background: BRAND.obsidianElevated,
-                                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                               }}>{id}</span>
                             ))}
                           </div>
@@ -7746,14 +7726,14 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     <div key={i} style={{
                       padding: "10px 12px",
                       background: BRAND.obsidianElevated,
-                      borderRadius: 3,
+                      borderRadius: 0,
                       border: `1px solid ${BRAND.borderSubtle}`,
                     }}>
                       {/* Framework badge + version + jurisdiction */}
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", marginBottom: 6 }}>
                         {bp.framework && (
                           <span style={{
-                            padding: "2px 7px", borderRadius: 2,
+                            padding: "2px 7px", borderRadius: 0,
                             fontFamily: "Inter, sans-serif", fontSize: 9,
                             fontWeight: 600, letterSpacing: "0.10em",
                             background: BRAND.gold, color: BRAND.obsidian,
@@ -7836,7 +7816,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       <span key={i} style={{
                         padding: "2px 6px", fontSize: 9, fontFamily: "Inter, sans-serif",
                         background: BRAND.obsidian, color: BRAND.goldDim,
-                        border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                        border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                         letterSpacing: "0.04em",
                       }}>
                         {id}
@@ -7869,7 +7849,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             marginBottom: 8,
             background: BRAND.obsidianElevated,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 6,
+            borderRadius: 0,
             overflow: "hidden",
           }}>
             <button
@@ -7892,7 +7872,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 padding: "1px 6px",
                 fontFamily: "Inter, sans-serif", fontSize: 9,
                 color: BRAND.textMuted, letterSpacing: "0.06em",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
               }}>
                 {items.length} {items.length === 1 ? "event" : "events"}
               </span>
@@ -7911,7 +7891,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                     padding: "10px 12px",
                     background: BRAND.obsidian,
                     border: `1px solid ${BRAND.borderSubtle}`,
-                    borderRadius: 3,
+                    borderRadius: 0,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 12, color: BRAND.white, fontWeight: 600 }}>
@@ -7966,7 +7946,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             marginBottom: 8,
             background: BRAND.obsidianElevated,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 6,
+            borderRadius: 0,
             overflow: "hidden",
           }}>
             <button
@@ -7989,7 +7969,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 padding: "1px 6px",
                 fontFamily: "Inter, sans-serif", fontSize: 9,
                 color: BRAND.textMuted, letterSpacing: "0.06em",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
               }}>
                 {items.length} cited
               </span>
@@ -8004,7 +7984,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             {isOpen && (
               <ul style={{ margin: 0, padding: "0 16px 16px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
                 {items.map((s, i) => (
-                  <li key={i} style={{ fontSize: 11, color: BRAND.textSecondary, padding: "8px 10px", background: BRAND.obsidian, borderRadius: 3, border: `1px solid ${BRAND.borderSubtle}` }}>
+                  <li key={i} style={{ fontSize: 11, color: BRAND.textSecondary, padding: "8px 10px", background: BRAND.obsidian, borderRadius: 0, border: `1px solid ${BRAND.borderSubtle}` }}>
                     <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold, marginBottom: 3 }}>[S{i + 1}] {s.publisher || "?"}</div>
                     <div style={{ color: BRAND.white, lineHeight: 1.4 }}>{s.title || "—"}</div>
                     {s.url && (
@@ -8034,7 +8014,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             marginBottom: 8,
             background: BRAND.obsidianElevated,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 6,
+            borderRadius: 0,
             overflow: "hidden",
           }}>
             <button onClick={() => toggleSection(id)}
@@ -8055,7 +8035,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 padding: "1px 6px",
                 fontFamily: "Inter, sans-serif", fontSize: 9,
                 color: BRAND.textMuted, letterSpacing: "0.06em",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
               }}>{items.length}</span>
               <span style={{
                 marginLeft: "auto",
@@ -8068,7 +8048,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             {isOpen && (
               <div style={{ padding: "0 16px 16px 16px", display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {items.map((v, i) => (
-                  <span key={i} style={{ padding: "3px 8px", fontSize: 11, background: BRAND.obsidian, color: BRAND.textSecondary, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2 }}>
+                  <span key={i} style={{ padding: "3px 8px", fontSize: 11, background: BRAND.obsidian, color: BRAND.textSecondary, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0 }}>
                     {typeof v === "string" ? v : (v.name || JSON.stringify(v).slice(0, 40))}
                   </span>
                 ))}
@@ -8091,7 +8071,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             marginBottom: 8,
             background: BRAND.obsidianElevated,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 6,
+            borderRadius: 0,
             overflow: "hidden",
           }}>
             <button onClick={() => toggleSection(id)}
@@ -8112,7 +8092,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 padding: "1px 6px",
                 fontFamily: "Inter, sans-serif", fontSize: 9,
                 color: BRAND.textMuted, letterSpacing: "0.06em",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
               }}>{items.length}</span>
               <span style={{
                 marginLeft: "auto",
@@ -8125,7 +8105,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             {isOpen && (
               <div style={{ padding: "0 16px 16px 16px", display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {items.map((p, i) => (
-                  <span key={i} style={{ padding: "3px 8px", fontSize: 11, background: BRAND.obsidian, color: BRAND.textSecondary, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 2 }}>
+                  <span key={i} style={{ padding: "3px 8px", fontSize: 11, background: BRAND.obsidian, color: BRAND.textSecondary, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0 }}>
                     {typeof p === "string" ? p : (p.name || p.entity || JSON.stringify(p).slice(0, 40))}
                   </span>
                 ))}
@@ -8146,7 +8126,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             marginBottom: 8,
             background: BRAND.obsidianElevated,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 6,
+            borderRadius: 0,
             overflow: "hidden",
           }}>
             <button onClick={() => toggleSection(id)}
@@ -8168,7 +8148,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                 fontFamily: "Inter, sans-serif", fontSize: 9,
                 color: incident._verified ? "#34C759" : "#FF6B6B",
                 letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600,
-                border: `1px solid ${incident._verified ? "#34C75955" : "#FF6B6B55"}`, borderRadius: 2,
+                border: `1px solid ${incident._verified ? "#34C75955" : "#FF6B6B55"}`, borderRadius: 0,
               }}>
                 {incident._verified ? "verified" : "unverified"}
               </span>
@@ -8231,7 +8211,7 @@ function KpiOverlay({ visibleIncidents, totalIncidents }) {
           background: "rgba(36,36,36,0.92)",
           backdropFilter: "blur(8px)",
           border: `1px solid ${BRAND.borderSubtle}`,
-          borderRadius: 4,
+          borderRadius: 0,
           padding: "8px 14px",
           minWidth: 92,
         }}>
@@ -8272,7 +8252,7 @@ function IncidentListPanel({ visibleIncidents, selectedId, onSelect, onHover, ho
       background: "rgba(26,26,26,0.95)",
       backdropFilter: "blur(20px)",
       border: `1px solid rgba(245,184,0,0.20)`,
-      borderRadius: 14,
+      borderRadius: 0,
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
@@ -8281,7 +8261,7 @@ function IncidentListPanel({ visibleIncidents, selectedId, onSelect, onHover, ho
       boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
     }}>
       {/* Gold edge accent */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: "14px 14px 0 0" }} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: 0 }} />
       <div style={{
         padding: "12px 14px",
         borderBottom: `1px solid ${BRAND.borderSubtle}`,
@@ -8297,7 +8277,7 @@ function IncidentListPanel({ visibleIncidents, selectedId, onSelect, onHover, ho
             style={{
               width: 24, height: 24, padding: 0,
               background: "transparent", color: BRAND.textSecondary,
-              border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3,
+              border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
               cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13,
               lineHeight: 1,
             }}>
@@ -8336,7 +8316,7 @@ function IncidentListPanel({ visibleIncidents, selectedId, onSelect, onHover, ho
                       transition: "background 120ms",
                     }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: 3, background: cat?.color || BRAND.gold, display: "inline-block" }} />
+                      <span style={{ width: 6, height: 6, borderRadius: 0, background: cat?.color || BRAND.gold, display: "inline-block" }} />
                       <span style={{ fontFamily: "Inter, sans-serif", fontSize: 8, color: BRAND.textMuted, letterSpacing: "0.06em" }}>
                         {inc._cat} · {inc.country || "—"} · {inc.event_date}
                       </span>
@@ -8415,7 +8395,7 @@ function AuditDrawer({ incidents, onClose }) {
           </div>
         </div>
         <button onClick={onClose}
-          style={{ padding: "8px 16px", background: BRAND.gold, color: BRAND.obsidian, border: "none", borderRadius: 3, fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.08em", cursor: "pointer", fontWeight: 600 }}>
+          style={{ padding: "8px 16px", background: BRAND.gold, color: BRAND.obsidian, border: "none", borderRadius: 0, fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.08em", cursor: "pointer", fontWeight: 600 }}>
           CLOSE
         </button>
       </div>
@@ -8461,7 +8441,7 @@ function AuditDrawer({ incidents, onClose }) {
                       const sev = SEVERITY[inc.severity] || SEVERITY[3];
                       return (
                         <span key={j} title={inc.headline}
-                          style={{ padding: "2px 7px", fontFamily: "Inter, sans-serif", fontSize: 9, background: BRAND.obsidianElevated, color: cat?.color || BRAND.white, borderLeft: `2px solid ${sev.color}`, borderRadius: 2 }}>
+                          style={{ padding: "2px 7px", fontFamily: "Inter, sans-serif", fontSize: 9, background: BRAND.obsidianElevated, color: cat?.color || BRAND.white, borderLeft: `2px solid ${sev.color}`, borderRadius: 0 }}>
                           {inc._cat}·{inc._idx}
                         </span>
                       );
@@ -8537,7 +8517,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
       position: "fixed", top: 108, left: 24, width: 340,
       maxHeight: "72vh", overflowY: "auto",
       background: "rgba(20,20,22,0.96)", backdropFilter: "blur(20px)",
-      border: `1px solid ${BRAND.borderGold}`, borderRadius: 10,
+      border: `1px solid ${BRAND.borderGold}`, borderRadius: 0,
       boxShadow: "0 18px 50px rgba(0,0,0,0.6)", zIndex: 30,
       display: "flex", flexDirection: "column",
     }}>
@@ -8550,11 +8530,11 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={onRefresh}
             title="Re-scan storage for sweeps"
-            style={{ width: 32, height: 32, padding: 0, background: "transparent", color: BRAND.gold, fontFamily: "Inter, sans-serif", fontSize: 12, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, cursor: "pointer" }}>
+            style={{ width: 32, height: 32, padding: 0, background: "transparent", color: BRAND.gold, fontFamily: "Inter, sans-serif", fontSize: 12, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, cursor: "pointer" }}>
             ↻
           </button>
           <button onClick={onClose}
-            style={{ width: 32, height: 32, padding: 0, background: "transparent", color: BRAND.textSecondary, fontFamily: "Inter, sans-serif", fontSize: 16, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, cursor: "pointer" }}>
+            style={{ width: 32, height: 32, padding: 0, background: "transparent", color: BRAND.textSecondary, fontFamily: "Inter, sans-serif", fontSize: 16, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, cursor: "pointer" }}>
             ×
           </button>
         </div>
@@ -8568,7 +8548,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
       {timeline && archiveIndex.length > 0 && (() => {
         const inStyle = {
           flex: 1, minWidth: 0, background: BRAND.obsidian, color: BRAND.white,
-          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, padding: "6px 8px",
+          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, padding: "6px 8px",
           fontFamily: "Inter, sans-serif", fontSize: 11, colorScheme: "dark",
         };
         const cur = timeline.playDates[timeline.playPos];
@@ -8598,7 +8578,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
               const noRange = !timeline.rangeFrom || !timeline.rangeTo;
               const dis = busy || noRange;
               const base = {
-                flex: 1, padding: "8px 0", borderRadius: 3, fontFamily: "Inter, sans-serif",
+                flex: 1, padding: "8px 0", borderRadius: 0, fontFamily: "Inter, sans-serif",
                 fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase",
                 cursor: busy ? "wait" : (noRange ? "not-allowed" : "pointer"),
               };
@@ -8633,7 +8613,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
                     </button>
                     <select value={timeline.playSpeedMs} onChange={e => timeline.setPlaySpeedMs(Number(e.target.value))}
                       title="Seconds each day is shown before advancing"
-                      style={{ flex: "0 0 auto", background: BRAND.obsidian, color: BRAND.white, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, padding: "7px 8px", fontFamily: "Inter, sans-serif", fontSize: 10, colorScheme: "dark" }}>
+                      style={{ flex: "0 0 auto", background: BRAND.obsidian, color: BRAND.white, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, padding: "7px 8px", fontFamily: "Inter, sans-serif", fontSize: 10, colorScheme: "dark" }}>
                       <option value={5000}>5s</option>
                       <option value={10000}>10s</option>
                       <option value={20000}>20s</option>
@@ -8659,16 +8639,16 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     <button onClick={() => timeline.onPlayBrief && timeline.onPlayBrief()}
                       title={timeline.briefPlaying ? "Stop the news brief" : "Read out every incident currently on the map — the whole range if a range is shown, otherwise this day"}
-                      style={{ background: timeline.briefPlaying ? BRAND.gold : "transparent", border: `1px solid ${BRAND.gold}`, borderRadius: 3, color: timeline.briefPlaying ? BRAND.obsidian : BRAND.gold, padding: "4px 9px", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      style={{ background: timeline.briefPlaying ? BRAND.gold : "transparent", border: `1px solid ${BRAND.gold}`, borderRadius: 0, color: timeline.briefPlaying ? BRAND.obsidian : BRAND.gold, padding: "4px 9px", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                       {timeline.briefPlaying ? "■ Brief" : "📻 Brief"}
                     </button>
                     <button onClick={() => timeline.onToggleNarrate()}
                       title={timeline.narrate ? "Mute date narration" : "Enable date narration"}
-                      style={{ background: "transparent", border: `1px solid ${timeline.narrate ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 3, color: timeline.narrate ? BRAND.gold : BRAND.textSecondary, padding: "4px 9px", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      style={{ background: "transparent", border: `1px solid ${timeline.narrate ? BRAND.gold : BRAND.borderSubtle}`, borderRadius: 0, color: timeline.narrate ? BRAND.gold : BRAND.textSecondary, padding: "4px 9px", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                       {timeline.narrate ? "🔊" : "🔇"}
                     </button>
                     <button onClick={() => timeline.onTogglePlay()}
-                      style={{ background: "transparent", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, color: BRAND.textSecondary, padding: "4px 10px", fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                      style={{ background: "transparent", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, color: BRAND.textSecondary, padding: "4px 10px", fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
                       {timeline.playing ? "⏸ Pause" : "▶ Resume"}
                     </button>
                   </div>
@@ -8708,14 +8688,14 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
 const _tourTiny = (active, light) => ({
   background: active ? (light ? "rgba(245,184,0,0.14)" : "rgba(245,184,0,0.16)") : (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.06)"),
   color: active ? (light ? "#8A6D00" : "#F5B800") : (light ? "#52525B" : "rgba(255,255,255,0.7)"),
-  border: light ? "1px solid #E7E7E9" : "1px solid rgba(255,255,255,0.12)", borderRadius: 4, padding: "4px 9px",
+  border: light ? "1px solid #E7E7E9" : "1px solid rgba(255,255,255,0.12)", borderRadius: 0, padding: "4px 9px",
   fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer",
   fontFamily: "Inter, sans-serif", textTransform: "uppercase", whiteSpace: "nowrap",
 });
 const _tourNav = (disabled, light) => ({
   background: disabled ? (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.04)") : "#F5B800",
   color: disabled ? (light ? "rgba(10,10,10,0.3)" : "rgba(255,255,255,0.3)") : "#1A1A1A",
-  border: "none", borderRadius: 5, padding: "8px 16px", fontSize: 12, fontWeight: 700,
+  border: "none", borderRadius: 0, padding: "8px 16px", fontSize: 12, fontWeight: 700,
   letterSpacing: "0.04em", cursor: disabled ? "default" : "pointer", fontFamily: "Inter, sans-serif",
 });
 
@@ -8814,7 +8794,7 @@ function GuidedTour({ incident, onFeature, onClose, light }) {
 
   return (
     <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 200, display: "flex", justifyContent: "center", padding: "0 16px 96px", pointerEvents: "none" }}>
-      <div style={{ pointerEvents: "auto", width: "min(760px, 96vw)", background: light ? "rgba(255,255,255,0.98)" : "rgba(16,16,18,0.94)", backdropFilter: "blur(18px)", border: light ? "1px solid #E7E7E9" : "1px solid rgba(245,184,0,0.30)", borderRadius: 14, boxShadow: light ? "0 24px 70px rgba(10,10,10,0.18)" : "0 24px 70px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
+      <div style={{ pointerEvents: "auto", width: "min(760px, 96vw)", background: light ? "rgba(255,255,255,0.98)" : "rgba(16,16,18,0.94)", backdropFilter: "blur(18px)", border: light ? "1px solid #E7E7E9" : "1px solid rgba(245,184,0,0.30)", borderRadius: 0, boxShadow: light ? "0 24px 70px rgba(10,10,10,0.18)" : "0 24px 70px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
         <div style={{ height: 3, background: light ? "rgba(10,10,10,0.08)" : "rgba(255,255,255,0.08)" }}>
           <div style={{ height: "100%", width: pct + "%", background: "linear-gradient(90deg,#F5B800,#D4A000)", transition: "width 300ms ease" }} />
         </div>
@@ -9741,7 +9721,7 @@ export default function GlobalAttackMap() {
           borderBottom: "1px solid #222",
         }}>
           <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 4, background: BRAND.gold, boxShadow: "0 0 8px rgba(245,184,0,0.6)", flexShrink: 0 }} />
+            <span style={{ width: 7, height: 7, borderRadius: 0, background: BRAND.gold, boxShadow: "0 0 8px rgba(245,184,0,0.6)", flexShrink: 0 }} />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {visibleIncidents.length} live{currentDate ? ` · ${currentDate}` : ""}
             </span>
@@ -9752,7 +9732,7 @@ export default function GlobalAttackMap() {
             { k: "archive", label: "Timeline", active: showArchive, on: () => { setShowArchive(o => !o); setFiltersOpen(false); setShowLayers(false); } },
           ].map(b => (
             <button key={b.k} onClick={b.on} style={{
-              flexShrink: 0, padding: "7px 12px", borderRadius: 6, cursor: "pointer",
+              flexShrink: 0, padding: "7px 12px", borderRadius: 0, cursor: "pointer",
               background: b.active ? BRAND.gold : "rgba(245,184,0,0.10)",
               border: `1px solid ${BRAND.borderGold}`,
               color: b.active ? BRAND.obsidian : BRAND.gold,
@@ -9769,7 +9749,7 @@ export default function GlobalAttackMap() {
       {isMobile && sweep && !selectedId && !showListPanel && !showArchive && !showLayers && (
         <button onClick={() => setShowListPanel(true)} style={{
           position: "fixed", bottom: "calc(18px + env(safe-area-inset-bottom))", left: "50%", transform: "translateX(-50%)",
-          zIndex: 45, padding: "12px 22px", borderRadius: 999, cursor: "pointer",
+          zIndex: 45, padding: "12px 22px", borderRadius: 0, cursor: "pointer",
           background: BRAND.gold, color: BRAND.obsidian, border: "none",
           fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: "0.04em",
           boxShadow: "0 10px 28px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: 8,
@@ -9781,18 +9761,18 @@ export default function GlobalAttackMap() {
         <div onClick={() => setShowLayers(false)} style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(0,0,0,0.55)" }}>
           <div onClick={e => e.stopPropagation()} style={{
             position: "absolute", left: 0, right: 0, bottom: 0,
-            background: "#141416", borderTop: "1px solid #333", borderRadius: "16px 16px 0 0",
+            background: "#141416", borderTop: "1px solid #333", borderRadius: 0,
             padding: "16px 16px calc(22px + env(safe-area-inset-bottom))", maxHeight: "82vh", overflowY: "auto",
             fontFamily: "Inter, sans-serif",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", textTransform: "uppercase" }}>Map layers</div>
-              <button onClick={() => setShowLayers(false)} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", color: "#fff", fontSize: 18, cursor: "pointer" }}>×</button>
+              <button onClick={() => setShowLayers(false)} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", color: "#fff", fontSize: 18, cursor: "pointer" }}>×</button>
             </div>
 
             {(() => {
               const lbl = { fontSize: 9.5, fontWeight: 700, color: BRAND.textMuted, letterSpacing: "0.16em", textTransform: "uppercase", margin: "0 0 8px" };
-              const seg = { display: "flex", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 8, overflow: "hidden", marginBottom: 18 };
+              const seg = { display: "flex", border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, overflow: "hidden", marginBottom: 18 };
               const segBtn = (active) => ({ flex: 1, padding: "11px 8px", background: active ? BRAND.gold : "transparent", color: active ? BRAND.obsidian : BRAND.textSecondary, border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" });
               return (
                 <>
@@ -9818,7 +9798,7 @@ export default function GlobalAttackMap() {
                       { id: "blast", t: "Blast", active: showBlastRadius, on: () => setShowBlastRadius(s => !s) },
                     ].map(b => (
                       <button key={b.id} onClick={b.on} style={{
-                        flex: 1, padding: "11px 8px", borderRadius: 8, cursor: "pointer",
+                        flex: 1, padding: "11px 8px", borderRadius: 0, cursor: "pointer",
                         background: b.active ? "rgba(245,184,0,0.14)" : "transparent",
                         color: b.active ? BRAND.gold : BRAND.textMuted,
                         border: `1px solid ${b.active ? BRAND.borderGold : BRAND.borderSubtle}`,
@@ -9831,7 +9811,7 @@ export default function GlobalAttackMap() {
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
                     {[5, 4, 3, 2, 1].map(level => (
                       <span key={level} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        <span style={{ width: 8, height: 8, borderRadius: 4, background: SEVERITY[level].color }} />
+                        <span style={{ width: 8, height: 8, borderRadius: 0, background: SEVERITY[level].color }} />
                         {SEVERITY[level].label}
                       </span>
                     ))}
@@ -9900,7 +9880,7 @@ export default function GlobalAttackMap() {
           {!isUserMode && error && (
             <div style={{
               padding: 12, background: "rgba(255,107,107,0.1)",
-              border: "1px solid rgba(255,107,107,0.3)", borderRadius: 4,
+              border: "1px solid rgba(255,107,107,0.3)", borderRadius: 0,
               color: "#FF6B6B", fontFamily: "Inter, sans-serif", fontSize: 12,
             }}>
               {error}
@@ -9914,13 +9894,13 @@ export default function GlobalAttackMap() {
                 background: "rgba(36,36,36,0.85)", backdropFilter: "blur(12px)",
                 color: BRAND.gold,
                 fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em",
-                border: `1px solid ${BRAND.borderGold}`, borderRadius: 4,
+                border: `1px solid ${BRAND.borderGold}`, borderRadius: 0,
                 cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
               }}>
               ◇ OPEN ARCHIVE
               <span style={{
                 padding: "2px 8px", background: BRAND.gold, color: BRAND.obsidian,
-                borderRadius: 2, fontSize: 10,
+                borderRadius: 0, fontSize: 10,
               }}>
                 {archiveIndex.length} {archiveIndex.length === 1 ? "day" : "days"} stored
               </span>
@@ -9930,13 +9910,13 @@ export default function GlobalAttackMap() {
           {isUserMode && (
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "10px 18px", borderRadius: 4,
+              padding: "10px 18px", borderRadius: 0,
               background: "rgba(245,184,0,0.08)", border: `1px solid ${BRAND.borderGold}`,
               fontFamily: "Inter, sans-serif", fontSize: 11,
               letterSpacing: "0.16em", color: BRAND.gold, textTransform: "uppercase",
             }}>
               <span style={{
-                width: 7, height: 7, borderRadius: 4, background: BRAND.gold,
+                width: 7, height: 7, borderRadius: 0, background: BRAND.gold,
                 animation: "attackmap-pulse 1.6s ease-in-out infinite",
               }} />
               LOADING LATEST INTELLIGENCE
@@ -9995,7 +9975,7 @@ export default function GlobalAttackMap() {
               const fCount = (activeSeverities.size > 0 ? 1 : 0) + activeCats.size + activeIndustries.size + activeCountries.size;
               const chip = {
                 display: "inline-flex", alignItems: "center", gap: 5,
-                padding: "4px 9px", borderRadius: 4, fontFamily: "Inter, sans-serif",
+                padding: "4px 9px", borderRadius: 0, fontFamily: "Inter, sans-serif",
                 fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
                 background: "rgba(245,184,0,0.12)", color: BRAND.gold,
                 border: `1px solid ${BRAND.borderGold}`, whiteSpace: "nowrap",
@@ -10005,7 +9985,7 @@ export default function GlobalAttackMap() {
                 <div className="r-hide" style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                   <button onClick={() => setFiltersOpen(o => !o)} title="Filter the map"
                     style={{
-                      padding: "6px 14px", borderRadius: 4,
+                      padding: "6px 14px", borderRadius: 0,
                       background: (filtersOpen || fCount > 0) ? "rgba(245,184,0,0.14)" : "rgba(36,36,36,0.85)",
                       backdropFilter: "blur(12px)",
                       border: `1px solid ${(filtersOpen || fCount > 0) ? BRAND.borderGold : BRAND.borderSubtle}`,
@@ -10019,7 +9999,7 @@ export default function GlobalAttackMap() {
                   <button onClick={() => setShowArchive(true)}
                     title={`${archiveIndex.length} day${archiveIndex.length === 1 ? "" : "s"} of intelligence`}
                     style={{
-                      padding: "6px 14px", borderRadius: 4,
+                      padding: "6px 14px", borderRadius: 0,
                       background: "rgba(36,36,36,0.85)", backdropFilter: "blur(12px)",
                       border: `1px solid ${BRAND.borderSubtle}`,
                       fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.10em",
@@ -10028,7 +10008,7 @@ export default function GlobalAttackMap() {
                     }}>
                     ◇ Timeline
                     {archiveIndex.length > 0 && (
-                      <span style={{ padding: "1px 5px", background: BRAND.gold, color: BRAND.obsidian, borderRadius: 2, fontSize: 9 }}>{archiveIndex.length}</span>
+                      <span style={{ padding: "1px 5px", background: BRAND.gold, color: BRAND.obsidian, borderRadius: 0, fontSize: 9 }}>{archiveIndex.length}</span>
                     )}
                   </button>
                   {activeSeverities.size > 0 && (
@@ -10060,7 +10040,7 @@ export default function GlobalAttackMap() {
               position: "absolute", top: 42, left: 0, width: 340,
               maxHeight: "72vh", overflowY: "auto", padding: 16,
               background: "rgba(20,20,22,0.96)", backdropFilter: "blur(20px)",
-              border: `1px solid ${BRAND.borderGold}`, borderRadius: 10,
+              border: `1px solid ${BRAND.borderGold}`, borderRadius: 0,
               boxShadow: "0 18px 50px rgba(0,0,0,0.6)", zIndex: 20,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -10081,7 +10061,7 @@ export default function GlobalAttackMap() {
                   }
                 }}
                   style={{
-                    padding: "5px 12px", borderRadius: 4,
+                    padding: "5px 12px", borderRadius: 0,
                     background: isActive ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${isActive ? BRAND.borderGold : BRAND.borderSubtle}`,
@@ -10116,7 +10096,7 @@ export default function GlobalAttackMap() {
                   })}
                   title={`${cat.label} · ${count} incident${count === 1 ? "" : "s"}${deskName ? ` · ${deskName}` : ""}`}
                   style={{
-                    padding: "5px 12px", borderRadius: 4,
+                    padding: "5px 12px", borderRadius: 0,
                     background: isActive ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${isActive ? BRAND.borderGold : BRAND.borderSubtle}`,
@@ -10149,7 +10129,7 @@ export default function GlobalAttackMap() {
               return (
                 <button onClick={() => { setIndustryPanelOpen(s => !s); setRegionPanelOpen(false); setShowFilterPopover(false); }}
                   style={{
-                    padding: "5px 12px", borderRadius: 4,
+                    padding: "5px 12px", borderRadius: 0,
                     background: (industryPanelOpen || activeIndustries.size > 0) ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${(industryPanelOpen || activeIndustries.size > 0) ? BRAND.borderGold : BRAND.borderSubtle}`,
@@ -10175,7 +10155,7 @@ export default function GlobalAttackMap() {
               return (
                 <button onClick={() => { setRegionPanelOpen(s => !s); setIndustryPanelOpen(false); setShowFilterPopover(false); }}
                   style={{
-                    padding: "5px 12px", borderRadius: 4,
+                    padding: "5px 12px", borderRadius: 0,
                     background: (regionPanelOpen || activeCountries.size > 0) ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${(regionPanelOpen || activeCountries.size > 0) ? BRAND.borderGold : BRAND.borderSubtle}`,
@@ -10192,7 +10172,7 @@ export default function GlobalAttackMap() {
             {/* MORE — opens detailed filter popover */}
             <button onClick={() => { setShowFilterPopover(s => !s); setIndustryPanelOpen(false); setRegionPanelOpen(false); }}
               style={{
-                padding: "5px 12px", borderRadius: 4,
+                padding: "5px 12px", borderRadius: 0,
                 background: showFilterPopover ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
                 backdropFilter: "blur(12px)",
                 border: `1px solid ${showFilterPopover ? BRAND.borderGold : BRAND.borderSubtle}`,
@@ -10227,7 +10207,7 @@ export default function GlobalAttackMap() {
                 maxHeight: "70vh", overflowY: "auto",
                 padding: 16,
                 background: "rgba(26,26,26,0.95)", backdropFilter: "blur(20px)",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 8,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                 boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
                 zIndex: 20,
               }}>
@@ -10250,7 +10230,7 @@ export default function GlobalAttackMap() {
                     style={{
                       width: "100%", padding: "6px 10px", marginBottom: 12,
                       background: "transparent",
-                      border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 4,
+                      border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                       fontFamily: "Inter, sans-serif", fontSize: 10,
                       color: BRAND.textSecondary, letterSpacing: "0.06em",
                       textTransform: "uppercase", cursor: "pointer",
@@ -10277,7 +10257,7 @@ export default function GlobalAttackMap() {
                           padding: "8px 12px",
                           background: on ? "rgba(245,184,0,0.18)" : "rgba(8,8,8,0.4)",
                           border: `1px solid ${on ? BRAND.gold : BRAND.borderSubtle}`,
-                          borderRadius: 4,
+                          borderRadius: 0,
                           fontFamily: "Inter, sans-serif", fontSize: 12,
                           color: on ? BRAND.white : BRAND.textSecondary,
                           fontWeight: on ? 600 : 400,
@@ -10299,7 +10279,7 @@ export default function GlobalAttackMap() {
                 {untaggedCount > 0 && (
                   <div style={{
                     marginTop: 12, padding: "8px 10px",
-                    background: "rgba(255,255,255,0.04)", borderRadius: 4,
+                    background: "rgba(255,255,255,0.04)", borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 9.5,
                     color: BRAND.textMuted, letterSpacing: "0.06em",
                     textAlign: "center",
@@ -10325,7 +10305,7 @@ export default function GlobalAttackMap() {
                 maxHeight: "70vh", overflowY: "auto",
                 padding: 16,
                 background: "rgba(26,26,26,0.95)", backdropFilter: "blur(20px)",
-                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 8,
+                border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                 boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
                 zIndex: 20,
               }}>
@@ -10348,7 +10328,7 @@ export default function GlobalAttackMap() {
                     style={{
                       width: "100%", padding: "6px 10px", marginBottom: 12,
                       background: "transparent",
-                      border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 4,
+                      border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                       fontFamily: "Inter, sans-serif", fontSize: 10,
                       color: BRAND.textSecondary, letterSpacing: "0.06em",
                       textTransform: "uppercase", cursor: "pointer",
@@ -10375,7 +10355,7 @@ export default function GlobalAttackMap() {
                           padding: "8px 12px",
                           background: on ? "rgba(245,184,0,0.18)" : "rgba(8,8,8,0.4)",
                           border: `1px solid ${on ? BRAND.gold : BRAND.borderSubtle}`,
-                          borderRadius: 4,
+                          borderRadius: 0,
                           fontFamily: "Inter, sans-serif", fontSize: 12,
                           color: on ? BRAND.white : BRAND.textSecondary,
                           fontWeight: on ? 600 : 400,
@@ -10403,17 +10383,17 @@ export default function GlobalAttackMap() {
               position: "absolute", top: 64, left: 24, width: 360,
               padding: 18,
               background: "rgba(26,26,26,0.95)", backdropFilter: "blur(20px)",
-              border: `1px solid rgba(245,184,0,0.20)`, borderRadius: 14,
+              border: `1px solid rgba(245,184,0,0.20)`, borderRadius: 0,
               boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
               zIndex: 30,
             }}>
-              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: "14px 14px 0 0" }} />
+              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: 0 }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600 }}>
                   ◇ DETAILED FILTERS
                 </div>
                 <button onClick={() => setShowFilterPopover(false)}
-                  style={{ width: 22, height: 22, padding: 0, background: "transparent", color: BRAND.textMuted, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3, cursor: "pointer", fontSize: 12 }}>×</button>
+                  style={{ width: 22, height: 22, padding: 0, background: "transparent", color: BRAND.textMuted, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, cursor: "pointer", fontSize: 12 }}>×</button>
               </div>
               {/* Search */}
               <div style={{ position: "relative", marginBottom: 14 }}>
@@ -10433,7 +10413,7 @@ export default function GlobalAttackMap() {
                     background: BRAND.obsidianElevated,
                     color: BRAND.white,
                     border: `1px solid ${searchQuery ? BRAND.borderGold : BRAND.borderSubtle}`,
-                    borderRadius: 3, outline: "none",
+                    borderRadius: 0, outline: "none",
                   }}
                 />
               </div>
@@ -10460,7 +10440,7 @@ export default function GlobalAttackMap() {
                         background: isActive ? s.color : "transparent",
                         color: isActive ? BRAND.obsidian : s.color,
                         border: `1px solid ${isActive ? s.color : BRAND.borderSubtle}`,
-                        borderRadius: 3, cursor: "pointer", fontWeight: 500,
+                        borderRadius: 0, cursor: "pointer", fontWeight: 500,
                       }}>
                       S{level} <span style={{ fontSize: 9, opacity: 0.8, marginLeft: 3 }}>{count}</span>
                     </button>
@@ -10489,7 +10469,7 @@ export default function GlobalAttackMap() {
                         background: isActive ? BRAND.gold : "transparent",
                         color: isActive ? BRAND.obsidian : BRAND.textSecondary,
                         border: `1px solid ${isActive ? BRAND.gold : BRAND.borderSubtle}`,
-                        borderRadius: 3, cursor: "pointer", fontWeight: 500, textTransform: "uppercase",
+                        borderRadius: 0, cursor: "pointer", fontWeight: 500, textTransform: "uppercase",
                       }}>
                       {level} <span style={{ fontSize: 9, opacity: 0.8, marginLeft: 3 }}>{count}</span>
                     </button>
@@ -10508,7 +10488,7 @@ export default function GlobalAttackMap() {
                   style={{
                     padding: "5px 10px", flex: 1,
                     background: "transparent", color: BRAND.gold,
-                    border: `1px solid ${BRAND.borderGold}`, borderRadius: 3,
+                    border: `1px solid ${BRAND.borderGold}`, borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 10, letterSpacing: "0.08em",
                     cursor: "pointer", textTransform: "uppercase",
                   }}>
@@ -10519,7 +10499,7 @@ export default function GlobalAttackMap() {
                     padding: "5px 10px",
                     background: showListPanel ? "rgba(245,184,0,0.12)" : "transparent",
                     color: showListPanel ? BRAND.gold : BRAND.textSecondary,
-                    border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3,
+                    border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 10, letterSpacing: "0.08em",
                     cursor: "pointer", textTransform: "uppercase",
                   }}>
@@ -10529,7 +10509,7 @@ export default function GlobalAttackMap() {
                   style={{
                     padding: "5px 10px",
                     background: "transparent", color: BRAND.textSecondary,
-                    border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 3,
+                    border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 10, letterSpacing: "0.08em",
                     cursor: "pointer", textTransform: "uppercase",
                   }}>
@@ -10548,7 +10528,7 @@ export default function GlobalAttackMap() {
             position: "absolute", bottom: 24, right: 24, zIndex: 20,
             padding: "9px 12px 10px", minWidth: 120,
             background: "rgba(26,26,28,0.92)", backdropFilter: "blur(14px)",
-            border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 9,
+            border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
             boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
           }}>
             <div style={{
@@ -10558,7 +10538,7 @@ export default function GlobalAttackMap() {
             }}>Risk level</div>
             {[5, 4, 3, 2, 1].map((level, i) => (
               <div key={level} style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: i < 4 ? 5 : 0 }}>
-                <span style={{ width: 7, height: 7, borderRadius: 4, background: SEVERITY[level].color, flexShrink: 0 }} />
+                <span style={{ width: 7, height: 7, borderRadius: 0, background: SEVERITY[level].color, flexShrink: 0 }} />
                 <span style={{
                   fontFamily: "Inter, sans-serif", fontSize: 9.5, fontWeight: 600,
                   color: BRAND.textSecondary, textTransform: "uppercase", letterSpacing: "0.06em",
@@ -10577,13 +10557,13 @@ export default function GlobalAttackMap() {
             display: "flex", alignItems: "center",
             padding: "6px 8px",
             background: "rgba(36,36,36,0.85)", backdropFilter: "blur(12px)",
-            border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 8,
+            border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
             boxShadow: "0 6px 24px rgba(0,0,0,0.4)",
             zIndex: 20,
             gap: 4,
           }}>
             {/* Group 2: Map mode (flat / globe) — segmented */}
-            <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
+            <div style={{ display: "flex", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
               {[
                 { id: "flat",  label: "▭ FLAT"  },
                 { id: "globe", label: "◯ GLOBE" },
@@ -10606,7 +10586,7 @@ export default function GlobalAttackMap() {
             <div style={{ width: 1, height: 18, background: BRAND.borderSubtle, margin: "0 2px" }} />
 
             {/* Group 3: View mode (buyer / newsroom) — segmented */}
-            <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
+            <div style={{ display: "flex", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
               {["buyer", "newsroom"].map(m => (
                 <button key={m} onClick={() => setViewMode(m)}
                   style={{
@@ -10638,7 +10618,7 @@ export default function GlobalAttackMap() {
                     background: b.active ? "rgba(245,184,0,0.12)" : "transparent",
                     color: b.active ? BRAND.gold : BRAND.textMuted,
                     border: `1px solid ${b.active ? BRAND.borderGold : BRAND.borderSubtle}`,
-                    borderRadius: 4,
+                    borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
                     letterSpacing: "0.08em",
                     cursor: "pointer", textTransform: "uppercase",
@@ -10658,7 +10638,7 @@ export default function GlobalAttackMap() {
             position: "absolute", bottom: 90, left: "50%", transform: "translateX(-50%)",
             padding: "8px 18px",
             background: "rgba(8,8,8,0.7)", backdropFilter: "blur(12px)",
-            border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 4,
+            border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
             fontFamily: "Inter, sans-serif", fontSize: 12, color: BRAND.textSecondary,
             maxWidth: 560, textAlign: "center",
             pointerEvents: "none", zIndex: 15,
@@ -10738,7 +10718,7 @@ export default function GlobalAttackMap() {
           position: "fixed", top: 92, left: "50%", transform: "translateX(-50%)", zIndex: 65,
           display: "flex", flexDirection: "column", gap: 8, padding: "12px 20px", width: "min(480px, 90vw)",
           background: "rgba(10,10,12,0.92)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 12, boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+          border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
           transition: "all 0.3s ease-in-out",
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -10821,7 +10801,7 @@ export default function GlobalAttackMap() {
           background: "rgba(46,46,46,0.95)", backdropFilter: "blur(16px)",
           color: archiveToast.type === "warn" ? "#FF8C5A" : BRAND.gold,
           border: `1px solid ${archiveToast.type === "warn" ? "rgba(255,107,107,0.4)" : BRAND.borderGold}`,
-          borderRadius: 4,
+          borderRadius: 0,
           fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.08em",
           zIndex: 1001, boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
         }}>
@@ -10833,7 +10813,7 @@ export default function GlobalAttackMap() {
         <div style={{
           position: "fixed", bottom: 24, right: 24,
           padding: "8px 12px", background: "rgba(255,107,107,0.08)",
-          border: "1px solid rgba(255,107,107,0.25)", borderRadius: 3,
+          border: "1px solid rgba(255,107,107,0.25)", borderRadius: 0,
           color: "#FF8C5A", fontFamily: "Inter, sans-serif", fontSize: 10,
           zIndex: 50,
         }}>

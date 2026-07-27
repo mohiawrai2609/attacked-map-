@@ -65,6 +65,21 @@ export const BRAND = {
   border:       "#333333",
   borderSubtle: "#333333",
   borderGold:   "rgba(245,184,0,0.3)",
+
+  // ── Semantic (NOT decorative — never reuse these as accents) ────────────
+  // Broadcast-red for the pulsing LIVE badge only. This is a functional
+  // signal in the newsroom sense (FT/BBC use the same convention), which is
+  // why it is exempt from the gold-only accent rule. It must never appear on
+  // a button, heading, border or anything that is not a liveness indicator.
+  live: "#E0091C",
+  ok:   "#34C759",   // success / confirmed states
+  blue: "#2D5BFF",   // footer link accent (legacy)
+
+  // Warm neutrals used by the Attacked Hub's newspaper layout.
+  newsprint:     "#14130F",
+  newsprintEdge: "#3D3A33",
+  newsprintText: "#E6E3DB",
+  newsprintMute: "#6E6A60",
 };
 
 // ── 5-tier risk scale (Attacked.ai standard — NOT the 3-tier RPI scale) ────

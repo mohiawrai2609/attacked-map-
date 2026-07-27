@@ -302,7 +302,7 @@ export function PricingPage() {
           : filled ? BRAND.obsidian : "#FFFFFF",
         border: cta.tone === "current" ? `1px solid #1E7A3D55`
           : filled ? "none" : `1px solid #101010`,
-        borderRadius: 6,
+        borderRadius: 0,
         fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 700,
         letterSpacing: "0.04em",
         cursor: cta.disabled ? "default" : "pointer",
@@ -374,7 +374,7 @@ export function PricingPage() {
               <div key={plan.id} style={{
                 background: hi ? "#FFFDF5" : "#FFFFFF",
                 border: `1px solid ${hi ? BRAND.gold : "#E7E7E9"}`,
-                borderRadius: 12,
+                borderRadius: 0,
                 padding: hi ? "30px 26px" : "26px 24px",
                 display: "flex", flexDirection: "column",
                 position: "relative",
@@ -386,7 +386,7 @@ export function PricingPage() {
                     padding: "4px 12px", background: BRAND.gold, color: BRAND.obsidian,
                     fontFamily: "Inter, sans-serif", fontSize: 9.5,
                     letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 800,
-                    borderRadius: 999,
+                    borderRadius: 0,
                   }}>Most popular</div>
                 )}
 
@@ -439,7 +439,7 @@ export function PricingPage() {
                   <div style={{
                     marginTop: 16, padding: "10px 12px",
                     background: "#FFF7DE", border: "1px solid rgba(245,184,0,0.55)",
-                    borderRadius: 6, fontSize: 11.5, color: "#3F3F46", lineHeight: 1.5,
+                    borderRadius: 0, fontSize: 11.5, color: "#3F3F46", lineHeight: 1.5,
                   }}>
                     <b style={{ color: "#8A6D00" }}>In return:</b> {plan.commitment}
                   </div>
@@ -474,7 +474,7 @@ export function PricingPage() {
                 <div key={plan.id} style={{
                   background: "#FAFAFA",
                   border: `1px solid #E7E7E9`,
-                  borderRadius: 10,
+                  borderRadius: 0,
                   padding: "22px 22px",
                   display: "flex", flexDirection: "column",
                 }}>
@@ -531,7 +531,7 @@ export function PricingPage() {
           <div style={{
             marginTop: 28, padding: "12px 16px", maxWidth: 700, margin: "28px auto 0",
             background: "rgba(255,107,107,0.10)", border: "1px solid rgba(255,107,107,0.3)",
-            borderRadius: 6, color: "#FF6B6B", fontSize: 13, lineHeight: 1.5,
+            borderRadius: 0, color: "#FF6B6B", fontSize: 13, lineHeight: 1.5,
           }}>
             {checkoutError}
           </div>

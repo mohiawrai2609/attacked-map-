@@ -82,12 +82,12 @@ const HUB_CSS = `
 .hubft button,.hubft select,.hubft input,.hubft textarea,.hubft optgroup{font-family:Inter,system-ui,sans-serif}
 .hubft .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,44px)}
 .hubft .kick{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-d)}
-.hubft .sev{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
+.hubft .sev{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:0;border:1px solid;white-space:nowrap}
 .hubft .by{font-size:11px;color:var(--mut)}
 .hubft img{display:block}
 .hubft .mast{text-align:center;padding:34px 0 22px;border-bottom:1px solid var(--line);background:radial-gradient(ellipse 60% 100% at 50% 0%,rgba(245,184,0,.07),transparent 70%)}
 .hubft .mast .bar{width:54px;height:3px;background:var(--gold);margin:0 auto 18px}
-.hubft .mast h1{font-size:clamp(40px,6.2vw,70px);font-weight:700;line-height:1;letter-spacing:-.01em}
+.hubft .mast h1{font-size:clamp(44px,6.6vw,78px);font-weight:600;line-height:.95;letter-spacing:-.055em;text-wrap:balance}
 .hubft .mast h1 i{color:var(--gold-d);font-style:italic}
 .hubft .mast p{max-width:560px;margin:12px auto 0;font-size:14px;line-height:1.55;color:var(--mut)}
 .hubft .kpis{display:flex;justify-content:center;flex-wrap:wrap;margin-top:18px}
@@ -103,15 +103,15 @@ const HUB_CSS = `
 .hubft .catnav button:hover{color:var(--ink)}
 .hubft .filterbar{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;padding:18px 0 0}
 .hubft .filterbar .cnt{margin-right:auto;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
-.hubft select{appearance:none;-webkit-appearance:none;padding:7px 28px 7px 11px;border-radius:4px;cursor:pointer;outline:none;background:#fff;border:1px solid var(--line);color:var(--sub);font-family:inherit;font-size:11px;font-weight:500;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6A60' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center}
+.hubft select{appearance:none;-webkit-appearance:none;padding:7px 28px 7px 11px;border-radius:0;cursor:pointer;outline:none;background:#fff;border:1px solid var(--line);color:var(--sub);font-family:inherit;font-size:11px;font-weight:500;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6A60' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center}
 .hubft select.act{background-color:rgba(245,184,0,.12);border-color:rgba(245,184,0,.4);color:var(--gold-d)}
-.hubft .clr{padding:7px 12px;border-radius:4px;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+.hubft .clr{padding:7px 12px;border-radius:0;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
 .hubft .sh{display:flex;align-items:center;gap:18px;margin:8px 0 24px}
 .hubft .sh .ln{flex:1;border-top:1px dotted var(--rule)}
 .hubft .sh h2{font-weight:700;font-size:18px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
 .hubft .sh.l{justify-content:flex-start;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:20px;gap:12px}
 .hubft .sh.l .ln{display:none}.hubft .sh.l h2{font-size:20px;letter-spacing:-.01em;text-transform:none}
-.hubft .sh.l .sq{width:9px;height:9px;border-radius:2px}
+.hubft .sh.l .sq{width:9px;height:9px;border-radius:0}
 .hubft .sh.l .more{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--gold-d);background:none;border:none;cursor:pointer;font-family:inherit;text-transform:uppercase}
 .hubft .sec{padding:46px 0 0}
 .hubft .hero{display:grid;grid-template-columns:.92fr 1.5fr .92fr;gap:34px;padding:30px 0 0;align-items:start}
@@ -182,21 +182,21 @@ const HUB_CSS = `
 .hubft .opc .an{font-size:12px;font-weight:700}.hubft .opc .ad{font-size:10px;color:var(--mut)}
 .hubft .decon{background:var(--ob);color:#fff}
 .hubft .decon .in{display:grid;grid-template-columns:1.3fr 1fr;gap:34px;align-items:center}
-.hubft .decon .img{position:relative;overflow:hidden;border-radius:4px;cursor:pointer}
+.hubft .decon .img{position:relative;overflow:hidden;border-radius:0;cursor:pointer}
 .hubft .decon .img img{width:100%;object-fit:cover;transition:transform .6s}
 .hubft .decon:hover .img img{transform:scale(1.05)}
 .hubft .decon .tag{position:absolute;left:16px;bottom:16px;background:var(--gold);color:#1A1A1A;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px}
 .hubft .decon h2{font-size:clamp(28px,3vw,40px);font-weight:700;line-height:1.08}
 .hubft .decon p{margin-top:14px;font-size:14px;color:#bdbdbd;line-height:1.66}
 .hubft .decon .steps{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
-.hubft .decon .step{font-size:10px;color:#A8A8A8;border:1px solid #333;border-radius:3px;padding:5px 9px}
+.hubft .decon .step{font-size:10px;color:#A8A8A8;border:1px solid #333;border-radius:0;padding:5px 9px}
 .hubft .decon .step b{color:var(--gold)}
-.hubft .btn{display:inline-block;background:var(--gold);color:#1A1A1A;border:none;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:12px 24px;border-radius:4px;transition:transform .15s}
+.hubft .btn{display:inline-block;background:var(--gold);color:#1A1A1A;border:none;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:12px 24px;border-radius:0;transition:transform .15s}
 .hubft .btn:hover{transform:translateY(-2px)}
 .hubft .btn.gh{background:transparent;color:#fff;border:1px solid #444}
 .hubft .crit{display:grid;grid-template-columns:1fr 1fr;gap:0 48px}
 .hubft .latest{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:26px}
-.hubft .card{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
+.hubft .card{border:1px solid var(--line);border-radius:0;overflow:hidden;background:#fff;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
 .hubft .card:hover{border-color:var(--gold);box-shadow:0 12px 30px rgba(20,20,20,.10);transform:translateY(-2px)}
 .hubft .card .img{overflow:hidden}
 .hubft .card .img img{width:100%;object-fit:cover;transition:transform .5s}
@@ -208,10 +208,10 @@ const HUB_CSS = `
 .hubft .card:hover h3{color:var(--gold-d)}
 .hubft .card p{margin-top:9px;font-size:12.5px;line-height:1.55;color:var(--sub);-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .pager{margin-top:44px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
-.hubft .pager button{min-width:38px;padding:8px 12px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;color:var(--ink);border:1px solid var(--line)}
+.hubft .pager button{min-width:38px;padding:8px 12px;border-radius:0;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;color:var(--ink);border:1px solid var(--line)}
 .hubft .pager button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .hubft .pager button:disabled{color:#C4BCA8;cursor:default}
-.hubft .cta{margin-top:54px;text-align:center;padding:42px 24px;background:var(--ob);border-radius:12px}
+.hubft .cta{margin-top:54px;text-align:center;padding:42px 24px;background:var(--ob);border-radius:0}
 .hubft .cta h3{font-size:30px;font-weight:700;color:#fff}
 .hubft .cta p{max-width:470px;margin:10px auto 0;font-size:13.5px;color:#A8A8A8;line-height:1.6}
 .hubft .empty{padding:90px 0;text-align:center;color:var(--mut);font-size:13px}
@@ -294,7 +294,7 @@ function NewsImage({ a, height, lead }) {
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
         border: "1px solid rgba(255,255,255,0.05)",
       }}>
-        <span style={{ width: 8, height: 8, borderRadius: 2, background: sev }} />
+        <span style={{ width: 8, height: 8, borderRadius: 0, background: sev }} />
         <span style={{ color: "rgba(255,255,255,0.55)", fontWeight: 700, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase" }}>
           {CAT_NAME[a.primary_category] || a.primary_category || "Incident"}
         </span>
@@ -387,7 +387,7 @@ function ArticleView({ article, onBack, onMap, user }) {
           <span className="kick" style={{ color: GOLD_D }}>{a.primary_subcategory_name || catName(a)}</span>
           <span style={{ fontSize: 11.5, color: "#6E6A60", fontWeight: 600 }}>{fmtDay(a.incident_day)}</span>
         </div>
-        <h1 style={{ margin: "14px 0 0", fontSize: "clamp(30px, 4vw, 46px)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.01em" }}>{a.headline}</h1>
+        <h1 style={{ margin: "14px 0 0", fontSize: "clamp(32px, 4.4vw, 52px)", fontWeight: 600, lineHeight: 1.02, letterSpacing: "-0.045em", textWrap: "balance" }}>{a.headline}</h1>
         {meta && <div style={{ marginTop: 14, fontSize: 12.5, color: "#6E6A60", fontWeight: 600 }}>{meta}</div>}
         <div style={{ margin: "24px 0 0", overflow: "hidden", border: "1px solid #E6E3DB" }}>
           <div style={{ width: "100%", overflow: "hidden" }}><NewsImage a={a} height={340} lead /></div>
@@ -397,7 +397,7 @@ function ArticleView({ article, onBack, onMap, user }) {
             ...(longBody && !expanded ? { display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" } : {}) }}>{body}</p>
         )}
         {(longBody || a.severity_rationale || a.threat_actor || a.if_you_operate_x_then_y || a.financial_impact_disclosed) && (
-          <button onClick={() => setExpanded(v => !v)} style={{ marginTop: 16, padding: "10px 18px", borderRadius: 4, cursor: "pointer", background: "transparent", border: `1px solid rgba(245,184,0,0.3)`, color: GOLD_D, fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{expanded ? "Read less ↑" : "Read more ↓"}</button>
+          <button onClick={() => setExpanded(v => !v)} style={{ marginTop: 16, padding: "10px 18px", borderRadius: 0, cursor: "pointer", background: "transparent", border: `1px solid rgba(245,184,0,0.3)`, color: GOLD_D, fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{expanded ? "Read less ↑" : "Read more ↓"}</button>
         )}
         {expanded && (
           <>
@@ -407,10 +407,10 @@ function ArticleView({ article, onBack, onMap, user }) {
             <Block label="Disclosed financial impact">{a.financial_impact_disclosed}</Block>
           </>
         )}
-        <div style={{ marginTop: 44, padding: "32px 26px", textAlign: "center", background: OB, borderRadius: 12 }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>See the blast radius on the map.</div>
+        <div style={{ marginTop: 44, padding: "32px 26px", textAlign: "center", background: OB, borderRadius: 0 }}>
+          <div style={{ fontSize: 26, fontWeight: 600, color: "#fff", letterSpacing: "-0.035em" }}>See the blast radius on the map.</div>
           <p style={{ margin: "10px auto 0", maxWidth: 440, fontSize: 13, color: "#A8A8A8", lineHeight: 1.6 }}>Blast radius, adaptive controls and vendor Defence Ratings for this incident — live on the Attack Map.</p>
-          <button onClick={onMap} style={{ marginTop: 18, padding: "12px 26px", background: GOLD, color: OB, border: "none", borderRadius: 4, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{user ? "Open on the map →" : "Sign up to open the map →"}</button>
+          <button onClick={onMap} style={{ marginTop: 18, padding: "12px 26px", background: GOLD, color: OB, border: "none", borderRadius: 0, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{user ? "Open on the map →" : "Sign up to open the map →"}</button>
         </div>
       </div>
     </main>
@@ -428,7 +428,7 @@ function ReportFrame({ article, onBack, onMap, user }) {
         position: "absolute", top: 12, left: 24, zIndex: 20,
         display: "inline-flex", alignItems: "center", gap: 6,
         background: "rgba(255,255,255,0.9)", backdropFilter: "saturate(1.4) blur(6px)",
-        border: "1px solid #D9D6CE", borderRadius: 8, padding: "7px 13px",
+        border: "1px solid #D9D6CE", borderRadius: 0, padding: "7px 13px",
         color: "#3A362E", cursor: "pointer", fontFamily: "Inter, sans-serif",
         fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
       }}>← Back to the feed</button>
@@ -693,7 +693,7 @@ export function AttackHub() {
                   {[...articles.slice(0, 24), ...articles.slice(0, 24)].map((a, i) => (
                     <span key={`${a.id}-${i}`} className="hub-ticker-item" onClick={() => openArticle(a)}
                       style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "0 22px", cursor: "pointer", fontSize: 12.5 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: 2, background: SEV_C[a.severity] || GOLD, flex: "0 0 auto" }} />
+                      <span style={{ width: 7, height: 7, borderRadius: 0, background: SEV_C[a.severity] || GOLD, flex: "0 0 auto" }} />
                       <span style={{ color: SEV_C[a.severity] || GOLD, fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase" }}>{CAT_SHORT[a.primary_category] || a.primary_category || ""}</span>
                       <span className="hti-h" style={{ color: "#eaeaea", fontWeight: 500, transition: "color 120ms" }}>{a.headline}</span>
                       <span style={{ color: "#666" }}>·</span>
@@ -743,7 +743,7 @@ export function AttackHub() {
               </select>
               {(() => {
                 const dStyle = (on) => ({
-                  fontFamily: "inherit", fontSize: 12, padding: "6px 8px", borderRadius: 3,
+                  fontFamily: "inherit", fontSize: 12, padding: "6px 8px", borderRadius: 0,
                   border: `1px solid ${on ? "var(--gold-d)" : "var(--line)"}`, background: "#fff",
                   color: on ? "var(--ink)" : "var(--mut)", colorScheme: "light", cursor: "pointer",
                 });

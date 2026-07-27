@@ -333,7 +333,7 @@ export function LandingPage() {
         .landing-skip-link {
           position: absolute; left: 12px; top: -48px; z-index: 200;
           background: ${BRAND.gold}; color: ${BRAND.obsidian};
-          padding: 10px 16px; border-radius: 4px;
+          padding: 10px 16px; border-radius:0;
           font-family: Inter, sans-serif; font-size: 12px; font-weight: 700;
           letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none;
           transition: top 160ms ease;
@@ -343,7 +343,7 @@ export function LandingPage() {
         .landing-root button:focus-visible {
           outline: 2px solid ${BRAND.gold};
           outline-offset: 2px;
-          border-radius: 3px;
+          border-radius:0;
         }
         @keyframes attacked-tick-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .attacked-tick { animation: attacked-tick-x 46s linear infinite; }
@@ -473,13 +473,13 @@ export function LandingPage() {
               style={{
                 display: "flex", flexWrap: "wrap", cursor: "pointer",
                 background: BRAND.obsidian, border: `1px solid ${BRAND.border}`,
-                borderRadius: 12, overflow: "hidden",
+                borderRadius: 0, overflow: "hidden",
                 transition: "border-color 160ms ease",
               }}>
               <div style={{ flex: "1 1 240px", minWidth: 0, padding: "16px 18px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.t2 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: 3, background: BRAND.gold }} />
+                    <span style={{ width: 6, height: 6, borderRadius: 0, background: BRAND.gold }} />
                     Live sample · {fmtDay(intel.latestDay) || "today"}
                   </span>
                   <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.gold, whiteSpace: "nowrap" }}>GUARD classified</span>
@@ -487,8 +487,8 @@ export function LandingPage() {
                 {hero ? (
                   <>
                     <div style={{ display: "inline-flex", gap: 8, marginBottom: 9 }}>
-                      <span style={{ padding: "3px 9px", borderRadius: 3, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: `${sevColor}1f`, color: sevColor, border: `1px solid ${sevColor}55` }}>{SEVERITY_LABEL[hero.severity] || "—"}</span>
-                      <span style={{ padding: "3px 9px", borderRadius: 3, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: "rgba(255,255,255,0.06)", color: BRAND.t2, border: `1px solid ${BRAND.border}` }}>{hero.primary_category || "OPS"}</span>
+                      <span style={{ padding: "3px 9px", borderRadius: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: `${sevColor}1f`, color: sevColor, border: `1px solid ${sevColor}55` }}>{SEVERITY_LABEL[hero.severity] || "—"}</span>
+                      <span style={{ padding: "3px 9px", borderRadius: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: "rgba(255,255,255,0.06)", color: BRAND.t2, border: `1px solid ${BRAND.border}` }}>{hero.primary_category || "OPS"}</span>
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, letterSpacing: "-0.01em", marginBottom: 8, color: BRAND.white, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{hero.headline}</div>
                     <div style={{ fontSize: 11, color: BRAND.tmuted, fontWeight: 600, letterSpacing: "0.03em" }}>
@@ -539,7 +539,7 @@ export function LandingPage() {
             aspectRatio: "16 / 9", width: "100%",
             background: BRAND.deep,
             border: `1px solid ${BRAND.border}`,
-            borderRadius: 14, overflow: "hidden",
+            borderRadius: 0, overflow: "hidden",
             boxShadow: "0 24px 70px rgba(0,0,0,0.5)",
           }} />
         </div>
@@ -562,7 +562,7 @@ export function LandingPage() {
               letterSpacing: "0.16em", textTransform: "uppercase",
             }}>
               <span style={{
-                width: 7, height: 7, borderRadius: 4, background: BRAND.gold,
+                width: 7, height: 7, borderRadius: 0, background: BRAND.gold,
                 boxShadow: "0 0 10px rgba(245,184,0,0.5)",
               }} />
               Live from the latest incidents
@@ -611,7 +611,7 @@ export function LandingPage() {
                       display: "flex", gap: 6, alignItems: "center",
                     }}>
                       <span style={{
-                        padding: "2px 8px", borderRadius: 3,
+                        padding: "2px 8px", borderRadius: 0,
                         fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                         background: `${SEVERITY_COLOR[c.severity] || BRAND.gold}26`,
                         color: SEVERITY_COLOR[c.severity] || BRAND.gold,
@@ -619,7 +619,7 @@ export function LandingPage() {
                         backdropFilter: "blur(4px)",
                       }}>{SEVERITY_LABEL[c.severity] || "—"}</span>
                       <span style={{
-                        padding: "2px 7px", borderRadius: 3,
+                        padding: "2px 7px", borderRadius: 0,
                         fontSize: 9.5, fontWeight: 700, color: BRAND.white,
                         letterSpacing: "0.08em", textTransform: "uppercase",
                         background: "rgba(8,8,8,0.5)", border: `1px solid ${BRAND.border}`,
@@ -741,7 +741,7 @@ export function LandingPage() {
               >
                 <div style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  width: 42, height: 42, borderRadius: 10, marginBottom: 18,
+                  width: 42, height: 42, borderRadius: 0, marginBottom: 18,
                   background: "#FFF7DE", border: "1px solid rgba(245,184,0,0.5)",
                 }}>{c.icon}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 10, color: "#FFFFFF" }}>
@@ -777,7 +777,7 @@ export function LandingPage() {
             {/* Daily Brief — free */}
             <div style={{
               background: "#FFFFFF", border: `1px solid ${BRAND.lineDark}`,
-              borderRadius: 10, padding: "26px 26px 24px",
+              borderRadius: 0, padding: "26px 26px 24px",
             }}>
               <div style={{
                 fontSize: 10.5, fontWeight: 700, color: "#6A6A6A",
@@ -791,7 +791,7 @@ export function LandingPage() {
               <button onClick={() => { if (user) window.location.href = "/?subscriptions"; else setAuthOpen(true); }} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: "transparent", color: "#8A6D00",
-                border: `1px solid ${BRAND.gold}`, borderRadius: 4, cursor: "pointer",
+                border: `1px solid ${BRAND.gold}`, borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 11.5, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
               }}>{user ? "Manage subscription →" : "Subscribe free →"}</button>
@@ -799,7 +799,7 @@ export function LandingPage() {
             {/* Partner Brief — featured (gold-tint) */}
             <div style={{
               background: "#FFFDF5", border: `1px solid ${BRAND.gold}`,
-              borderRadius: 10, padding: "26px 26px 24px",
+              borderRadius: 0, padding: "26px 26px 24px",
               position: "relative", boxShadow: "0 16px 40px rgba(245,184,0,0.14)",
             }}>
               <div style={{
@@ -814,7 +814,7 @@ export function LandingPage() {
               <button onClick={() => setPartnerOpen(true)} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: BRAND.gold, color: BRAND.obsidian,
-                border: "none", borderRadius: 4, cursor: "pointer",
+                border: "none", borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 11.5, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
               }}>Apply for access →</button>
@@ -895,7 +895,7 @@ export function LandingPage() {
             style={{
               width: "100%", maxWidth: 480,
               background: BRAND.obsidian, border: `1px solid ${BRAND.borderGold}`,
-              borderRadius: 12, padding: "34px 34px 30px",
+              borderRadius: 0, padding: "34px 34px 30px",
               boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
               textAlign: "center", position: "relative",
             }}>

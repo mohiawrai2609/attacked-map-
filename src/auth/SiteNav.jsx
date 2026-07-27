@@ -16,16 +16,8 @@ import React, { useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { Logo } from "./Logo";
 import { AuthModal } from "./AuthModal";
+import { BRAND } from "../brand.js";
 
-const BRAND = {
-  gold: "#F5B800",
-  obsidian: "#1A1A1A",
-  deep: "#080808",
-  white: "#FFFFFF",
-  t2: "#A8A8A8",
-  border: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
-};
 
 export function SiteNav({ active }) {
   const { user, tier, profile, signOut } = useAuth();
@@ -101,7 +93,7 @@ export function SiteNav({ active }) {
                 aria-label="Account menu" aria-expanded={menuOpen}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "4px 9px 4px 4px", borderRadius: 999, cursor: "pointer",
+                  padding: "4px 9px 4px 4px", borderRadius: 0, cursor: "pointer",
                   background: "rgba(245,184,0,0.08)", border: `1px solid ${BRAND.borderGold}`,
                 }}>
                 <span style={{
@@ -122,7 +114,7 @@ export function SiteNav({ active }) {
                   <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60 }} />
                   <div className="acct-menu" style={{
                     position: "absolute", top: "calc(100% + 12px)", right: 0, zIndex: 61,
-                    width: 248, background: "#FFFFFF", borderRadius: 10,
+                    width: 248, background: "#FFFFFF", borderRadius: 0,
                     border: "1px solid #E7E7E9", boxShadow: "0 18px 50px rgba(0,0,0,0.40)",
                     overflow: "hidden",
                   }}>
@@ -147,13 +139,13 @@ export function SiteNav({ active }) {
             <>
               <button onClick={() => setAuthOpen(true)} style={{
                 padding: "8px 16px", background: "transparent", color: BRAND.white,
-                border: `1px solid ${BRAND.border}`, borderRadius: 4, cursor: "pointer",
+                border: `1px solid ${BRAND.border}`, borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600,
                 letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 6,
               }}>Sign in</button>
               <button onClick={() => setAuthOpen(true)} style={{
                 padding: "8px 18px", background: BRAND.gold, color: BRAND.obsidian,
-                border: "none", borderRadius: 4, cursor: "pointer",
+                border: "none", borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700,
                 letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 4,
               }}>Subscribe</button>

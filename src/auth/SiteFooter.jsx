@@ -14,19 +14,8 @@ import React, { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "./AuthProvider";
 import { Logo } from "./Logo";
+import { BRAND } from "../brand.js";
 
-const BRAND = {
-  gold: "#F5B800",
-  blue: "#2D5BFF",
-  obsidian: "#1A1A1A",
-  deep: "#080808",
-  white: "#FFFFFF",
-  t2: "#A8A8A8",
-  tmuted: "#585858",
-  border: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
-  ok: "#34C759",
-};
 
 const CONTACT_EMAIL = "hello@attacked.ai";
 const SOCIAL = {
@@ -108,7 +97,7 @@ export function SiteFooter() {
                   onChange={e => { setEmail(e.target.value); if (state === "error") setState("idle"); }}
                   placeholder="Email address"
                   style={{
-                    flex: "1 1 auto", minWidth: 0, padding: "13px 16px", borderRadius: 4,
+                    flex: "1 1 auto", minWidth: 0, padding: "13px 16px", borderRadius: 0,
                     background: "transparent", color: BRAND.white,
                     border: `1px solid ${state === "error" ? "#FF3B30" : "#4B5563"}`,
                     fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none",
@@ -118,7 +107,7 @@ export function SiteFooter() {
                 />
                 <button type="submit" style={{
                   padding: "13px 32px", background: BRAND.gold, color: BRAND.obsidian,
-                  border: "none", borderRadius: 4, cursor: "pointer",
+                  border: "none", borderRadius: 0, cursor: "pointer",
                   fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700,
                   letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
                   transition: "background 160ms ease",
@@ -159,7 +148,7 @@ export function SiteFooter() {
                 }}
               >
                 <span style={{
-                  width: 40, height: 22, borderRadius: 999, position: "relative",
+                  width: 40, height: 22, borderRadius: 0, position: "relative",
                   background: privacyOn ? BRAND.gold : "#3a3a3a",
                   transition: "background 160ms ease", flexShrink: 0,
                 }}>
