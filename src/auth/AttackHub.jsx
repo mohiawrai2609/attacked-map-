@@ -20,7 +20,7 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 import { SEVERITY_INK, SEVERITY_CHIP } from "../brand.js";
 
-const GOLD = "#F5B800", GOLD_D = "#7A6000", OB = "#1A1A1A";  // GOLD_D darkened from #8A6D00: on the cream ground (#F5F3ED) it measured 4.43:1, just under the 4.5 minimum for the 10px kicker labels.
+const GOLD = "#F5B800", GOLD_D = "#8A6D00", OB = "#1A1A1A";  // GOLD_D = the reference's --gold-text; 4.92:1 on white  // GOLD_D darkened from #8A6D00: on the cream ground (#F5F3ED) it measured 4.43:1, just under the 4.5 minimum for the 10px kicker labels.
 const SEV_C = { 5: "#FF3B30", 4: "#FF6B35", 3: GOLD, 2: "#34C759", 1: "#8E8E93" };
 const SEV_L = { 5: "CRITICAL", 4: "HIGH", 3: "MEDIUM", 2: "LOW", 1: "MINIMAL" };
 const CAT_NAME = {
@@ -79,7 +79,7 @@ const fmtShort = (iso) => { try { return new Date(iso + "T00:00:00Z").toUTCStrin
 // the rest of the app. Injected once. Hover/zoom/responsive live here; data and
 // layout are React. A single Inter typeface throughout.
 const HUB_CSS = `
-.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#14130F;--sub:#3D4146;--mut:#6E6A60;--line:#E6E3DB;--rule:#DAD6CC;--ob:${OB};--paper:#F5F3ED;--paper-2:#ECE9E1;--paper-warm:#F4F1EA;background:#F5F3ED;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#0A0A0A;--sub:#3F3F46;--mut:#71717A;--line:#E7E7E9;--rule:#D6D6DA;--ob:${OB};--paper:#FFFFFF;--paper-2:#FAFAFA;--paper-3:#F4F4F5;--paper-warm:#FAFAFA;--gold-tint:#FEF8E3;--gold-edge:#EBCB5B;background:#FFFFFF;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .hubft button,.hubft select,.hubft input,.hubft textarea,.hubft optgroup{font-family:Inter,system-ui,sans-serif}
 .hubft .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,44px)}
 .hubft .kick{font-size:10px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-d)}
@@ -96,7 +96,7 @@ const HUB_CSS = `
 .hubft .kpis .k:last-child{border-right:none}
 .hubft .kpis .v{font-size:21px;font-weight:700}
 .hubft .kpis .l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-top:2px}
-.hubft .catnav{border-bottom:1px solid var(--rule);background:rgba(245,243,237,.94);backdrop-filter:blur(12px)}
+.hubft .catnav{border-bottom:1px solid var(--rule);background:rgba(255,255,255,.92);backdrop-filter:blur(12px)}
 .hubft .catnav .wrap{display:flex;flex-wrap:nowrap;justify-content:safe center;gap:0;overflow-x:auto;scrollbar-width:none}
 .hubft .catnav .wrap::-webkit-scrollbar{display:none}
 .hubft .catnav button{padding:12px 9px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:500;letter-spacing:0;text-transform:uppercase;color:var(--mut);white-space:nowrap;border-bottom:2px solid transparent}
@@ -112,7 +112,7 @@ const HUB_CSS = `
 .hubft .sh h2{font-weight:700;font-size:17px;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
 .hubft .sh.l{justify-content:flex-start;border-bottom:2px solid var(--gold);padding-bottom:8px;margin-bottom:18px;gap:12px}
 .hubft .sh.l .ln{display:none}.hubft .sh.l h2{font-size:20px;letter-spacing:-.01em;text-transform:none}
-.hubft .sh.l .sq{width:9px;height:9px;border-radius:0;box-shadow:0 0 0 3px rgba(245,184,0,.16)}
+.hubft .sh.l .sq{width:9px;height:9px;border-radius:0;box-shadow:0 0 0 3px var(--gold-tint)}
 .hubft .sh.l .more{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--gold-d);background:none;border:none;cursor:pointer;font-family:inherit;text-transform:uppercase}
 .hubft .sec{padding:20px 0 0}
 .hubft .hero{display:grid;grid-template-columns:.92fr 1.5fr .92fr;gap:28px;padding:18px 0 0;align-items:start}
@@ -198,9 +198,9 @@ const HUB_CSS = `
 .hubft .crit{display:grid;grid-template-columns:1fr 1fr;gap:0 48px}
 .hubft .latest{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:26px}
 .hubft .goldband{background:var(--gold);color:#14130F;margin:34px 0 10px}.hubft .goldband .in{display:grid;grid-template-columns:1.5fr repeat(3,1fr)}.hubft .goldband .c{padding:26px 26px;border-left:1px solid rgba(20,19,15,.18)}.hubft .goldband .c:first-child{border-left:none}.hubft .goldband .lede{font-size:18px;font-weight:600;line-height:1.28;letter-spacing:-.03em;max-width:30ch}.hubft .goldband strong{display:block;font-size:36px;line-height:1;font-weight:600;letter-spacing:-.05em}.hubft .goldband em{font-style:normal;display:block;margin-top:9px;font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;font-weight:700;opacity:.72;line-height:1.35}@media(max-width:860px){.hubft .goldband .in{grid-template-columns:1fr 1fr}.hubft .goldband .c:nth-child(3){border-left:none}}.hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
-.hubft .metric{background:var(--paper-warm);border:1px solid var(--rule);padding:18px}
+.hubft .metric{background:var(--paper-3);border:1px solid var(--line);padding:18px}
 .hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
-.hubft .card{border:1px solid #D8D3C8;border-radius:0;overflow:hidden;background:#fff;box-shadow:0 10px 34px rgba(18,20,24,.07);cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
+.hubft .card{border:1px solid var(--line);border-radius:0;overflow:hidden;background:var(--paper-2);box-shadow:none;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
 .hubft .card:hover{border-color:var(--gold);border-top:3px solid var(--gold);margin-top:-2px;box-shadow:0 24px 70px rgba(18,20,24,.14);transform:translateY(-3px)}
 .hubft .card .img{overflow:hidden}
 .hubft .card .img img{width:100%;object-fit:cover;transition:transform .5s}
@@ -383,7 +383,7 @@ function ArticleView({ article, onBack, onMap, user }) {
     </section>
   );
   return (
-    <main className="r-pad" style={{ padding: "28px 36px 56px", background: "#F5F3ED", color: "#14130F", fontFamily: "Inter, sans-serif" }}>
+    <main className="r-pad" style={{ padding: "28px 36px 56px", background: "#FFFFFF", color: "#0A0A0A", fontFamily: "Inter, sans-serif" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 0", color: "#6E6A60", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>← Back to the feed</button>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
@@ -427,7 +427,7 @@ function ArticleView({ article, onBack, onMap, user }) {
 // re-rendering. Falls back to ArticleView when no report file exists.
 function ReportFrame({ article, onBack, onMap, user }) {
   return (
-    <main style={{ background: "#F5F3ED", fontFamily: "Inter, sans-serif", position: "relative" }}>
+    <main style={{ background: "#FFFFFF", fontFamily: "Inter, sans-serif", position: "relative" }}>
       <button onClick={onBack} style={{
         position: "absolute", top: 12, left: 24, zIndex: 20,
         display: "inline-flex", alignItems: "center", gap: 6,

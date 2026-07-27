@@ -102,12 +102,14 @@ export const SEVERITY = {
 // further, but that was chasing numbers polluted by the dark LIVE ticker,
 // which had wrongly been switched to this ramp — on a dark ground these read
 // worse, not better. Light grounds only.
+// Taken from the impact-assessment reference's light-mode ramp
+// (--crit / --hi / --gold-text / --lo / --min) rather than hand-derived.
 export const SEVERITY_INK = {
-  5: "#B01F16",
-  4: "#A03D12",
-  3: "#7A6000",
-  2: "#1A7430",
-  1: "#57575C",
+  5: "#C0341D",
+  4: "#C2410C",
+  3: "#8A6D00",
+  2: "#1E7A3D",
+  1: "#6B6B70",
 };
 
 // Opaque pale grounds for severity chips. A chip that uses a TRANSLUCENT tint
