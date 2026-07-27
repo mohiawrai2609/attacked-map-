@@ -1163,14 +1163,14 @@ function resolveCoords(inc) {
           background: rgba(245, 184, 0, 0.25);
         }
         .nav-btn-top {
-          border-radius: 8px 8px 0 0;
+          border-radius: 0;
           border-bottom: none;
         }
         .nav-btn-mid {
           border-bottom: none;
         }
         .nav-btn-bot {
-          border-radius: 0 0 8px 8px;
+          border-radius: 0;
         }
       `}</style>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
@@ -1187,7 +1187,7 @@ function resolveCoords(inc) {
           backdropFilter: "blur(12px)",
           border: `1px solid ${tooltip.color}55`,
           borderLeft: `3px solid ${tooltip.color}`,
-          borderRadius: 8,
+          borderRadius: 0,
           padding: "8px 12px",
           minWidth: 200,
           maxWidth: 280,

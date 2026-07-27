@@ -6672,8 +6672,6 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
       <style>{`
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
       `}</style>
-      {/* Gold left edge accent */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: 0 }} />
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, gap: 12 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -8263,8 +8261,6 @@ function IncidentListPanel({ visibleIncidents, selectedId, onSelect, onHover, ho
       position: "relative",
       boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
     }}>
-      {/* Gold edge accent */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: 0 }} />
       <div style={{
         padding: "12px 14px",
         borderBottom: `1px solid ${BRAND.borderSubtle}`,
