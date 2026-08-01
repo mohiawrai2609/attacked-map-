@@ -9121,21 +9121,40 @@ export default function GlobalAttackMap() {
         ["best_practices", "best_practices", "select=*"],
         ["historical_analogues", "historical_analogues", "select=*"],
         ["vendors", "vendors", "select=*"],
-        ["incident_secondary_links", "secondary_mappings",
-         "select=id,incident_id,category,subcategory_code,subcategory_name,why&why=not.is.null"],
       ];
       const eq = `incident_id=eq.${encodeURIComponent(dbId)}`;
-      await Promise.all(CHILD_RELATIONS.map(async ([rel, prop, sel]) => {
-        try {
-          const res = await fetch(`${url}/rest/v1/${rel}?${sel}&${eq}`, {
-            headers: { apikey: key, Authorization: `Bearer ${key}` },
-          });
-          if (!res.ok) return;
-          const rows = await res.json();
-          if (cancelled || !Array.isArray(rows)) return;
-          inc[prop] = rows;
-        } catch (_) { /* leave the empty array in place */ }
-      }));
+      await Promise.all([
+        ...CHILD_RELATIONS.map(async ([rel, prop, sel]) => {
+          try {
+            const res = await fetch(`${url}/rest/v1/${rel}?${sel}&${eq}`, {
+              headers: { apikey: key, Authorization: `Bearer ${key}` },
+            });
+            if (!res.ok) return;
+            const rows = await res.json();
+            if (cancelled || !Array.isArray(rows)) return;
+            inc[prop] = rows;
+          } catch (_) { /* leave the empty array in place */ }
+        }),
+        // Secondary categories were merged into incidents.secondary_mappings
+        // (jsonb) on 2026-08-01, so they come from the incident row itself
+        // rather than a child table — note the key is `id`, not incident_id.
+        // Still fetched lazily so it stays out of the initial map payload.
+        // The why-not-null filter that used to live in the query is applied
+        // here instead: 101 of the 3,267 entries are stubs with no reasoning
+        // and no name, and the panel has never rendered them.
+        (async () => {
+          try {
+            const res = await fetch(
+              `${url}/rest/v1/incidents?select=secondary_mappings&id=eq.${encodeURIComponent(dbId)}`,
+              { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+            if (!res.ok) return;
+            const rows = await res.json();
+            if (cancelled || !Array.isArray(rows) || !rows.length) return;
+            const arr = rows[0].secondary_mappings;
+            inc.secondary_mappings = Array.isArray(arr) ? arr.filter(m => m && m.why != null) : [];
+          } catch (_) { /* leave the empty array in place */ }
+        })(),
+      ]);
       if (cancelled) return;
       inc._childrenLoaded = true;
       setChildVersion(v => v + 1);   // force selectedIncident to recompute
