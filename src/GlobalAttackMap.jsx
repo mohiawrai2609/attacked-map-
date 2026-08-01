@@ -1284,124 +1284,52 @@ async function loadFromSupabase() {
     "financial_impact_disclosed", "related_cve_ids", "if_you_operate_x_then_y",
     "category", "reporter", "desk", "is_enriched",
   ].join(",");
-  const [
-    regularRows, viRows, reporterRows,
-    brRows, vendorRows, sourceRows, objRows, masterRows, adaptiveRows,
-    peerRows, histRows, bpRows, secMapRows,
-    viBrRows, viVendorRows, viSourceRows, viCoRows, viMcRows, viAcRows,
-    viPeerRows, viHistRows, viBpRows, viSecMapRows, viCtxRows,
-    viSponsoredRows, viEditorialRows, viDroppedRows,
-  ] = await Promise.all([
+  // ────────────────────────────────────────────────────────────────────
+  // Initial load fetches ONLY what the map itself draws: the incident pins
+  // and the newsroom. Measured 2026-08-01, the old version pulled 28 relations
+  // and ~17-26 MB per page load, which is what exhausted the Supabase egress
+  // allowance (5 GB ≈ 300 visits/month).
+  //
+  // Two problems were fixed here:
+  //   1. Eighteen of those fetches — every vi_* relation and
+  //      adaptive_master_controls — no longer exist in the database. They
+  //      returned errors on every load and were silently swallowed by
+  //      _fetchSupabaseTable, so they cost round-trips and delivered nothing.
+  //   2. The per-incident child tables were pulled in full for all 1,099
+  //      incidents, but are only ever read by the detail panel for the ONE
+  //      incident a visitor opens. They are now lazily fetched on selection
+  //      (see the child-hydration effect near the selectedIncident memo),
+  //      exactly as blast_radius already was.
+  // ────────────────────────────────────────────────────────────────────
+  const [regularRows, reporterRows] = await Promise.all([
     _fetchSupabaseTable(url, key, "incidents",
       `select=${incidentCols}&incident_day=not.is.null&latitude=not.is.null&longitude=not.is.null&order=incident_day.desc&${q}`),
-    _fetchSupabaseTable(url, key, "vi_incidents",
-      `select=${viIncidentCols}&latitude=not.is.null&longitude=not.is.null&${q}`),
     _fetchSupabaseTable(url, key, "reporters", "select=slug,name,desk,cats,color&limit=200"),
-    _fetchSupabaseTable(url, key, "blast_radius", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vendors", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "sources", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "adaptive_objectives", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "adaptive_master_controls", `select=*&${q}`),
-    // adaptive_controls = the incident-specific ADAPTED controls (AC-*) — customer-facing.
-    // adaptive_master_controls above is the raw framework library (MC-*) — internal only.
-    _fetchSupabaseTable(url, key, "adaptive_controls", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "peer_watchlist", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "historical_analogues", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "best_practices", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "secondary_mappings", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_blast_radius", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_vendors", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_sources", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_control_objectives", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_master_controls", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_adaptive_controls", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_peer_watchlist", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_historical_analogues", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_best_practices", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_secondary_mappings", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_contextual_vendors", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_sponsored_slots", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_editorial_picks", `select=*&${q}`),
-    _fetchSupabaseTable(url, key, "vi_dropped_vendors", `select=*&${q}`),
   ]);
+  // vi_* incidents were dropped from the database on 2026-07-28; keep the
+  // downstream code paths alive with an empty set rather than 13 dead fetches.
+  const viRows = [];
 
-  // vi_sweeps tells us which calendar day each vi_incident belongs to. All
-  // vi_incidents from the same merged sweep collapse onto that one day on
-  // the map (matching how the analyst originally pushed them), rather than
-  // scattering across each incident's own event_date.
-  const viSweepRows = await _fetchSupabaseTable(url, key, "vi_sweeps",
-    "select=id,generated_at&order=generated_at.desc&limit=10000");
+  // vi_sweeps was dropped with the rest of the vi_* layer on 2026-07-28.
   const viSweepDayById = new Map();
-  for (const s of viSweepRows) {
-    if (s && s.id && typeof s.generated_at === "string") {
-      viSweepDayById.set(s.id, s.generated_at.slice(0, 10));
-    }
-  }
 
-  // Index child rows by parent incident_id for O(1) stitching.
-  const groupBy = (rows, fk) => {
-    const map = new Map();
-    for (const row of rows) {
-      const id = row[fk];
-      if (id == null) continue;
-      if (!map.has(id)) map.set(id, []);
-      map.get(id).push(row);
-    }
-    return map;
-  };
-  const brBy = groupBy(brRows, "incident_id");
-  const vendorBy = groupBy(vendorRows, "incident_id");
-  const sourceBy = groupBy(sourceRows, "incident_id");
-  const objBy = groupBy(objRows, "incident_id");
-  const masterBy = groupBy(masterRows, "incident_id");
-  const adaptiveBy = groupBy(adaptiveRows, "incident_id");
-  const peerBy = groupBy(peerRows, "incident_id");
-  const histBy = groupBy(histRows, "incident_id");
-  const bpBy = groupBy(bpRows, "incident_id");
-  const secMapBy = groupBy(secMapRows, "incident_id");
-  const viBrBy = groupBy(viBrRows, "vi_incident_id");
-  const viVendorBy = groupBy(viVendorRows, "vi_incident_id");
-  const viSourceBy = groupBy(viSourceRows, "vi_incident_id");
-  const viCoBy = groupBy(viCoRows, "vi_incident_id");
-  const viMcBy = groupBy(viMcRows, "vi_incident_id");
-  const viAcBy = groupBy(viAcRows, "vi_incident_id");
-  const viPeerBy = groupBy(viPeerRows, "vi_incident_id");
-  const viHistBy = groupBy(viHistRows, "vi_incident_id");
-  const viBpBy = groupBy(viBpRows, "vi_incident_id");
-  const viSecMapBy = groupBy(viSecMapRows, "vi_incident_id");
-  const viCtxBy = groupBy(viCtxRows, "vi_incident_id");
-  const viSponsoredBy = groupBy(viSponsoredRows, "vi_incident_id");
-  const viEditorialBy = groupBy(viEditorialRows, "vi_incident_id");
-  const viDroppedBy = groupBy(viDroppedRows, "vi_incident_id");
-
-  // Stitch each incident with its children.
+  // Every incident starts with empty child arrays. They are filled in one
+  // incident at a time by the child-hydration effect when a visitor opens
+  // that incident — see CHILD_RELATIONS further down. Keeping the keys
+  // present (rather than undefined) means every downstream `Array.isArray`
+  // and `?.length` check behaves exactly as it did before.
   for (const row of regularRows) {
-    row.blast_radius = brBy.get(row.id) || [];
-    row.vendors = vendorBy.get(row.id) || [];
-    row.sources = sourceBy.get(row.id) || [];
-    row.adaptive_objectives = objBy.get(row.id) || [];
-    row.adaptive_master_controls = masterBy.get(row.id) || [];
-    row.adaptive_controls_rows = adaptiveBy.get(row.id) || [];
-    row.peer_watchlist = peerBy.get(row.id) || [];
-    row.historical_analogues = histBy.get(row.id) || [];
-    row.best_practices = bpBy.get(row.id) || [];
-    row.secondary_mappings = secMapBy.get(row.id) || [];
-  }
-  for (const row of viRows) {
-    row.vi_blast_radius = viBrBy.get(row.id) || [];
-    row.vi_vendors = viVendorBy.get(row.id) || [];
-    row.vi_sources = viSourceBy.get(row.id) || [];
-    row.vi_control_objectives = viCoBy.get(row.id) || [];
-    row.vi_master_controls = viMcBy.get(row.id) || [];
-    row.vi_adaptive_controls = viAcBy.get(row.id) || [];
-    row.vi_peer_watchlist = viPeerBy.get(row.id) || [];
-    row.vi_historical_analogues = viHistBy.get(row.id) || [];
-    row.vi_best_practices = viBpBy.get(row.id) || [];
-    row.vi_secondary_mappings = viSecMapBy.get(row.id) || [];
-    row.vi_contextual_vendors = viCtxBy.get(row.id) || [];
-    row.vi_sponsored_slots = viSponsoredBy.get(row.id) || [];
-    row.vi_editorial_picks = viEditorialBy.get(row.id) || [];
-    row.vi_dropped_vendors = viDroppedBy.get(row.id) || [];
+    row.blast_radius = [];
+    row.vendors = [];
+    row.sources = [];
+    row.adaptive_objectives = [];
+    row.adaptive_master_controls = [];
+    row.adaptive_controls_rows = [];
+    row.peer_watchlist = [];
+    row.historical_analogues = [];
+    row.best_practices = [];
+    row.secondary_mappings = [];
+    row._childrenLoaded = false;
   }
 
   // Build the newsroom map (slug → record) the renderer expects.
@@ -8868,6 +8796,7 @@ export default function GlobalAttackMap() {
   const [filtersOpen, setFiltersOpen] = useState(false); // top-left Filters drawer
   const [showBlastRadius, setShowBlastRadius] = useState(true);
   const [selBlast, setSelBlast] = useState(null);   // blast_radius (grouped) for the selected incident, lazily fetched on tap
+  const [childVersion, setChildVersion] = useState(0); // bumped when the selected incident's child rows finish loading
   const [showHeat, setShowHeat] = useState(false);  // off by default — heat halos compete with the cinematic pin bloom; user can toggle on for analytical density view
   const [showLabels, setShowLabels] = useState(false);  // country + city labels off by default
   // v2 additions
@@ -9165,7 +9094,74 @@ export default function GlobalAttackMap() {
     return () => { cancelled = true; };
   }, [selectedId, visibleIncidents]);
 
-  const selectedIncident = useMemo(() => incidents.find(i => i._id === selectedId) || null, [incidents, selectedId]);
+  // Lazily fetch the selected incident's child records. The fast map loader
+  // now ships only the incident pins (see the initial Promise.all), because
+  // these tables are read exclusively by the detail panel and pulling all of
+  // them for all 1,099 incidents cost ~14 MB on every page load. Fetched once
+  // per incident, cached on the incident object, keyed by incident_id.
+  useEffect(() => {
+    if (!selectedId) return;
+    const inc = visibleIncidents.find(i => String(i._id) === String(selectedId));
+    if (!inc || inc._childrenLoaded) return;
+    const dbId = inc.id;
+    if (dbId == null || dbId === "") return;
+    let cancelled = false;
+    (async () => {
+      const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+      const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
+      if (!url || !key) return;
+      // [relation, property on the incident, extra query]. blast_radius is
+      // handled by its own effect above; adaptive_master_controls no longer
+      // exists in the database and stays an empty array.
+      const CHILD_RELATIONS = [
+        ["adaptive_controls", "adaptive_controls_rows", "select=*"],
+        ["adaptive_objectives", "adaptive_objectives", "select=*"],
+        ["peer_watchlist", "peer_watchlist", "select=*"],
+        ["sources", "sources", "select=*"],
+        ["best_practices", "best_practices", "select=*"],
+        ["historical_analogues", "historical_analogues", "select=*"],
+        ["vendors", "vendors", "select=*"],
+        ["incident_secondary_links", "secondary_mappings",
+         "select=id,incident_id,category,subcategory_code,subcategory_name,why&why=not.is.null"],
+      ];
+      const eq = `incident_id=eq.${encodeURIComponent(dbId)}`;
+      await Promise.all(CHILD_RELATIONS.map(async ([rel, prop, sel]) => {
+        try {
+          const res = await fetch(`${url}/rest/v1/${rel}?${sel}&${eq}`, {
+            headers: { apikey: key, Authorization: `Bearer ${key}` },
+          });
+          if (!res.ok) return;
+          const rows = await res.json();
+          if (cancelled || !Array.isArray(rows)) return;
+          inc[prop] = rows;
+        } catch (_) { /* leave the empty array in place */ }
+      }));
+      if (cancelled) return;
+      inc._childrenLoaded = true;
+      setChildVersion(v => v + 1);   // force selectedIncident to recompute
+    })();
+    return () => { cancelled = true; };
+  }, [selectedId, visibleIncidents]);
+
+  const selectedIncident = useMemo(() => {
+    const found = incidents.find(i => i._id === selectedId) || null;
+    if (!found) return null;
+    // blast_radius is lazy-loaded into `selBlast` after selection (it is not
+    // fetched inline with the incident list). When the found incident has no
+    // inline blast data yet, splice the lazily-loaded blast in as a NEW object
+    // so the reference changes and IncidentCascade's blastChannels useMemo
+    // recomputes — otherwise the Blast Radius scene never appears and Scene 2
+    // shows only the Peer Watchlist.
+    const hasBlast = found.blast_radius && Object.keys(found.blast_radius).length > 0;
+    if (!hasBlast && selBlast && Object.keys(selBlast).length > 0) {
+      return { ...found, blast_radius: selBlast };
+    }
+    // The hydration effect mutates the child arrays onto `found` in place, so
+    // spread into a fresh object once they land. Without this the reference
+    // never changes and the detail panel's useMemos keep the empty arrays.
+    if (found._childrenLoaded) return { ...found };
+    return found;
+  }, [incidents, selectedId, selBlast, childVersion]);
   const selectedReporter = useMemo(() => selectedIncident ? reporterForCat(selectedIncident._cat, reporters) : null, [selectedIncident, reporters]);
 
   // Guided tour — feature the most severe incident of the loaded day (prefer one
