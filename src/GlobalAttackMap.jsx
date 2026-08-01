@@ -1269,21 +1269,17 @@ async function loadFromSupabase() {
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date", "incident_day",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
-    "severity", "severity_rationale", "confidence", "threat_actor",
-    "financial_impact_disclosed", "related_cve_ids", "if_you_operate_x_then_y",
+    "severity", "severity_rationale", "confidence", "if_you_operate_x_then_y",
     "mapped_objectives", "mapped_controls", "adaptive_controls_codes",
-    "reporter", "desk", "is_enriched",
-  ].join(",");
+    ].join(",");
   const viIncidentCols = [
     "id", "vi_sweep_id",
     "headline", "summary", "entity", "sector", "industry",
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
-    "severity", "severity_rationale", "confidence", "threat_actor",
-    "financial_impact_disclosed", "related_cve_ids", "if_you_operate_x_then_y",
-    "category", "reporter", "desk", "is_enriched",
-  ].join(",");
+    "severity", "severity_rationale", "confidence", "if_you_operate_x_then_y",
+    "category", ].join(",");
   // ────────────────────────────────────────────────────────────────────
   // Initial load fetches ONLY what the map itself draws: the incident pins
   // and the newsroom. Measured 2026-08-01, the old version pulled 28 relations
@@ -1414,8 +1410,8 @@ async function loadIncidentsFast() {
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,threat_actor,financial_impact_disclosed,if_you_operate_x_then_y,reporter,desk,image_url";
-  const viCols = "id,vi_sweep_id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,threat_actor,financial_impact_disclosed,if_you_operate_x_then_y,category,reporter,desk,image_url";
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,if_you_operate_x_then_y,image_url";
+  const viCols = "id,vi_sweep_id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,if_you_operate_x_then_y,category,image_url";
   try {
     const [reg, vi, sweeps, reporters] = await Promise.all([
       _fetchSupabaseTable(url, key, "incidents", `select=${cols}&incident_day=not.is.null&latitude=not.is.null&longitude=not.is.null&order=incident_day.desc&limit=10000`),
@@ -9162,14 +9158,13 @@ export default function GlobalAttackMap() {
         (async () => {
           try {
             const res = await fetch(
-              `${url}/rest/v1/incidents?select=secondary_mappings,vendors&id=eq.${encodeURIComponent(dbId)}`,
+              `${url}/rest/v1/incidents?select=secondary_mappings&id=eq.${encodeURIComponent(dbId)}`,
               { headers: { apikey: key, Authorization: `Bearer ${key}` } });
             if (!res.ok) return;
             const rows = await res.json();
             if (cancelled || !Array.isArray(rows) || !rows.length) return;
             const sec = rows[0].secondary_mappings;
             inc.secondary_mappings = Array.isArray(sec) ? sec.filter(m => m && m.why != null) : [];
-            inc.vendors = Array.isArray(rows[0].vendors) ? rows[0].vendors : [];
           } catch (_) { /* leave the empty arrays in place */ }
         })(),
       ]);
