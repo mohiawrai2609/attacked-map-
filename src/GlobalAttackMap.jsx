@@ -9120,7 +9120,6 @@ export default function GlobalAttackMap() {
         ["sources", "sources", "select=*"],
         ["best_practices", "best_practices", "select=*"],
         ["historical_analogues", "historical_analogues", "select=*"],
-        ["vendors", "vendors", "select=*"],
       ];
       const eq = `incident_id=eq.${encodeURIComponent(dbId)}`;
       await Promise.all([
@@ -9135,24 +9134,27 @@ export default function GlobalAttackMap() {
             inc[prop] = rows;
           } catch (_) { /* leave the empty array in place */ }
         }),
-        // Secondary categories were merged into incidents.secondary_mappings
-        // (jsonb) on 2026-08-01, so they come from the incident row itself
-        // rather than a child table — note the key is `id`, not incident_id.
-        // Still fetched lazily so it stays out of the initial map payload.
-        // The why-not-null filter that used to live in the query is applied
-        // here instead: 101 of the 3,267 entries are stubs with no reasoning
-        // and no name, and the panel has never rendered them.
+        // Secondary categories (2026-08-01) and vendors (same day) were merged
+        // onto the incident row as jsonb, so they come from the incident itself
+        // rather than child tables — note the key is `id`, not incident_id.
+        // One request covers both, and it stays lazy so neither lands in the
+        // initial map payload.
+        //
+        // The why-not-null filter that used to live in the secondary query is
+        // applied here instead: 101 of the 3,267 entries are stubs with no
+        // reasoning and no name, and the panel has never rendered them.
         (async () => {
           try {
             const res = await fetch(
-              `${url}/rest/v1/incidents?select=secondary_mappings&id=eq.${encodeURIComponent(dbId)}`,
+              `${url}/rest/v1/incidents?select=secondary_mappings,vendors&id=eq.${encodeURIComponent(dbId)}`,
               { headers: { apikey: key, Authorization: `Bearer ${key}` } });
             if (!res.ok) return;
             const rows = await res.json();
             if (cancelled || !Array.isArray(rows) || !rows.length) return;
-            const arr = rows[0].secondary_mappings;
-            inc.secondary_mappings = Array.isArray(arr) ? arr.filter(m => m && m.why != null) : [];
-          } catch (_) { /* leave the empty array in place */ }
+            const sec = rows[0].secondary_mappings;
+            inc.secondary_mappings = Array.isArray(sec) ? sec.filter(m => m && m.why != null) : [];
+            inc.vendors = Array.isArray(rows[0].vendors) ? rows[0].vendors : [];
+          } catch (_) { /* leave the empty arrays in place */ }
         })(),
       ]);
       if (cancelled) return;
