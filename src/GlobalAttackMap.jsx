@@ -9132,6 +9132,22 @@ export default function GlobalAttackMap() {
             const rows = await res.json();
             if (cancelled || !Array.isArray(rows)) return;
             inc[prop] = rows;
+            // adaptive_controls needs RESHAPING, not just assigning.
+            // _reshapeIncident maps adaptive_controls_rows -> inc.adaptive_controls
+            // at load time, when this array is still empty — so it silently took
+            // the adaptive_controls_codes fallback (raw sentences) and the
+            // Adaptive Controls card rendered objectives and MC-* ids instead of
+            // the real AC-* controls. Redo that mapping here, identically.
+            if (prop === "adaptive_controls_rows" && rows.length) {
+              inc.adaptive_controls = rows.map(c => ({
+                id: c.control_id || c.id,
+                statement: c.statement,
+                rationale: c.rationale,
+                parent_mc_id: c.parent_mc_id,
+                layer: c.layer,
+                control_kind: c.kind,
+              }));
+            }
           } catch (_) { /* leave the empty array in place */ }
         }),
         // Secondary categories (2026-08-01) and vendors (same day) were merged
