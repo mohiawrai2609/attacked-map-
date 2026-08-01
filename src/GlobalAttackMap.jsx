@@ -1141,7 +1141,7 @@ function _reshapeIncident(row) {
   // blast_radius rows → grouped object
   const brByBucket = {};
   for (const br of row.blast_radius || []) {
-    const b = br.bucket || "internal";
+    const b = br.exposure_group || "internal";
     if (!brByBucket[b]) brByBucket[b] = [];
     brByBucket[b].push(br);
   }
@@ -1195,7 +1195,7 @@ function _reshapeViIncident(row) {
   // vi_blast_radius rows → grouped object
   const brByBucket = {};
   for (const br of row.vi_blast_radius || []) {
-    const b = br.bucket || "internal";
+    const b = br.exposure_group || "internal";
     if (!brByBucket[b]) brByBucket[b] = [];
     brByBucket[b].push(br);
   }
@@ -5896,12 +5896,12 @@ function HistoricalBody({ items }) {
                   marginBottom: 5, textTransform: "uppercase",
                 }}>{toText(h.entity)}</div>
               )}
-              {h.parallel && (
+              {h.summary && (
                 <div style={{
                   fontSize: 10.5, color: "rgba(255,255,255,0.7)",
                   lineHeight: 1.45, fontStyle: "italic",
                   marginBottom: h.outcome ? 6 : 0,
-                }}>{toText(h.parallel)}</div>
+                }}>{toText(h.summary)}</div>
               )}
               {h.outcome && (
                 <div style={{
@@ -7837,9 +7837,9 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         {h.entity}
                       </div>
                     )}
-                    {h.parallel && (
+                    {h.summary && (
                       <div style={{ fontSize: 11, color: BRAND.textSecondary, lineHeight: 1.45, marginBottom: h.outcome ? 6 : 0 }}>
-                        {h.parallel}
+                        {h.summary}
                       </div>
                     )}
                     {h.outcome && (
@@ -9086,7 +9086,7 @@ export default function GlobalAttackMap() {
         const rows = await res.json();
         if (cancelled || !Array.isArray(rows) || !rows.length) return;
         const grouped = {};
-        for (const br of rows) { const b = br.bucket || "internal"; (grouped[b] = grouped[b] || []).push(br); }
+        for (const br of rows) { const b = br.exposure_group || "internal"; (grouped[b] = grouped[b] || []).push(br); }
         inc.blast_radius = grouped;   // also feeds the flat MapCanvas view
         setSelBlast(grouped);
       } catch (_) { /* noop */ }
