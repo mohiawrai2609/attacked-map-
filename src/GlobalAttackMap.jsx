@@ -1160,27 +1160,19 @@ function _reshapeIncident(row) {
   // adaptive_controls — PREFER the real adapted controls (AC-*) from the
   // adaptive_controls table: incident-specific, executable, with real semantic
   // ids + rationale + provenance back to the parent master control.
-  // Fall back to the legacy incidents.adaptive_controls_codes column only when
-  // the table has nothing for this incident (that column holds raw sentences,
-  // not codes, so it needs the synthesize-an-id hack below).
-  inc.adaptive_controls = (Array.isArray(row.adaptive_controls_rows) && row.adaptive_controls_rows.length)
-    ? row.adaptive_controls_rows.map(c => ({
-        id: c.control_id || c.id,
-        statement: c.statement,
-        rationale: c.rationale,
-        parent_mc_id: c.parent_mc_id,
-        layer: c.layer,
-        control_kind: c.kind,   // 'direct' | 'indirect' — from the parent MC's framework capability
-      }))
-    : Array.isArray(row.adaptive_controls_codes)
-      ? row.adaptive_controls_codes.map((code, i) => {
-          const s = typeof code === "string" ? code : "";
-          const looksLikeStatement = s.length > 30 || /\s/.test(s.trim());
-          return looksLikeStatement
-            ? { id: `AC-${String(i + 1).padStart(2, "0")}`, statement: s }
-            : { id: s || `AC-${i + 1}` };
-        })
-      : [];
+  // The legacy incidents.adaptive_controls_codes fallback went with the column
+  // on 2026-08-03. It held a mix of MC-* codes and raw sentences — zero AC-*
+  // codes — and synthesising ids from it is what put master-control ids on the
+  // Adaptive Controls card. The adaptive_controls table is now the only source,
+  // with provenance preserved via parent_mc_id.
+  inc.adaptive_controls = (row.adaptive_controls_rows || []).map(c => ({
+    id: c.control_id || c.id,
+    statement: c.statement,
+    rationale: c.rationale,
+    parent_mc_id: c.parent_mc_id,
+    layer: c.layer,
+    control_kind: c.kind,   // 'direct' | 'indirect' — from the parent MC's framework capability
+  }));
 
   // vendors, sources, peer_watchlist, historical_analogues, best_practices,
   // secondary_mappings are already shaped correctly by the embed.
@@ -1269,9 +1261,8 @@ async function loadFromSupabase() {
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date", "incident_day",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
-    "severity", "severity_rationale", "confidence", 
-    "mapped_objectives", "mapped_controls", "adaptive_controls_codes",
-    ].join(",");
+    "severity", "severity_rationale", "confidence",
+  ].join(",");
   const viIncidentCols = [
     "id", "vi_sweep_id",
     "headline", "summary", "entity", "sector", "industry",
