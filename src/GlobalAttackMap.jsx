@@ -1269,7 +1269,7 @@ async function loadFromSupabase() {
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date", "incident_day",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
-    "severity", "severity_rationale", "confidence", "if_you_operate_x_then_y",
+    "severity", "severity_rationale", "confidence", 
     "mapped_objectives", "mapped_controls", "adaptive_controls_codes",
     ].join(",");
   const viIncidentCols = [
@@ -1278,7 +1278,7 @@ async function loadFromSupabase() {
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
-    "severity", "severity_rationale", "confidence", "if_you_operate_x_then_y",
+    "severity", "severity_rationale", "confidence", 
     "category", ].join(",");
   // ────────────────────────────────────────────────────────────────────
   // Initial load fetches ONLY what the map itself draws: the incident pins
@@ -1410,8 +1410,8 @@ async function loadIncidentsFast() {
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,if_you_operate_x_then_y,image_url";
-  const viCols = "id,vi_sweep_id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,if_you_operate_x_then_y,category,image_url";
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence";
+  const viCols = "id,vi_sweep_id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,category";
   try {
     const [reg, vi, sweeps, reporters] = await Promise.all([
       _fetchSupabaseTable(url, key, "incidents", `select=${cols}&incident_day=not.is.null&latitude=not.is.null&longitude=not.is.null&order=incident_day.desc&limit=10000`),
@@ -3810,7 +3810,7 @@ function Legend({ visibleCats, showBlastRadius, showHeat, onToggleHeat, onToggle
 
 // Defensive renderer for fields that might be plain strings OR structured
 // objects. The GUARD pipeline emits some fields (velocity_signal,
-// emerging_risk_signal, severity_rationale, peer_watchlist entries) either
+//  severity_rationale, peer_watchlist entries) either
 // as prose strings or as structured objects with keys like { pattern,
 // count_quarter, trajectory, brief }. React throws "objects are not valid
 // as a React child" if we try to render the object directly — so coerce.
@@ -5669,7 +5669,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
     // OBJ = Adaptive Objective — desired-outcome goal (not a control per se)
     objs.forEach((o, i) => out.push({
       kind: "OBJ", kindLabel: "OBJECTIVE", kindTone: "objective",
-      id: o.id || `CO-${i + 1}`,
+      id: o.objective_id || o.co_id || `CO-${i + 1}`,
       text: o.statement || o.description || (typeof o === "string" ? o : toText(o)),
       fit: o.fit || null,
     }));
