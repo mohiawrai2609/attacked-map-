@@ -66,13 +66,13 @@ export function AdminBriefings() {
             .select(baseCols).order(orderCol, { ascending: false }).limit(2000);
           return base.data || [];
         };
-        const [regData, viData] = await Promise.all([
-          fetchTable("incidents", "id,headline,entity,country,severity,primary_category,incident_day", "incident_day"),
-          fetchTable("vi_incidents", "id,headline,entity,country,severity,primary_category,event_date", "event_date"),
-        ]);
+        // vi_incidents was dropped from the database on 2026-07-28. The call
+        // 404'd on every load of this page and contributed nothing, since the
+        // error path just yields an empty list.
+        const regData = await fetchTable(
+          "incidents", "id,headline,entity,country,severity,primary_category,incident_day", "incident_day");
         const r = regData.map(x => ({ ...x, _source: "incident", _day: x.incident_day }));
-        const v = viData.map(x => ({ ...x, _source: "vi", _day: x.event_date }));
-        if (!cancelled) setRows([...r, ...v]);
+        if (!cancelled) setRows(r);
       } catch { /* leave empty */ }
       finally { if (!cancelled) setLoading(false); }
     })();

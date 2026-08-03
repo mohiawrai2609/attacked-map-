@@ -495,7 +495,14 @@ export function AttackHub() {
         // 9 Jul. Ordering newest-first guarantees the most recent briefings are
         // always in the window we do get back.
         const incRes = await supabase.from("incidents")
-          .select("id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,reporter,image_url,event_date,incident_day,hub_ref:raw->>hub_id")
+          // `confidence`, `reporter`, `image_url` and `raw` are no longer
+          // exposed by the public.incidents view. PostgREST rejects the whole
+          // select when ANY named column is unknown, so asking for them 400'd
+          // this query outright and the Hub rendered zero articles. Every
+          // consumer below already falls back when these are absent
+          // (image_url -> CATEGORY_IMG, hub_ref -> null), so dropping them
+          // degrades gracefully instead of taking the page down.
+          .select("id,headline,summary,entity,country,location_name,industry,sector,severity,primary_category,primary_subcategory_name,event_date,incident_day")
           .order("incident_day", { ascending: false, nullsFirst: false })
           .order("severity", { ascending: false })
           .limit(1000);
