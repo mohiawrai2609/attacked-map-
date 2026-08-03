@@ -1261,7 +1261,14 @@ async function loadFromSupabase() {
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date", "incident_day",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
-    "severity", "severity_rationale", "confidence",
+    // `confidence` was dropped from public.incidents but was still named here.
+    // PostgREST rejects the WHOLE select when any single column is unknown, so
+    // this one stale name 400'd the only query that loads live incidents —
+    // every visitor then silently fell back to the 13 sweep files baked into
+    // public/sweeps/, which stop at 2026-05-28. That is the "map isn't
+    // populating day by day" report. Never add a column here without first
+    // confirming it exists on the table.
+    "severity", "severity_rationale",
   ].join(",");
   const viIncidentCols = [
     "id", "vi_sweep_id",
@@ -1401,15 +1408,18 @@ async function loadIncidentsFast() {
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence";
-  const viCols = "id,vi_sweep_id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,category";
+  // `confidence` no longer exists on public.incidents — see the note in
+  // loadFromSupabase. It 400'd this fast-paint query too, which is why the
+  // very first render also fell back to the baked May sweeps.
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale";
   try {
-    const [reg, vi, sweeps, reporters] = await Promise.all([
+    // vi_incidents / vi_sweeps were dropped on 2026-07-28. They 404'd on every
+    // single page load; keep the downstream shape with empty arrays instead.
+    const [reg, reporters] = await Promise.all([
       _fetchSupabaseTable(url, key, "incidents", `select=${cols}&incident_day=not.is.null&latitude=not.is.null&longitude=not.is.null&order=incident_day.desc&limit=10000`),
-      _fetchSupabaseTable(url, key, "vi_incidents", `select=${viCols}&latitude=not.is.null&longitude=not.is.null&limit=10000`),
-      _fetchSupabaseTable(url, key, "vi_sweeps", "select=id,generated_at&order=generated_at.desc&limit=10000"),
       _fetchSupabaseTable(url, key, "reporters", "select=slug,name,desk,cats,color&limit=200"),
     ]);
+    const vi = [], sweeps = [];
     let newsroom = null;
     if (reporters.length) {
       newsroom = {};
@@ -4427,7 +4437,24 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
   );
   const objs = useMemo(() => Array.isArray(incident.adaptive_objectives) ? incident.adaptive_objectives : [], [incident]);
   const masters = useMemo(() => Array.isArray(incident.adaptive_master_controls) ? incident.adaptive_master_controls : [], [incident]);
-  const acts = useMemo(() => Array.isArray(incident.adaptive_controls) ? incident.adaptive_controls : [], [incident]);
+  // Adapted controls arrive under two different keys depending on the source:
+  // the Supabase path (adaptive_controls table, lazily hydrated) fills
+  // `adaptive_controls`, while the baked sweep files in public/sweeps/*.json
+  // carry the same rows under `adaptive_controls_v2`. Only the first was read,
+  // so every baked incident rendered its objectives and NOTHING else — the
+  // Adaptive Controls card showed a column of OBJECTIVE chips with no DIRECT
+  // rows, even though the file held 15 fully-adapted AC-* controls.
+  const acts = useMemo(() => {
+    if (Array.isArray(incident.adaptive_controls) && incident.adaptive_controls.length)
+      return incident.adaptive_controls;
+    if (Array.isArray(incident.adaptive_controls_v2) && incident.adaptive_controls_v2.length)
+      return incident.adaptive_controls_v2.map(c => ({
+        ...c,
+        id: c.id || c.ac_id || c.control_id,
+        control_kind: c.control_kind || c.kind,
+      }));
+    return [];
+  }, [incident]);
   const bps = useMemo(() => Array.isArray(incident.best_practices) ? incident.best_practices : [], [incident]);
   const hasControls = (
     incident.if_you_operate_x_then_y || incident.severity_rationale ||
@@ -5660,7 +5687,14 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
     // OBJ = Adaptive Objective — desired-outcome goal (not a control per se)
     objs.forEach((o, i) => out.push({
       kind: "OBJ", kindLabel: "OBJECTIVE", kindTone: "objective",
-      id: o.objective_id || o.co_id || `CO-${i + 1}`,
+      // Baked sweeps store the semantic code on plain `id` ("CO-GEO-002");
+      // the Supabase path puts it on `objective_id`. Dropping the `id` branch
+      // made every baked incident fall through to the positional placeholder,
+      // which is why the card read CO-1 / CO-2 / CO-3. Accept `id` only when it
+      // actually looks like a code, so a numeric DB primary key never leaks in.
+      id: o.objective_id || o.co_id ||
+          (typeof o.id === "string" && /[A-Za-z]/.test(o.id) ? o.id : null) ||
+          `CO-${i + 1}`,
       text: o.statement || o.description || (typeof o === "string" ? o : toText(o)),
       fit: o.fit || null,
     }));
@@ -8382,7 +8416,7 @@ function AuditDrawer({ incidents, onClose }) {
 // delete, and persistence-status messaging. Reads from the archive index
 // (passed in as a prop) so it renders fast without fetching sweeps.
 // ─────────────────────────────────────────────────────────────────────────────
-function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, busy, storageSubstrate, storageCanaryError, onRefresh, timeWindow, onWindow, windowInfo, timeline }) {
+function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, busy, storageSubstrate, storageCanaryError, liveDataError, onRefresh, timeWindow, onWindow, windowInfo, timeline }) {
   const persistsAcrossSessions = storageSubstrate === "persistent";
   // Live diagnostics: actual count of stored sweep keys (which may differ
   // from archiveIndex.length if the index is mid-recovery or a write failed)
@@ -8453,6 +8487,26 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
           </button>
         </div>
       </div>
+
+      {/* Live-feed failure. Without this the map degrades in total silence:
+          the baked sweeps still paint a full-looking archive, so a stale
+          May snapshot is indistinguishable from today's data. ↻ retries. */}
+      {liveDataError && (
+        <div style={{
+          padding: "10px 16px", borderBottom: `1px solid ${BRAND.borderSubtle}`,
+          background: "rgba(255,107,107,0.10)",
+        }}>
+          <div style={{
+            fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF6B6B",
+            letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4,
+          }}>
+            ⚠ Live feed unavailable
+          </div>
+          <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10.5, color: BRAND.textSecondary, lineHeight: 1.5 }}>
+            Showing archived sweeps only — this is not today's data. Press ↻ to retry.
+          </div>
+        </div>
+      )}
 
       {/* Time-window toggle (Day/Week/Month/All) removed — the archive now
           exposes only the calendar range + play controls below. */}
@@ -8832,6 +8886,12 @@ export default function GlobalAttackMap() {
   const [archiveToast, setArchiveToast] = useState(null);  // { type, text }
   const [storageSubstrate, setStorageSubstrate] = useState("unknown");  // "persistent" | "session" | "unknown"
   const [storageCanaryError, setStorageCanaryError] = useState(null);
+  // Set when the live Supabase pull returns nothing this boot. When that
+  // happens the map silently falls back to the 13 sweep files baked into
+  // public/sweeps/ — which stop at 2026-05-28 — so the map looks fully
+  // populated while actually showing months-old data with no adapted
+  // controls. Surfaced in the Timeline panel rather than swallowed.
+  const [liveDataError, setLiveDataError] = useState(null);
   // Time-window aggregation — "day" (default, single sweep) | "week" |
   // "month" | "all". When not "day", the rendered sweep is a synthetic
   // merge of the relevant archived days (see applyTimeWindow). currentDate
@@ -8908,8 +8968,18 @@ export default function GlobalAttackMap() {
           supa = await loadFromSupabase();
         } catch (e) {
           console.warn("Supabase load skipped:", e?.message || e);
+          if (!cancelled) setLiveDataError(e?.message || String(e));
         }
         if (cancelled) return;
+        // A thrown error is not the only failure mode: _fetchSupabaseTable
+        // swallows non-OK responses and returns [], so an exhausted egress
+        // allowance or a revoked key comes back as a perfectly ordinary empty
+        // result. Treat "no live days at all" as the failure it is.
+        if (!supa || !supa.sweepsByDay || supa.sweepsByDay.size === 0) {
+          setLiveDataError(prev => prev || "no live incidents returned");
+        } else {
+          setLiveDataError(null);
+        }
 
         const idx = await readIndex();   // self-healing — discovers orphans
         if (cancelled) return;
@@ -10824,6 +10894,7 @@ export default function GlobalAttackMap() {
           busy={archiveBusy}
           storageSubstrate={storageSubstrate}
           storageCanaryError={storageCanaryError}
+          liveDataError={liveDataError}
           timeWindow={timeWindow}
           onWindow={applyTimeWindow}
           windowInfo={windowInfo}
