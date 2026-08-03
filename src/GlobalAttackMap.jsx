@@ -1261,14 +1261,15 @@ async function loadFromSupabase() {
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date", "incident_day",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
-    // `confidence` was dropped from public.incidents but was still named here.
     // PostgREST rejects the WHOLE select when any single column is unknown, so
-    // this one stale name 400'd the only query that loads live incidents —
-    // every visitor then silently fell back to the 13 sweep files baked into
-    // public/sweeps/, which stop at 2026-05-28. That is the "map isn't
-    // populating day by day" report. Never add a column here without first
-    // confirming it exists on the table.
-    "severity", "severity_rationale",
+    // a single stale name here takes down the only query that loads live
+    // incidents, and every visitor silently falls back to the sweep files
+    // baked into public/sweeps/ (which stop at 2026-05-28). That is exactly
+    // how the "map isn't populating day by day" outage happened, via
+    // `confidence` being named after it was dropped from the view. It has
+    // since been restored to public.incidents from the sweep.incidents base
+    // table. Never add a column here without first confirming it exists.
+    "severity", "severity_rationale", "confidence",
   ].join(",");
   const viIncidentCols = [
     "id", "vi_sweep_id",
@@ -1408,10 +1409,10 @@ async function loadIncidentsFast() {
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  // `confidence` no longer exists on public.incidents — see the note in
-  // loadFromSupabase. It 400'd this fast-paint query too, which is why the
-  // very first render also fell back to the baked May sweeps.
-  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale";
+  // Keep this list in lockstep with incidentCols in loadFromSupabase — a name
+  // that is not on public.incidents 400s this fast-paint query and drops the
+  // first render back to the baked May sweeps. See the note there.
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence";
   try {
     // vi_incidents / vi_sweeps were dropped on 2026-07-28. They 404'd on every
     // single page load; keep the downstream shape with empty arrays instead.
