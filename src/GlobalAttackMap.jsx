@@ -9176,7 +9176,6 @@ export default function GlobalAttackMap() {
         ["adaptive_objectives", "adaptive_objectives", "select=*"],
         ["peer_watchlist", "peer_watchlist", "select=*"],
         ["sources", "sources", "select=*"],
-        ["best_practices", "best_practices", "select=*"],
         ["historical_analogues", "historical_analogues", "select=*"],
       ];
       const eq = `incident_id=eq.${encodeURIComponent(dbId)}`;
