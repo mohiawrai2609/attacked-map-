@@ -1681,6 +1681,12 @@ function UploadZone({ onLoad, onError }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAP CANVAS — d3.geoNaturalEarth1 projection, country fills, pins, arcs
 // ─────────────────────────────────────────────────────────────────────────────
+// Ocean colour for the flat map. Blue Marble's own sea is near-black navy
+// (mid-Pacific measures #070e28) which looked nothing like the bright sky blue
+// of the ArcGIS imagery on the globe, so the sea is painted rather than taken
+// from the texture. Tune here — this is the only place it is defined.
+const OCEAN_BLUE = "#2C6E9B";
+
 function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, onHover, onSelect, showBlastRadius, showHeat, showLabels }) {
   const containerRef = useRef(null);
   const [dims, setDims] = useState({ width: 1200, height: 720 });
@@ -2037,7 +2043,13 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
     // No minHeight: a 480px floor inside a shorter stage pushed the map past
     // the bottom of its own container. The projection fits itself to whatever
     // height it is given, so the frame should simply be the stage.
-    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", background: "#020b1c", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
+    // Background is the SPACE around the map, not the sea. Because the world
+    // is a fixed 2:1 rectangle and the stage rarely is, there are bands above
+    // and below it; they were a dark navy (#020b1c) which read as more dark
+    // blue next to the ocean. Black matches the globe, whose Cesium
+    // backgroundColor is BLACK with a starfield — so both views now sit in the
+    // same void and only the planet differs.
+    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", background: "#050505", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
       {/* Deep space starfield behind the map */}
       <canvas style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }}
         ref={el => {
@@ -2100,6 +2112,36 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
           <clipPath id="map-viewport">
             <rect x={0} y={0} width={dims.width} height={dims.height} />
           </clipPath>
+
+          {/* Gentle lift on the LAND only (the sea is painted separately
+              below). Gamma rather than brightness, so shadowed terrain opens
+              up without blowing out the deserts. */}
+          <filter id="earth-sky" colorInterpolationFilters="sRGB">
+            <feComponentTransfer>
+              <feFuncR type="gamma" exponent="0.88" amplitude="1" offset="0" />
+              <feFuncG type="gamma" exponent="0.86" amplitude="1" offset="0" />
+              <feFuncB type="gamma" exponent="0.86" amplitude="1" offset="0" />
+            </feComponentTransfer>
+            <feColorMatrix type="saturate" values="1.1" />
+          </filter>
+
+          {/* Land mask. Blue Marble's sea is essentially black — I measured
+              mid-Pacific at #070e28 — so no tone curve can lift it to the sky
+              blue the ArcGIS globe shows without destroying the land with it
+              (a gamma strong enough to fix the sea turned the Amazon from
+              #1b2c0c to #2c5037). Instead the sea is painted as a flat colour
+              and the satellite imagery is clipped to the coastlines, so the
+              land stays photographic and the sea is exactly the colour we
+              choose. Built from the same pathGen as the borders, so the
+              coastline of the mask and of the outlines are the same curve. */}
+          {world && (
+            <clipPath id="land-only">
+              {world.features.map((feat, i) => {
+                const d = pathGen(feat);
+                return d ? <path key={i} d={d} /> : null;
+              })}
+            </clipPath>
+          )}
         </defs>
 
         {/* Ocean — transparent so the deep-blue container and stars show through. */}
@@ -2122,13 +2164,27 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
               MUST be the first child: it is opaque, so anything drawn before
               it (the graticule) would simply be painted over. */}
           {worldRect && (
-            <image
-              href="/textures/earth-blue-marble.jpg"
-              x={worldRect.x} y={worldRect.y}
-              width={worldRect.w} height={worldRect.h}
-              preserveAspectRatio="none"
-              style={{ pointerEvents: "none" }}
-            />
+            <>
+              {/* Sea first — a real sky blue, matching the ArcGIS basemap the
+                  globe renders rather than Blue Marble's near-black navy. This
+                  single constant is the dial for the ocean colour. */}
+              <rect
+                x={worldRect.x} y={worldRect.y}
+                width={worldRect.w} height={worldRect.h}
+                fill={OCEAN_BLUE}
+                style={{ pointerEvents: "none" }}
+              />
+              {/* Then the photographic land on top, clipped to the coastlines */}
+              <image
+                href="/textures/earth-blue-marble.jpg"
+                x={worldRect.x} y={worldRect.y}
+                width={worldRect.w} height={worldRect.h}
+                preserveAspectRatio="none"
+                clipPath="url(#land-only)"
+                filter="url(#earth-sky)"
+                style={{ pointerEvents: "none" }}
+              />
+            </>
           )}
 
           {/* Graticule — now sits ON the imagery, so it is a faint white
