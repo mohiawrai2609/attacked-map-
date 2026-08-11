@@ -1704,8 +1704,13 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
         const fallbackH = (typeof window !== "undefined")
           ? Math.max(480, window.innerHeight - 280)
           : 600;
+        // Take the parent's real height. The old Math.max(480, …) floor meant
+        // that in a stage shorter than 480px the SVG was taller than the box
+        // containing it, so the map overflowed and had to be scrolled — the
+        // opposite of "the whole world in one frame". The projection already
+        // scales to fit whatever height it is given, so no floor is needed.
         const h = parentH > 100 ? parentH : fallbackH;
-        setDims({ width: w, height: Math.max(480, h) });
+        setDims({ width: w, height: h });
       }
     });
     obs.observe(containerRef.current);
@@ -1713,13 +1718,22 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
   }, []);
 
   const projection = useMemo(() => {
-    // Pick the scale that fits the world inside the canvas regardless of
-    // whether the canvas is wide or tall. Natural Earth projection has a
-    // ~2:1 width-to-height ratio, so scale is bounded by min(w/6.3, h/3.15).
-    const scale = Math.min(dims.width / 6.3, dims.height / 3.15);
-    return d3.geoNaturalEarth1()
+    // Equirectangular (plate carrée), NOT Natural Earth. Natural Earth is the
+    // rounded/oval world map with curved edges — pretty, but it can never fill
+    // a rectangular frame, so there is always dead space at the corners and
+    // the map reads as a graphic rather than an operational world map.
+    //
+    // Equirectangular is a true rectangle with an exact 2:1 ratio: longitude
+    // maps to x linearly and latitude to y linearly. Because d3 spans
+    // 2π·scale horizontally and π·scale vertically, taking the smaller of
+    // w/2π and h/π guarantees the WHOLE world fits inside the canvas on any
+    // aspect ratio — one frame, always, with no cropping and no scrolling.
+    // The trade is area distortion near the poles (Greenland looks huge),
+    // which does not matter for plotting incident positions.
+    const scale = Math.min(dims.width / (2 * Math.PI), dims.height / Math.PI);
+    return d3.geoEquirectangular()
       .scale(scale)
-      .translate([dims.width / 2, dims.height / 2 + 10]);
+      .translate([dims.width / 2, dims.height / 2]);
   }, [dims]);
 
   const pathGen = useMemo(() => d3.geoPath(projection), [projection]);
@@ -1789,9 +1803,15 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
   // full canvas of slack in each direction) so panning still feels free.
   useEffect(() => {
     if (!zoomBehaviorRef.current) return;
+    // Pinned to exactly the canvas, NOT the old one-canvas-of-slack in every
+    // direction. That slack meant that at 1× the world could still be dragged
+    // half a screen off-frame in any direction — the "it scrolls left and
+    // right" complaint. With the extent equal to the canvas, 1× has exactly
+    // one legal transform (the fully-framed world) so it cannot be panned at
+    // all, while zooming in still pans freely within the map's own bounds.
     zoomBehaviorRef.current.translateExtent([
-      [-dims.width * 0.5, -dims.height * 0.5],
-      [dims.width * 1.5, dims.height * 1.5],
+      [0, 0],
+      [dims.width, dims.height],
     ]);
   }, [dims]);
 
@@ -2001,7 +2021,10 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
   }, [pathGen]);
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", minHeight: 480, background: "#020b1c", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
+    // No minHeight: a 480px floor inside a shorter stage pushed the map past
+    // the bottom of its own container. The projection fits itself to whatever
+    // height it is given, so the frame should simply be the stage.
+    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", background: "#020b1c", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
       {/* Deep space starfield behind the map */}
       <canvas style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }}
         ref={el => {
@@ -10085,20 +10108,44 @@ export default function GlobalAttackMap() {
               bot-left, bot-right) plus the two mid-edges; they do not push
               the globe aside. */}
           <div style={{ position: "absolute", inset: 0 }}>
+            {/* FLAT is an SVG map, not Cesium in 2D. Cesium is a 3D globe
+                engine: its 2D mode is a camera looking at a plane, so the
+                framing is a camera fit that drifts with container aspect and
+                it wraps infinitely east-west by default. Keeping the whole
+                world in one frame meant fighting it on every axis. An SVG
+                equirectangular projection simply cannot scroll or crop —
+                there is no camera — and it costs no WebGL context and no
+                satellite tile requests. Cesium still owns the GLOBE view,
+                which is what it is actually good at. */}
             <GlobeErrorBoundary>
-              <Globe3D
-                mapMode={mapMode}
-                visibleIncidents={visibleIncidents}
-                selectedId={selectedId}
-                hoveredId={hoveredId}
-                activeCountries={activeCountries}
-                onSelect={setSelectedId}
-                onHover={setHoveredId}
-                showBlastRadius={showBlastRadius}
-                blastRadius={selBlast}
-                showLabels={showLabels}
-                world={world}
-              />
+              {mapMode === "flat" ? (
+                <MapCanvas
+                  world={world}
+                  visibleIncidents={visibleIncidents}
+                  viewMode={viewMode}
+                  hoveredId={hoveredId}
+                  selectedId={selectedId}
+                  onHover={setHoveredId}
+                  onSelect={setSelectedId}
+                  showBlastRadius={showBlastRadius}
+                  showHeat={showHeat}
+                  showLabels={showLabels}
+                />
+              ) : (
+                <Globe3D
+                  mapMode={mapMode}
+                  visibleIncidents={visibleIncidents}
+                  selectedId={selectedId}
+                  hoveredId={hoveredId}
+                  activeCountries={activeCountries}
+                  onSelect={setSelectedId}
+                  onHover={setHoveredId}
+                  showBlastRadius={showBlastRadius}
+                  blastRadius={selBlast}
+                  showLabels={showLabels}
+                  world={world}
+                />
+              )}
             </GlobeErrorBoundary>
           </div>
 

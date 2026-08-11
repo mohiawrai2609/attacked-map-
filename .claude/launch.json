@@ -9,6 +9,12 @@
       "autoPort": true
     },
     {
+      "name": "vite-prod-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--", "--port", "4173"],
+      "port": 4173
+    },
+    {
       "name": "static-preview",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "5050"],
