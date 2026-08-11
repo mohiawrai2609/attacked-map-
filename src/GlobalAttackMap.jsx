@@ -1738,6 +1738,19 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
 
   const pathGen = useMemo(() => d3.geoPath(projection), [projection]);
 
+  // Exact on-screen rectangle the whole world occupies, read back out of the
+  // projection itself rather than recomputed from scale — so the satellite
+  // texture can never drift out of register with the vector borders drawn on
+  // top of it. Equirectangular is what makes this trivial: a standard 2:1
+  // plate-carrée Earth image maps corner-to-corner onto this rect with no
+  // resampling, which is not true of Natural Earth or any oval projection.
+  const worldRect = useMemo(() => {
+    const tl = projection([-180, 90]);
+    const br = projection([180, -90]);
+    if (!tl || !br) return null;
+    return { x: tl[0], y: tl[1], w: br[0] - tl[0], h: br[1] - tl[1] };
+  }, [projection]);
+
   // Project a [lng, lat] → [x, y] safely
   function project(lng, lat) {
     if (typeof lng !== "number" || typeof lat !== "number") return null;
@@ -2097,12 +2110,36 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
           clipPath="url(#map-viewport)"
           transform={`translate(${zoomTransform.x},${zoomTransform.y}) scale(${k})`}>
 
-          {/* Graticule — neutral grey, very subtle. Matches the demo's
-              barely-visible reference lines. */}
-          <path d={graticule} fill="none" stroke="rgba(78,161,255,0.07)" strokeWidth={0.3 / k} strokeOpacity={1} />
+          {/* Real Earth imagery — the same photographic basemap the GLOBE
+              shows, so switching FLAT/GLOBE no longer changes what the planet
+              looks like. This replaced a hardcoded palette of ten dark-green
+              landmass tones over a near-black ocean, which read as a schematic
+              rather than the satellite view used everywhere else.
+              NASA Blue Marble is 4096x2048 plate carrée — exactly the
+              projection in use — so it lands corner-to-corner on worldRect
+              with no distortion. Inside the zoom group, so it pans and scales
+              with the vector layers on top of it.
+              MUST be the first child: it is opaque, so anything drawn before
+              it (the graticule) would simply be painted over. */}
+          {worldRect && (
+            <image
+              href="/textures/earth-blue-marble.jpg"
+              x={worldRect.x} y={worldRect.y}
+              width={worldRect.w} height={worldRect.h}
+              preserveAspectRatio="none"
+              style={{ pointerEvents: "none" }}
+            />
+          )}
 
-          {/* Countries — muted earth-green/brown landmasses matching the 
-              photorealistic satellite palette. */}
+          {/* Graticule — now sits ON the imagery, so it is a faint white
+              rather than the old blue: a 0.07-alpha blue that was legible
+              against a near-black schematic disappears entirely over ocean
+              and desert photography. */}
+          <path d={graticule} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={0.3 / k} strokeOpacity={1} />
+
+          {/* Country borders — outlines only now. The imagery below supplies
+              the land colour, so filling the polygons would just paint over
+              the photograph. */}
           {(() => {
             // Deliberately NO country-wide focus flood. An incident is a point
             // event — a strike on one base, a tanker seized in a strait. Filling
@@ -2111,10 +2148,6 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
             // Hormuz is Iran/Oman transit) it also mis-attributes the event to
             // one state. The focus highlight now lives at the incident's real
             // coordinates instead — see the place-highlight block below.
-            const tones = [
-              "#2d3d1e","#324020","#2a3a1c","#2e3b1d","#304220",
-              "#28381b","#334521","#2b3e1e","#2f4122","#263519",
-            ];
             return world && world.features.map((feat, i) => {
               const d = pathGen(feat);
               if (!d) return null;
@@ -2122,9 +2155,12 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
                 <path
                   key={i}
                   d={d}
-                  fill={tones[i % tones.length]}
-                  stroke="rgba(60,80,40,0.55)"
-                  strokeWidth={0.4 / k}
+                  fill="none"
+                  // Warm hairline rather than the old green: it has to read as
+                  // a border over both bright desert and dark ocean without
+                  // competing with the severity-coloured pins.
+                  stroke="rgba(255,255,255,0.22)"
+                  strokeWidth={0.5 / k}
                 />
               );
             });
