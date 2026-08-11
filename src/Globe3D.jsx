@@ -20,6 +20,64 @@ const SEV_COLOR = {
   1: "#8E8E93", // MINIMAL
 };
 
+// ── Incident marker artwork ────────────────────────────────────────────────
+// Markers were a 22 px solid dot with a 2 px white outline. That heavy white
+// ring read as a generic consumer map pin, and at 22 px a busy day (the Gulf,
+// say) collapsed into one unreadable blob. They are now a reticle: a 3 px core
+// inside four ticks, which stays separable when incidents overlap and reads as
+// a surveillance instrument rather than a pushpin.
+//
+// Drawn to a canvas rather than shipped as an image so the colour follows the
+// severity scale, and cached per colour — there are only five severity
+// colours, so ~1,000 incidents share five bitmaps instead of allocating one
+// canvas each.
+const MARKER_PX = 28;      // logical footprint; the visible core is far smaller
+const MARKER_SS = 2;       // supersample so the 1 px strokes stay crisp on HiDPI
+
+function _markerCanvas(hex, draw) {
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = MARKER_PX * MARKER_SS;
+  const g = cv.getContext("2d");
+  g.scale(MARKER_SS, MARKER_SS);
+  g.strokeStyle = hex;
+  g.fillStyle = hex;
+  draw(g, MARKER_PX / 2);
+  return cv;
+}
+
+const _reticleCache = new Map();
+function reticleCanvas(hex) {
+  let cv = _reticleCache.get(hex);
+  if (cv) return cv;
+  cv = _markerCanvas(hex, (g, c) => {
+    g.globalAlpha = 0.45; g.lineWidth = 1;              // containment ring
+    g.beginPath(); g.arc(c, c, 11.5, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = 0.95; g.lineWidth = 1.4;            // four ticks, gapped
+    g.beginPath();
+    g.moveTo(c, c - 13); g.lineTo(c, c - 8);
+    g.moveTo(c, c + 8);  g.lineTo(c, c + 13);
+    g.moveTo(c - 13, c); g.lineTo(c - 8, c);
+    g.moveTo(c + 8, c);  g.lineTo(c + 13, c);
+    g.stroke();
+    g.globalAlpha = 1;                                   // solid core
+    g.beginPath(); g.arc(c, c, 3, 0, Math.PI * 2); g.fill();
+  });
+  _reticleCache.set(hex, cv);
+  return cv;
+}
+
+const _pulseCache = new Map();
+function pulseRingCanvas(hex) {
+  let cv = _pulseCache.get(hex);
+  if (cv) return cv;
+  cv = _markerCanvas(hex, (g, c) => {
+    g.lineWidth = 1.6;
+    g.beginPath(); g.arc(c, c, 8, 0, Math.PI * 2); g.stroke();
+  });
+  _pulseCache.set(hex, cv);
+  return cv;
+}
+
 // Longitude roughly under the user's local timezone (UTC offset × 15°/hour).
 // The globe opens over the user's part of the world, so its day/night state
 // always matches the laptop's local time (day hours → lit, night → dark).
@@ -583,20 +641,50 @@ function resolveCoords(inc) {
       const coords = resolveCoords(inc);
       if (!coords) return;
       const [lng, lat] = coords;
-      const c = Cesium.Color.fromCssColorString(SEV_COLOR[inc.severity] || SEV_COLOR[3]);
+      const hex = SEV_COLOR[inc.severity] || SEV_COLOR[3];
       const entity = viewer.entities.add({
         id: String(inc._id),
         position: Cesium.Cartesian3.fromDegrees(lng, lat),
-        point: {
-          pixelSize: 22,
-          color: c.withAlpha(0.95),
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 2,
+        billboard: {
+          image: reticleCanvas(hex),
+          width: MARKER_PX,
+          height: MARKER_PX,
           heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-          scaleByDistance: new Cesium.NearFarScalar(1.5e6, 1.5, 4.0e7, 0.5),
+          // Tighter range than the old dot: the reticle carries detail, so
+          // blowing it up close-in just makes it coarse.
+          scaleByDistance: new Cesium.NearFarScalar(1.5e6, 1.25, 4.0e7, 0.55),
         },
       });
       entity._incident = inc;
+
+      // CRITICAL only — a slow outward pulse, so the eye lands on the worst
+      // incident of the day without every marker competing. Deliberately not
+      // applied to all five tiers: the globe renders one day at a time (a
+      // handful of severity-5 pins), whereas animating the full set would put
+      // a CallbackProperty on ~1,000 entities for no read-through.
+      if (inc.severity === 5) {
+        const t0 = (typeof performance !== "undefined" ? performance.now() : Date.now());
+        const phase = () => {
+          const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+          return ((now - t0) % 2400) / 2400;   // 0→1 every 2.4s
+        };
+        const pulse = viewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(lng, lat),
+          billboard: {
+            image: pulseRingCanvas(hex),
+            width: MARKER_PX,
+            height: MARKER_PX,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            scale: new Cesium.CallbackProperty(() => 0.5 + phase() * 1.4, false),
+            // WHITE multiplier keeps the ring's own colour; only alpha moves.
+            color: new Cesium.CallbackProperty(
+              () => Cesium.Color.WHITE.withAlpha(0.6 * (1 - phase())), false),
+          },
+        });
+        // So a click that lands on the expanding ring still opens the incident
+        // rather than firing onSelect with an auto-generated entity GUID.
+        pulse._incident = inc;
+      }
     });
     viewer.scene.requestRender();
   }
@@ -782,8 +870,15 @@ function resolveCoords(inc) {
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
       handler.setInputAction((movement) => {
         const picked = viewer.scene.pick(movement.position);
-        if (Cesium.defined(picked) && picked.id && picked.id.id != null) {
-          onSelectRef.current && onSelectRef.current(picked.id.id);
+        if (Cesium.defined(picked) && picked.id) {
+          // Prefer the incident stapled to the entity. The severity-5 pulse
+          // ring is a second entity at the same position with an auto-assigned
+          // GUID, so keying off entity.id alone would fire onSelect with a
+          // GUID that matches no incident whenever the click caught the ring.
+          const inc = picked.id._incident;
+          const id = inc && inc._id != null ? inc._id
+                   : (picked.id.id != null ? picked.id.id : null);
+          if (id != null) onSelectRef.current && onSelectRef.current(id);
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
       viewer._clickHandler = handler;
@@ -1001,10 +1096,15 @@ function resolveCoords(inc) {
         const dotEnt = viewer.entities.add({
           position: Cesium.Cartesian3.fromDegrees(ent.longitude, ent.latitude),
           point: {
-            pixelSize: 18,
+            // Was 18 px with a white outline. Against the new reticle — whose
+            // visible core is 3 px — an 18 px solid disc made the blast-radius
+            // satellites louder than the incident they radiate from. Sized
+            // down and given a dark hairline so the hierarchy reads correctly:
+            // incident first, related entities second.
+            pixelSize: 9,
             color: Cesium.Color.fromCssColorString(def.color).withAlpha(0.9),
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 1.5,
+            outlineColor: Cesium.Color.fromCssColorString("#0D0D0D").withAlpha(0.8),
+            outlineWidth: 1,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
           },
         });
