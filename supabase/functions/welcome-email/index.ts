@@ -7,7 +7,7 @@
 //   1. Editorial hero (baked "Narrow your blast radius." headline + radar)
 //   2. "Now make the most of your account" greeting + benefits checklist
 //   3. "Today's top incidents" — 3 real rows, each with a category IMAGE
-//   4. 3 feature cards (image + title + CTA): Map / Hub / Design Partner
+//   4. 3 feature cards (image + title + CTA): Map / Hub / Subscribe
 //   5. Calibration summary card
 //   6. Footer — "Follow our thinking" socials + manage subscription + unsubscribe
 //
@@ -162,7 +162,7 @@ function welcomeHtml(profile: any, incidents: any[], unsubUrl: string) {
       benefit("Your <b>daily brief</b> — every classified incident, led by the industries you watch.") +
       benefit("The <b>live attack map</b> — every incident geolocated and GUARD-classified.") +
       benefit("The <b>Attacked Hub</b> — the editorial feed of the latest daily sweep.") +
-      benefit("Locked, for now: named blast radius, adaptive controls and vendor Defence Ratings — with <b style=\"color:#F5B800;\">Design Partner</b> access.") +
+      benefit("Locked, for now: named blast radius, adaptive controls and vendor Defence Ratings — when you <b style=\"color:#F5B800;\">subscribe</b>.") +
     `</table>` +
 
     (incidents.length ?
@@ -174,7 +174,7 @@ function welcomeHtml(profile: any, incidents: any[], unsubUrl: string) {
     `<table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr style="vertical-align:top;">` +
       featureCard(FEATURE_IMG.map, "Live map", "Open the map", "Every incident, geolocated and classified.", "Explore", `${APP_URL}/?map`) +
       featureCard(FEATURE_IMG.hub, "The hub", "Read the feed", "The latest sweep, written for operators.", "Browse", `${APP_URL}/?hub`) +
-      featureCard(FEATURE_IMG.partner, "Go deeper", "Design Partner", "Blast radius, controls, vendor ratings.", "Apply", `${APP_URL}/?pricing`) +
+      featureCard(FEATURE_IMG.partner, "Go deeper", "Subscribe", "Blast radius, controls, vendor ratings.", "Subscribe", `${APP_URL}/?subscriptions`) +
     `</tr></table>` +
 
     // Calibration card

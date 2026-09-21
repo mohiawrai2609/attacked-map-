@@ -34,15 +34,13 @@ const BRAND = {
 
 const TIER_COLOR = {
   free: BRAND.cyan,
-  partner: BRAND.gold,
-  enterprise: BRAND.violet,
+  enterprise: BRAND.gold,
   vendor: BRAND.green,
   admin: BRAND.violet,
 };
 const TIER_LABEL = {
   free: "Free",
-  partner: "Partner",
-  enterprise: "Enterprise",
+  enterprise: "Subscriber",
   vendor: "Vendor",
   admin: "Admin",
 };
@@ -166,13 +164,7 @@ export function AdminStats() {
 
       {/* ── APPLICATIONS ───────────────────────────────────────────────── */}
       <SectionTitle>Applications</SectionTitle>
-      <div className="r-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 28 }}>
-        <Card title="Partner" color={BRAND.gold}>
-          <Row k="Pending" v={fmtNum(a.partner_pending)} highlight={a.partner_pending > 0} />
-          <Row k="Approved" v={fmtNum(a.partner_approved)} />
-          <Row k="Rejected" v={fmtNum(a.partner_rejected)} />
-          <Row k="Total received" v={fmtNum(a.partner_total)} muted />
-        </Card>
+      <div className="r-grid" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14, marginBottom: 28 }}>
         <Card title="Vendor" color={BRAND.green}>
           <Row k="Pending" v={fmtNum(a.vendor_pending)} highlight={a.vendor_pending > 0} />
           <Row k="Approved" v={fmtNum(a.vendor_approved)} />
@@ -233,7 +225,7 @@ export function AdminStats() {
       {/* ── FEEDBACK ──────────────────────────────────────────────────── */}
       <SectionTitle style={{ marginTop: 28 }}>Feedback</SectionTitle>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 8 }}>
-        <Tile label="Partner submissions" value={fmtNum(fb.total_submissions)} color={BRAND.gold} hint="Open Feedback tab for breakdown" />
+        <Tile label="Feedback submissions" value={fmtNum(fb.total_submissions)} color={BRAND.gold} hint="Open Feedback tab for breakdown" />
       </div>
     </div>
   );

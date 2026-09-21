@@ -17,7 +17,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { AuthModal } from "./AuthModal";
-import { PartnerApplicationModal } from "./PartnerApplicationModal";
+import { SubscribeModal } from "./SubscribeModal";
 import { useAuth } from "./AuthProvider";
 import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
@@ -114,10 +114,15 @@ function useLiveIntel() {
       try {
         const [{ count: total }, { data: latest }, { data: rows }] = await Promise.all([
           supabase.from("incidents").select("id", { count: "exact", head: true }),
-          supabase.from("incidents").select("incident_day").order("incident_day", { ascending: false }).limit(1),
+          // nullsFirst:false — five rows carry a NULL incident_day and Postgres sorts
+          // NULLs first on DESC, which made "latest day" resolve to null.
+          supabase.from("incidents").select("incident_day").not("incident_day", "is", null).order("incident_day", { ascending: false, nullsFirst: false }).limit(1),
           supabase.from("incidents")
-            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry,image_url")
-            .order("incident_day", { ascending: false })
+            // image_url was dropped in the 2026-07-28 restructure; asking for it
+            // 400'd this whole select and left the sample card on "Loading…".
+            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry")
+            .not("incident_day", "is", null)
+            .order("incident_day", { ascending: false, nullsFirst: false })
             .order("severity", { ascending: false })
             .limit(40),
         ]);
@@ -272,7 +277,7 @@ const sectionLabel = {
 export function LandingPage() {
   const { user } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
-  const [partnerOpen, setPartnerOpen] = useState(false);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const intel = useLiveIntel();
 
@@ -796,7 +801,7 @@ export function LandingPage() {
                 letterSpacing: "0.08em", textTransform: "uppercase",
               }}>{user ? "Manage subscription →" : "Subscribe free →"}</button>
             </div>
-            {/* Partner Brief — featured (gold-tint) */}
+            {/* Subscriber Brief — featured (gold-tint) */}
             <div style={{
               background: "#FFFDF5", border: `1px solid ${BRAND.gold}`,
               borderRadius: 0, padding: "26px 26px 24px",
@@ -805,19 +810,18 @@ export function LandingPage() {
               <div style={{
                 fontSize: 10.5, fontWeight: 700, color: "#8A6D00",
                 letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8,
-              }}>Design partner · daily</div>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", color: "#101010" }}>The Partner Brief</div>
+              }}>Subscriber · daily</div>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", color: "#101010" }}>The Subscriber Brief</div>
               <div style={{ marginTop: 10, fontSize: 13.5, lineHeight: 1.6, color: "#52525B" }}>
-                Full operational detail — named entities, summaries, "if you operate
-                X, then Y" advisories, blast radius and vendor Defence Ratings.
+                Full operational detail — named blast radius, adaptive GUARD controls, peer watchlist, historical analogues and vendor Defence Ratings.
               </div>
-              <button onClick={() => setPartnerOpen(true)} style={{
+              <button onClick={() => setSubscribeOpen(true)} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: BRAND.gold, color: BRAND.obsidian,
                 border: "none", borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 11.5, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
-              }}>Apply for access →</button>
+              }}>Subscribe →</button>
             </div>
           </div>
         </div>
@@ -925,9 +929,9 @@ export function LandingPage() {
                 Sign up free →
               </button>
               <button
-                onClick={() => { dismissWelcome(); setPartnerOpen(true); }}
+                onClick={() => { dismissWelcome(); setSubscribeOpen(true); }}
                 style={{ ...ghostBtn, padding: "12px 24px" }}>
-                Apply for Partner
+                Subscribe
               </button>
             </div>
             <button onClick={dismissWelcome} style={{
@@ -942,7 +946,7 @@ export function LandingPage() {
       )}
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <PartnerApplicationModal open={partnerOpen} onClose={() => setPartnerOpen(false)} />
+      <SubscribeModal open={subscribeOpen} onClose={() => setSubscribeOpen(false)} onSignIn={() => { setSubscribeOpen(false); setAuthOpen(true); }} />
     </div>
   );
 }

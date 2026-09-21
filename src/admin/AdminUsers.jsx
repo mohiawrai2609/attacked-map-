@@ -28,8 +28,7 @@ const BRAND = {
 
 const TIER_OPTIONS = [
   { v: "free",       label: "FREE",       color: "#4FC3D7" },
-  { v: "partner",    label: "PARTNER",    color: "#F5B800" },
-  { v: "enterprise", label: "ENTERPRISE", color: "#9D7BEC" },
+  { v: "enterprise", label: "SUBSCRIBER", color: "#F5B800" },
   { v: "vendor",     label: "VENDOR",      color: "#34C759" },
   { v: "admin",      label: "ADMIN",       color: "#9D7BEC" },
 ];

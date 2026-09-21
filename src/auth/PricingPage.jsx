@@ -3,7 +3,7 @@
 // Accessible via /?pricing or from the account menu.
 //
 // Per access_model_v2.html §2 (Life of an incident) — one sweep monetises
-// FOUR ways: enterprise subscription, design partner program, vendor
+// THREE ways: subscription, vendor
 // promotion, media licence. Plus reports as standalone premium artefacts.
 //
 // All prices here are PLACEHOLDERS — edit PLANS below as the team decides
@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "./AuthProvider";
 import { AuthModal } from "./AuthModal";
-import { PartnerApplicationModal } from "./PartnerApplicationModal";
+import { SubscribeModal } from "./SubscribeModal";
 import { VendorApplicationModal } from "./VendorApplicationModal";
 import { supabase } from "../lib/supabaseClient";
 import { SiteNav } from "./SiteNav";
@@ -62,41 +62,22 @@ const PLANS = [
     ],
     cta: { label: "Sign up — free", kind: "signup" },
   },
-  {
-    id: "partner",
-    eyebrow: "🤝 Gate 2 · Founding cohort · Limited seats",
-    name: "Design Partner",
-    pitch: "Preview of the priced product — at founding-cohort terms.",
-    price: {
-      amount: 0,
-      currency: "₹",
-      period: "during founding cohort",
-      note: "Then locked at ₹4,999/month — grandfathered forever when cohort closes (target Q4 2026)",
-    },
-    accent: BRAND.gold,
-    highlight: true,
-    features: [
-      "Everything in the Inbox",
-      "Source URLs + full article-grade write-ups",
-      "Named blast radius + recommended actions per entity",
-      "Adaptive controls — Objectives → Master → Recommended",
-      "Vendor Defence Ratings + capability claims",
-      "First look at every new module before public release",
-      "Grandfathered ₹4,999/month forever when cohort closes (vs ₹14,999 Enterprise)",
-    ],
-    locked: [],
-    commitment: "~30 minutes of feedback when we ask · reference logo when you're ready",
-    cta: { label: "Apply for design partner", kind: "partner" },
-  },
+  // The Design Partner plan (application + approval, founding cohort) was
+  // retired on 2026-09-21. Its unlocks live on the Subscriber plan below.
   {
     id: "enterprise",
-    eyebrow: "✦ Priced tier",
-    name: "Enterprise",
-    pitch: "Operational intelligence for your security org.",
-    price: { amount: 14999, currency: "₹", period: "per month", note: "Per organisation · 3 user seats included · multi-seat available" },
-    accent: BRAND.violet,
+    eyebrow: "◆ Gate 2 · Subscriber",
+    name: "Subscriber",
+    highlight: true,
+    accent: BRAND.gold,
+    pitch: "The operational layer behind every incident in your industry.",
+    price: { amount: 14999, currency: "₹", period: "per month", note: "Placeholder price · per organisation · 3 seats included" },
     features: [
-      "Everything in Design Partner",
+      "Everything in the Inbox, plus:",
+      "Named blast radius + recommended actions per entity",
+      "Adaptive GUARD controls — Objectives → Master → Recommended",
+      "Peer watchlist + historical analogues",
+      "Vendor Defence Ratings + capability claims",
       "3 user seats (additional seats on request)",
       "Sector-filtered daily intelligence stream",
       "Dedicated analyst desk for clarifications",
@@ -106,7 +87,9 @@ const PLANS = [
     ],
     locked: [],
     commitment: "Multi-seat available · SSO on request",
-    cta: { label: "Subscribe", kind: "checkout", planId: "enterprise" },
+    // Subscribe flips profiles.tier via set_own_subscription(); Stripe checkout
+    // (create-checkout) can replace this action later without touching the card.
+    cta: { label: "Subscribe", kind: "subscribe" },
   },
   {
     id: "reports",
@@ -184,7 +167,7 @@ function formatPrice(p) {
 export function PricingPage() {
   const { user, tier } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
-  const [partnerOpen, setPartnerOpen] = useState(false);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [vendorOpen, setVendorOpen] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(null);
   const [checkoutError, setCheckoutError] = useState(null);
@@ -218,13 +201,9 @@ export function PricingPage() {
       return { label, action: () => setAuthOpen(true), disabled: false, tone: "primary" };
     }
 
-    if (kind === "partner") {
-      if (tier === "partner" || tier === "admin") return { label: "✓ Active partner", action: null, disabled: true, tone: "current" };
-      // Anonymous submission is supported (submit_partner_application RPC
-      // accepts null user_id; the trigger binds the account to the
-      // application on later signin by email match). Open the modal
-      // directly — same UX as the PublicWall partner card.
-      return { label, action: () => setPartnerOpen(true), disabled: false, tone: "primary" };
+    if (kind === "subscribe") {
+      if (tier === "enterprise" || tier === "admin") return { label: "✓ You're a subscriber", action: null, disabled: true, tone: "current" };
+      return { label, action: () => setSubscribeOpen(true), disabled: false, tone: "primary" };
     }
 
     if (kind === "checkout") {
@@ -252,7 +231,7 @@ export function PricingPage() {
   // non-templated feel.
   const cleanEyebrow = (s) => s.replace(/[📧🤝✦§◈◇]/g, "").replace(/^[\s·]+/, "").trim();
 
-  const PRIMARY = ["free", "partner", "enterprise"];
+  const PRIMARY = ["free", "enterprise"];
   const primaryPlans = PLANS.filter((p) => PRIMARY.includes(p.id));
   const secondaryPlans = PLANS.filter((p) => !PRIMARY.includes(p.id));
 
@@ -350,9 +329,8 @@ export function PricingPage() {
             <p style={{
               fontSize: 16.5, color: BRAND.textSecondary, marginTop: 20, lineHeight: 1.6, maxWidth: 600,
             }}>
-              The public map and daily inbox are free, forever. Join the founding design-partner
-              cohort for the fully unlocked product at grandfathered terms — or move to Enterprise
-              when your team is ready.
+              The public map and daily inbox are free, forever. Subscribe when you need the
+              answer behind each incident — who is exposed, which controls apply, and what to do.
             </p>
           </div>
         </div>
@@ -517,8 +495,8 @@ export function PricingPage() {
               The public map stays free. We charge for the answer — names, controls, vendor analysis, source articles.
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#101010", marginBottom: 6 }}>Partners are grandfathered</div>
-              Sign up during the founding cohort and your access stays at preview-tier terms. We don't backstab partners.
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#101010", marginBottom: 6 }}>Switch it on, switch it off</div>
+              Subscribe from your dashboard in one click and cancel the same way. No application, no approval queue.
             </div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#101010", marginBottom: 6 }}>Four revenue lines, not one bundle</div>
@@ -549,7 +527,7 @@ export function PricingPage() {
       <SiteFooter />
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <PartnerApplicationModal open={partnerOpen} onClose={() => setPartnerOpen(false)} />
+      <SubscribeModal open={subscribeOpen} onClose={() => setSubscribeOpen(false)} onSignIn={() => { setSubscribeOpen(false); setAuthOpen(true); }} />
       <VendorApplicationModal open={vendorOpen} onClose={() => setVendorOpen(false)} />
     </div>
   );

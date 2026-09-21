@@ -23,9 +23,9 @@
 //   free    → headlines + sector + category + severity for every incident.
 //             Hidden: source, named blast radius, full summary, advisory,
 //             adaptive controls, vendor ratings. CTA → unlock (Gate 2).
-//   partner → source, named blast radius, adaptive controls, vendor ratings,
+//   subscriber (tier enterprise) → source, named blast radius, adaptive controls, vendor ratings,
 //             full report. Full-detail blocks.
-//   admin   → treated as partner.
+//   admin   → treated as subscriber.
 //
 // TESTING (zero send / zero spam risk):
 //   POST { "dryRun": true }            → renders + partitions every subscriber,
@@ -147,7 +147,7 @@ function shell(title: string, bodyHtml: string, unsubUrl: string, periodLabel: s
     // ── Top nav ────────────────────────────────────────────────
     `<tr><td style="padding:0 4px 14px;text-align:center;">` +
       navLink(`${APP_URL}/?map`, "Open the map") + ` &nbsp;|&nbsp; ` +
-      navLink(`${APP_URL}/?pricing`, "Become a partner") + ` &nbsp;|&nbsp; ` +
+      navLink(`${APP_URL}/?subscriptions`, "Subscribe") + ` &nbsp;|&nbsp; ` +
       navLink(`${APP_URL}/?subscriptions`, "Manage") + ` &nbsp;|&nbsp; ` +
       navLink(unsubUrl, "Unsubscribe") +
     `</td></tr>` +
@@ -301,9 +301,9 @@ function incidentCard(i: any, isPartner: boolean): string {
       (i.severity_rationale
         ? `<div style="padding:11px 13px;background:rgba(245,184,0,0.07);border-left:3px solid ${GOLD};border-radius:0 4px 4px 0;font-family:${INTER};font-size:12px;color:#FFF;line-height:1.55;margin-bottom:14px;"><b style="color:${GOLD};">Why it matters →</b> ${escape(i.severity_rationale)}</div>`
         : "")
-    : `<p style="font-family:${INTER};font-size:13px;color:${MUTED};line-height:1.6;margin:0 0 14px;">${place || "Live incident"}. Named blast radius, recommended actions and vendor Defence Ratings are <b style="color:#FFF;">partner-only</b>.</p>`;
+    : `<p style="font-family:${INTER};font-size:13px;color:${MUTED};line-height:1.6;margin:0 0 14px;">${place || "Live incident"}. Named blast radius, recommended actions and vendor Defence Ratings are <b style="color:#FFF;">subscriber-only</b>.</p>`;
 
-  const btnHref = isPartner ? `${APP_URL}/?map` : `${APP_URL}/?pricing`;
+  const btnHref = isPartner ? `${APP_URL}/?map` : `${APP_URL}/?subscriptions`;
   const btnLabel = isPartner ? "Open on map →" : "Unlock details →";
 
   return card(
@@ -373,9 +373,9 @@ function freeDigestHtml(
 
   // Partner upsell card.
   body += card(
-    `<div style="font-family:${INTER};font-size:10.5px;color:${GOLD};letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:8px;">Design partner access</div>` +
-    `<div style="font-family:${INTER};font-size:14px;color:#FFF;line-height:1.55;margin-bottom:16px;">Headlines tell you <i>what</i>. Partner access unlocks <i>who</i> — named entities, blast radius, adaptive controls and vendor Defence Ratings for every incident.</div>` +
-    `<a href="${APP_URL}/?pricing" style="display:inline-block;padding:13px 26px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Become a partner →</a>`
+    `<div style="font-family:${INTER};font-size:10.5px;color:${GOLD};letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:8px;">Subscribe</div>` +
+    `<div style="font-family:${INTER};font-size:14px;color:#FFF;line-height:1.55;margin-bottom:16px;">Headlines tell you <i>what</i>. Subscribing unlocks <i>who</i> — named entities, blast radius, adaptive controls and vendor Defence Ratings for every incident.</div>` +
+    `<a href="${APP_URL}/?subscriptions" style="display:inline-block;padding:13px 26px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Subscribe →</a>`
   );
 
   body += signalsCard(signals);
@@ -415,7 +415,7 @@ function partnerDigestHtml(
     body += `<div style="text-align:center;margin:2px 0 4px;"><a href="${APP_URL}/?map" style="font-family:${INTER};font-size:12.5px;color:${MUTED};text-decoration:underline;">+ ${ordered.length - 18} more incidents on the live map →</a></div>`;
   }
 
-  return shell(`Daily intelligence — ${periodLabel} · Partner`, body, unsubUrl, periodLabel);
+  return shell(`Daily intelligence — ${periodLabel} · Subscriber`, body, unsubUrl, periodLabel);
 }
 
 // ── Plumbing ────────────────────────────────────────────────────────────────
@@ -481,7 +481,8 @@ function buildForProfile(p: any, dayIncidents: any[], weekIncidents: any[], targ
   const matched = hasFocus ? pool.filter(matches) : [];
   const rest = hasFocus ? pool.filter((i) => !matches(i)) : pool;
 
-  const isPartner = p.tier === "partner" || p.tier === "admin";
+  // Subscriber = profiles.tier enterprise (Design Partner retired 2026-09-21).
+  const isPartner = p.tier === "enterprise" || p.tier === "admin";
   // Label reflects the data window, not "now": daily = the target day; weekly =
   // the 7-day window that ends on the target day.
   const periodLabel = weekly
@@ -497,7 +498,7 @@ function buildForProfile(p: any, dayIncidents: any[], weekIncidents: any[], targ
   const lead = isPartner ? "🤝" : "🔔";
   const subject = (hasFocus && matched.length > 0)
     ? `${lead} ${matched.length} in your watchlist · ${pool.length} tracked — ${periodLabel}`
-    : `${lead} ${pool.length} incidents — ${periodLabel} · ${isPartner ? "Partner" : "Daily"} brief`;
+    : `${lead} ${pool.length} incidents — ${periodLabel} · ${isPartner ? "Subscriber" : "Daily"} brief`;
 
   return { isPartner, weekly, focus: hasFocus ? focus : "all", matched: matched.length, rest: rest.length, pool: pool.length, subject, html };
 }
@@ -545,7 +546,7 @@ Deno.serve(async (req) => {
 
   let profiles: any[] = await pgFetch(
     `profiles?select=id,email,tier,unsubscribe_token,watch_industries,watch_categories,digest_frequency` +
-    `&email_subscribed=eq.true&tier=in.(free,partner,admin)&limit=10000`,
+    `&email_subscribed=eq.true&tier=in.(free,enterprise,admin)&limit=10000`,
   );
   if (onlyTo) profiles = profiles.filter((p) => p.email === onlyTo);
 

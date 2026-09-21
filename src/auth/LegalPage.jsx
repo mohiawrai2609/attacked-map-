@@ -66,9 +66,9 @@ const PAGES = {
     title: "Frequently asked questions",
     body: [
       ["What is Attacked.ai?", "A daily-updated map of corporate cyber and operational incidents, each classified through the GUARD framework with blast radius, controls and vendor Defence Ratings."],
-      ["Is it free?", "Yes — the map and the Daily Brief are free. Deeper operational detail is available on the Design Partner and Enterprise tiers. See the pricing page."],
+      ["Is it free?", "Yes — the map and the Daily Brief are free. Deeper operational detail — named blast radius, GUARD controls, peer watchlist — is for subscribers. See the pricing page."],
       ["Where does the data come from?", "Daily sweeps of public reporting and disclosures, enriched and classified by our analysts and the GUARD pipeline."],
-      ["How do I get full access?", `Sign up free to open the map, or email ${CONTACT_EMAIL} about partner and enterprise access.`],
+      ["How do I get full access?", `Sign up free to open the map and your industry dashboard, then subscribe from the dashboard for full access.`],
     ],
   },
 };

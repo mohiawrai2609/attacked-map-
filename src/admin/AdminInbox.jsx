@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 // AdminInbox — Phase 1 of /admin.
 //
-// Single queue: pending partner_applications + vendor_applications merged
+// Single queue: vendor_applications (partner applications retired 2026-09-21)
 // + sorted by submitted_at (newest first). Each card:
 //   • Type badge (🤝 PARTNER · ◈ VENDOR)
 //   • Name + company + role + time-ago
@@ -63,17 +63,14 @@ export function AdminInbox() {
     setLoading(true);
     setError(null);
     try {
-      const [{ data: p, error: pe }, { data: v, error: ve }] = await Promise.all([
-        supabase.from("partner_applications")
-          .select("id,email,full_name,company,role,sector,linkedin_url,why_interested,status,submitted_at,decided_at,decided_by,decision_notes")
-          .order("submitted_at", { ascending: false }),
-        supabase.from("vendor_applications")
-          .select("id,email,company_name,contact_name,contact_role,website,linkedin_url,categories,capability_summary,target_sectors,headquarters_country,status,submitted_at,decided_at,decided_by")
-          .order("submitted_at", { ascending: false }),
-      ]);
-      if (pe) throw pe;
+      // Design Partner applications are retired (2026-09-21): readers subscribe
+      // themselves now, so the partner_applications table no longer feeds this
+      // queue. Only vendor listings still need a human decision.
+      const { data: v, error: ve } = await supabase.from("vendor_applications")
+        .select("id,email,company_name,contact_name,contact_role,website,linkedin_url,categories,capability_summary,target_sectors,headquarters_country,status,submitted_at,decided_at,decided_by")
+        .order("submitted_at", { ascending: false });
       if (ve) throw ve;
-      setPartnerApps(p || []);
+      setPartnerApps([]);
       setVendorApps(v || []);
     } catch (e) {
       setError(e?.message || "Failed to load applications.");

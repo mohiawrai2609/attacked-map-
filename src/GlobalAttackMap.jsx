@@ -3,7 +3,8 @@ import * as d3 from "d3";
 import { useAuth } from "./auth/AuthProvider.jsx";
 import { AuthModal } from "./auth/AuthModal.jsx";
 import { PartnerFeedbackModal } from "./auth/PartnerFeedbackModal.jsx";
-import { PartnerApplicationModal } from "./auth/PartnerApplicationModal.jsx";
+import { SubscribeModal } from "./auth/SubscribeModal.jsx";
+import { isSubscriber } from "./lib/taxonomy";
 import { Logo } from "./auth/Logo.jsx";
 import { SiteNav } from "./auth/SiteNav.jsx";
 import Globe3D from "./Globe3D.jsx";
@@ -69,12 +70,15 @@ function buildDailyBrief(incidents, niceDate) {
 // Globally-mounted partner modal. Any GateBlock click anywhere in the map
 // opens the same modal via this window-level event. Keeps the modal a
 // single source of truth and avoids prop-drilling through 7 components.
-const PARTNER_MODAL_EVENT = "attackmap:open-partner-modal";
-export function openPartnerModal() {
+const SUBSCRIBE_MODAL_EVENT = "attackmap:open-subscribe-modal";
+export function openSubscribeModal() {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(PARTNER_MODAL_EVENT));
+    window.dispatchEvent(new Event(SUBSCRIBE_MODAL_EVENT));
   }
 }
+// Design Partner is retired (2026-09-21). Old name kept as an alias so any
+// external caller keeps working.
+export const openPartnerModal = openSubscribeModal;
 
 // useIsMobile — true when the viewport is phone-sized (<=768px). Drives the
 // map's mobile shell (compact top bar + bottom sheets + swipe-card incident
@@ -114,12 +118,12 @@ function AccountChip({ onOpenAuth }) {
   if (loading) return null;
 
   const colorFor = (t) =>
-    t === "partner" ? "#F5B800" :
+    t === "enterprise" ? "#F5B800" :
     t === "admin"   ? "#9D7BEC" :
     t === "free"    ? "#4FC3D7" :
                       "#A8A8A8";
   const labelFor = (t) =>
-    t === "partner" ? "🤝 PARTNER" :
+    t === "enterprise" ? "◆ SUBSCRIBER" :
     t === "admin"   ? "✦ ADMIN" :
     t === "free"    ? "📧 FREE" :
                       "🌐 PUBLIC";
@@ -177,7 +181,7 @@ function AccountChip({ onOpenAuth }) {
             </div>
             {/* Show company / role for partners + admins so they see what
                 we have on file (came from their application). */}
-            {(tier === "partner" || tier === "admin") && (profile?.company || profile?.role) && (
+            {isSubscriber(tier) && (profile?.company || profile?.role) && (
               <div style={{ padding: "0 10px 10px", fontSize: 11, color: "#A8A8A8", lineHeight: 1.45 }}>
                 {profile.role}{profile.company ? ` · ${profile.company}` : ""}
                 {profile.approved_at && (
@@ -185,7 +189,7 @@ function AccountChip({ onOpenAuth }) {
                     fontFamily: "Inter, sans-serif", fontSize: 9,
                     color: "#585858", letterSpacing: "0.08em", marginTop: 2,
                   }}>
-                    Partner since {new Date(profile.approved_at).toUTCString().slice(5, 16)}
+                    Subscriber since {new Date(profile.approved_at).toUTCString().slice(5, 16)}
                   </div>
                 )}
               </div>
@@ -196,9 +200,9 @@ function AccountChip({ onOpenAuth }) {
                   padding: "10px 10px", margin: "0 0 4px", background: "rgba(245,184,0,0.08)",
                   borderRadius: 0, fontSize: 11, color: "#F5B800", lineHeight: 1.45,
                                   }}>
-                  You're on the free tier. Apply for <b>Design Partner</b> access to unlock the full product.
+                  You're on the free tier. <b>Subscribe</b> to unlock named blast radius, GUARD controls and the peer watchlist.
                 </div>
-                <button onClick={() => { setMenuOpen(false); openPartnerModal(); }}
+                <button onClick={() => { setMenuOpen(false); openSubscribeModal(); }}
                   style={{
                     width: "100%", padding: "8px 10px", marginBottom: 4,
                     background: "#F5B800", color: "#1A1A1A",
@@ -207,7 +211,7 @@ function AccountChip({ onOpenAuth }) {
                     letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                     fontWeight: 600,
                   }}>
-                  Apply for partner →
+                  Subscribe →
                 </button>
               </>
             )}
@@ -4131,7 +4135,7 @@ const CASCADE_STYLES = `
 // data. True public deployment must strip these fields server-side. See
 // the feed_gating_spec for Phase 5 server-side payload work.
 // ─────────────────────────────────────────────────────────────────────────────
-const AccessContext = React.createContext("partner");
+const AccessContext = React.createContext("subscriber");
 function useAccess() { return React.useContext(AccessContext); }
 
 // GateBlock — reusable locked placeholder. Carries the count (the "shape")
@@ -4163,11 +4167,11 @@ function GateBlock({ title, sub, count, countLabel }) {
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#F5B800", letterSpacing: "0.06em", textTransform: "uppercase", textAlign: "center", maxWidth: 250, lineHeight: 1.5 }}>{title}</div>
         {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", textAlign: "center", maxWidth: 250, lineHeight: 1.45 }}>{sub}</div>}
 
-        {/* Dual CTA: Partner application (primary, founding rate) +     */}
+        {/* Dual CTA: Subscribe (primary) +                                 */}
         {/* Enterprise subscribe (secondary, immediate access at higher  */}
         {/* price). Gives the free user TWO unlock paths instead of one. */}
         <button
-          onClick={openPartnerModal}
+          onClick={openSubscribeModal}
           style={{
             marginTop: 6, padding: "7px 14px",
             background: "#F5B800", color: "#1A1A1A",
@@ -4180,7 +4184,7 @@ function GateBlock({ title, sub, count, countLabel }) {
           onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(245,184,0,0.3)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
         >
-          Apply · Partner ₹4,999/mo →
+          Subscribe →
         </button>
 
         {/* "or" divider — tiny, lets the eye see two options without */}
@@ -4268,14 +4272,14 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
           color: "#F5B800", letterSpacing: "0.08em",
           textTransform: "uppercase", fontWeight: 600,
         }}>
-          Showing 1 of {total} · {remaining} more {itemLabel} for partners
+          Showing 1 of {total} · {remaining} more {itemLabel} for subscribers
         </span>
       </div>
 
       {/* Dual CTA — same as GateBlock for consistency */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
         <button
-          onClick={openPartnerModal}
+          onClick={openSubscribeModal}
           style={{
             padding: "7px 14px",
             background: "#F5B800", color: "#1A1A1A",
@@ -4287,7 +4291,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
           onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(245,184,0,0.3)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
         >
-          Apply · Partner ₹4,999/mo →
+          Subscribe →
         </button>
         <div style={{
           fontFamily: "'Inter', sans-serif", fontSize: 9,
@@ -5235,7 +5239,7 @@ function BlastRadiusBody({ incident, channels }) {
         marginBottom: 6,
       }}>
         {tier === "public"
-          ? "Named entities · why · what to do — design-partner access"
+          ? "Named entities · why · what to do — subscriber access"
           : "Tap a ring to see why · who · when · what to do"}
       </div>
 
@@ -5529,7 +5533,7 @@ function PeerWatchlistBody({ peers }) {
         fontStyle: "italic", lineHeight: 1.5, marginBottom: 14,
       }}>
         {isPublic
-          ? "Peers tracking comparable signals — first reveal shown, rest design-partner only."
+          ? "Peers tracking comparable signals — first reveal shown, rest subscriber only."
           : "Peers tracking comparable signals in their own activity — read-across to watch."}
       </div>
 
@@ -6192,7 +6196,7 @@ function VendorRichCard({ v, idx, badge }) {
               <span style={{ fontSize: 11 }}>🔒</span>
               <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 600, color: "#F5B800", letterSpacing: "0.06em" }}>RATING</span>
             </div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 7, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginTop: 2 }}>DESIGN PARTNER</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 7, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginTop: 2 }}>SUBSCRIBER</div>
           </div>
         )}
       </div>
@@ -8980,13 +8984,13 @@ export default function GlobalAttackMap() {
   const mobilePreviewStartedRef = useRef(false);
   const [deckReady, setDeckReady] = useState(false); // mobile: brief delay so the globe focus+arcs are seen before the deck opens
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showPartnerModal, setShowPartnerModal] = useState(false);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
 
   // Global event subscriber — any GateBlock click anywhere opens the modal.
   useEffect(() => {
-    const handler = () => setShowPartnerModal(true);
-    window.addEventListener(PARTNER_MODAL_EVENT, handler);
-    return () => window.removeEventListener(PARTNER_MODAL_EVENT, handler);
+    const handler = () => setShowSubscribeModal(true);
+    window.addEventListener(SUBSCRIBE_MODAL_EVENT, handler);
+    return () => window.removeEventListener(SUBSCRIBE_MODAL_EVENT, handler);
   }, []);
 
   // ────────────────────────────────────────────────────────────────────
@@ -8997,7 +9001,7 @@ export default function GlobalAttackMap() {
   // QA flip without real auth — useful for the demo.
   // ────────────────────────────────────────────────────────────────────
   // chromeTier above is the live auth tier; reuse it here as the access gate.
-  const accessTier = (chromeTier === "partner" || chromeTier === "admin") ? "partner" : "public";
+  const accessTier = isSubscriber(chromeTier) ? "subscriber" : "public";
   const [archiveBusy, setArchiveBusy] = useState(false);
   const [archiveToast, setArchiveToast] = useState(null);  // { type, text }
   const [storageSubstrate, setStorageSubstrate] = useState("unknown");  // "persistent" | "session" | "unknown"
@@ -10075,8 +10079,8 @@ export default function GlobalAttackMap() {
 
       {/* Auth modal — global, opens from AccountChip "Sign in" */}
       <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
-      {/* Partner application modal — global, opens from any GateBlock "Request Partner Access" */}
-      <PartnerApplicationModal open={showPartnerModal} onClose={() => setShowPartnerModal(false)} />
+      {/* Subscribe modal — global, opens from any gated panel's CTA */}
+      <SubscribeModal open={showSubscribeModal} onClose={() => setShowSubscribeModal(false)} />
 
       {/* ───── BOOT LOADER — subtle, while the first data load runs (so the
               map doesn't flash the big empty/upload landing during the fetch) ───── */}
