@@ -11,6 +11,7 @@ import { SubscriptionsPage } from "./auth/SubscriptionsPage.jsx";
 import { LegalPage } from "./auth/LegalPage.jsx";
 import { ProfilePage } from "./auth/ProfilePage.jsx";
 import { AdminDashboard } from "./admin/AdminDashboard.jsx";
+import { Dashboard } from "./dashboard/Dashboard.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────
 // AppShell — decides what the visitor sees based on auth state.
@@ -39,6 +40,16 @@ function LoadingScreen() {
 
 function AppShell() {
   const { user, loading, tier } = useAuth();
+
+  // Detect ?preview= in URL — same heuristic the AuthProvider uses.
+  const hasPreviewOverride = (() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const p = new URLSearchParams(window.location.search).get("preview");
+      return p === "public" || p === "free" || p === "subscriber" || p === "partner" || p === "admin";
+    } catch { return false; }
+  })();
+
 
   // Detect ?unsubscribe=<token> in URL — handle BEFORE auth resolution so
   // anyone clicking from email lands on the unsubscribe page without being
@@ -108,6 +119,11 @@ function AppShell() {
     try { return new URLSearchParams(window.location.search).has("subscriptions"); } catch { return false; }
   })();
   if (showSubscriptions) {
+    // The static subscriptions-v3.html page saved nothing (its Confirm was a
+    // toast). Preferences now live on the dashboard's Configure Alerts view,
+    // which writes profiles via update_subscription_prefs. Anonymous visitors
+    // still bounce to the landing page below.
+    if (user || hasPreviewOverride) return <Dashboard initialPage="alerts" />;
     return <SubscriptionsPage />;
   }
 
@@ -158,15 +174,6 @@ function AppShell() {
     return <AdminDashboard />;
   }
 
-  // Detect ?preview= in URL — same heuristic the AuthProvider uses.
-  const hasPreviewOverride = (() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const p = new URLSearchParams(window.location.search).get("preview");
-      return p === "public" || p === "free" || p === "partner" || p === "admin";
-    } catch { return false; }
-  })();
-
   if (loading) {
     return <LoadingScreen />;
   }
@@ -187,8 +194,20 @@ function AppShell() {
     if (typeof window === "undefined") return false;
     try { return new URLSearchParams(window.location.search).has("map"); } catch { return false; }
   })();
-  if (showMap || hasPreviewOverride) {
+  if (showMap) {
     return <GlobalAttackMap />;
+  }
+
+  // ?dashboard — the signed-in home, personalised to profiles.industry. It is
+  // also the default for a signed-in visitor at "/" (the landing page stays
+  // one click away via ?home). With ?preview=… and no ?map it renders too, so
+  // QA can walk it without an account.
+  const showDashboard = (() => {
+    if (typeof window === "undefined") return false;
+    try { return new URLSearchParams(window.location.search).has("dashboard"); } catch { return false; }
+  })();
+  if (showDashboard || user || hasPreviewOverride) {
+    return <Dashboard />;
   }
 
   return <LandingPage />;
