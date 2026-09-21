@@ -17,7 +17,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "../auth/AuthProvider";
 import { SubscribeModal } from "../auth/SubscribeModal";
 import { CATEGORIES, CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
-import { loadCorpus, loadCounts, loadIncidentDetail, loadIndustry, loadIndustryExtras, savePrefs } from "./data";
+import { loadCorpus, loadCounts, loadHub, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
+import { incidentImage } from "../lib/images";
 import "./dashboard.css";
 
 const DEFAULT_INDUSTRY = "Automotive & EV";
@@ -51,29 +52,39 @@ const Icon = ({ name, style }) => <span className="icon" style={style}><svg view
 // ── small pieces ───────────────────────────────────────────────────────────
 const Sev = ({ i, small }) => <span className={`sev s${i.severity}`} style={small ? { padding: "2px 6px" } : undefined}><i />S{i.severity} {i.sevLabel || SEVERITY[i.severity]}</span>;
 const Cat = ({ i }) => <span className="cat"><b>{i.cat}</b> · {i.subcat || i.catName}</span>;
-const Teaser = ({ i }) => i.n && (
-  <div className="teaser">
-    <span className="lk"><Icon name="lock" style={{ width: 10, height: 10, flexBasis: 10 }} /><b>{i.n.blast}</b> in blast radius</span>
+// The locked counts ARE the upsell: for a free reader the whole strip is the
+// Subscribe trigger, so the card needs no separate gold "Subscribe" bar.
+const Teaser = ({ i, subscriber, onSubscribe }) => i.n && (
+  <div className={`teaser${subscriber ? "" : " locked"}`} onClick={subscriber ? undefined : onSubscribe} role={subscriber ? undefined : "button"} title={subscriber ? undefined : "Subscribe to see who is exposed and what to do"}>
+    <span className="lk">{!subscriber && <Icon name="lock" style={{ width: 10, height: 10, flexBasis: 10 }} />}<b>{i.n.blast}</b> in blast radius</span>
     <span className="lk"><b>{i.n.controls}</b> GUARD controls</span>
     {i.n.peers ? <span className="lk"><b>{i.n.peers}</b> peers</span> : null}
     <span><b>{i.n.sources}</b> sources</span>
   </div>
 );
 
+// One card, one destination. "Open" gives the best we have for the incident:
+// the full baked report where one exists, the structured brief otherwise.
+// The map pin is a secondary, icon-first link to the same incident on the
+// live map (deep-linked by DB id).
 function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
+  const report = !!reportRefFor(i.id);
   return (
-    <article className="incident">
-      <div className="topline"><div className="meta"><Sev i={i} /><span>{shortDay(i.day)}</span></div><Cat i={i} /></div>
-      <h3>{i.headline}</h3><p>{i.summary}</p>
-      <div className="who"><b>{i.entity || "—"}</b><span>·</span><span>{i.country || ""}</span></div>
-      <Teaser i={i} />
-      <div className="card-actions">
-        <button className="btn btn-dark" onClick={() => onOpen(i)}>{i.body ? "Read the briefing" : "Open"} →</button>
-        <a className="btn" href={`/?map&incident=${i.id}`} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> On map</a>
+    <article className="incident" onClick={() => onOpen(i)}>
+      <div className="incident-img" style={{ backgroundImage: `url(${incidentImage(i)})` }}>
+        <div className="img-meta"><Sev i={i} /><span className="date">{shortDay(i.day)}</span></div>
+        {(report || i.body) && <span className="img-tag">{report ? "Full report" : "Briefing"}</span>}
       </div>
-      {!subscriber && (
-        <button className="sub-q" onClick={onSubscribe}><span className="mini"><Icon name="lock" style={{ width: 10, height: 10, flexBasis: 10 }} /></span><span>Who is exposed, and what should we do?</span><span className="end">Subscribe</span></button>
-      )}
+      <div className="incident-body">
+        <Cat i={i} />
+        <h3>{i.headline}</h3><p>{i.summary}</p>
+        <div className="who"><b>{i.entity || "—"}</b>{i.country ? <><span>·</span><span>{i.country}</span></> : null}</div>
+        <Teaser i={i} subscriber={subscriber} onSubscribe={(e) => { e.stopPropagation(); onSubscribe(); }} />
+        <div className="card-actions">
+          <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>{report ? "Read the report" : i.body ? "Read the briefing" : "Open"} →</button>
+          <a className="btn icon-only" href={`/?map&incident=${i.id}`} target="_blank" rel="noopener" title="Open on the live map" aria-label="Open on the live map" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 14, height: 14, flexBasis: 14 }} /></a>
+        </div>
+      </div>
     </article>
   );
 }
@@ -214,70 +225,109 @@ function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe,
   );
 }
 
-function AttackHub({ P, query, onOpen, go }) {
+function AttackHub({ P, hub, query, onOpen, go }) {
   const [scope, setScope] = useState("mine");
   const [sev, setSev] = useState(new Set([5, 4, 3]));
   const [cats, setCats] = useState(new Set(CATEGORIES.map(([c]) => c)));
   const toggle = (set, setter, v) => { const n = new Set(set); n.has(v) ? n.delete(v) : n.add(v); setter(n); };
   const q = query.trim().toLowerCase();
   const ok = (i) => sev.has(i.severity) && cats.has(i.cat) && (!q || `${i.headline} ${i.summary} ${i.entity}`.toLowerCase().includes(q));
-  // "For your industry" is EVERY incident in the industry, not only the ones
-  // with a long-form essay. Only 310 of ~2,300 incidents carry an essay and
-  // they cluster in a few industries, so requiring one left most readers with
-  // an empty Hub while their industry page was full. Essays lead and carry a
-  // "Full briefing" mark; the rest open as the summary + classification.
-  const seen = new Set();
-  const dedupe = (arr) => arr.filter((i) => !seen.has(i.id) && seen.add(i.id));
-  const mine = dedupe([...P.briefs, ...P.incidents]).filter(ok)
-    .sort((a, b) => (b.body ? 1 : 0) - (a.body ? 1 : 0) || (b.day > a.day ? 1 : b.day < a.day ? -1 : 0) || b.severity - a.severity);
-  const others = P.hub.filter((i) => i.industry !== P.industry && ok(i));
-  const lead = (scope === "mine" ? mine : [...mine, ...others].sort((a, b) => (b.day > a.day ? 1 : b.day < a.day ? -1 : b.severity - a.severity)))[0];
+  const byDate = (a, b) => (b.day > a.day ? 1 : b.day < a.day ? -1 : 0) || b.severity - a.severity;
+  const hasFull = (i) => !!(reportRefFor(i.id) || i.body);
+  // Full reports and briefings lead within the same day; otherwise newest first.
+  const rank = (a, b) => (hasFull(b) ? 1 : 0) - (hasFull(a) ? 1 : 0) || byDate(a, b);
+  // "My industry" is the whole industry (loadHub), not the 24-card home window.
+  // "All industries" is one merged list, newest first, industry named per row.
+  const mineAll = hub ? hub.mine : P.incidents;
+  const mine = mineAll.filter(ok).sort(rank);
+  const world = (hub ? hub.world : []).filter(ok);
+  const merged = scope === "all" ? [...mine, ...world].sort(byDate) : mine;
+  const lead = merged[0];
+  const rest = merged.filter((i) => i !== lead);
+  const fullCount = mineAll.filter(hasFull).length;
   const activeFilters = `${sev.size} of 5 severities, ${cats.size} of 13 categories${q ? `, matching “${q}”` : ""}`;
   const Row = ({ i }) => (
     <article className="panel hub-item" onClick={() => onOpen(i)}>
-      <div><Sev i={i} /><div className="hub-date">{shortDay(i.day)}</div>{i.body ? <div className="hub-full">Full briefing</div> : null}</div>
-      <div><h3>{i.headline}</h3><p>{i.summary}</p><div className="h-meta"><span>{i.cat} · {i.subcat || i.catName}</span>{i.entity ? <span title={i.entity}>{i.entity}</span> : null}{i.industry && i.industry !== P.industry ? <span>{i.industry}</span> : null}</div></div>
-      <button className="btn btn-dark">{i.body ? "Read" : "Open"} →</button>
+      <div><Sev i={i} /><div className="hub-date">{shortDay(i.day)}</div>{hasFull(i) ? <div className="hub-full">{reportRefFor(i.id) ? "Full report" : "Briefing"}</div> : null}</div>
+      <div><h3>{i.headline}</h3><p>{i.summary}</p><div className="h-meta"><span>{i.cat} · {i.subcat || i.catName}</span>{i.entity ? <span title={i.entity}>{i.entity}</span> : null}{i.industry && i.industry !== P.industry ? <span className="ind">{i.industry}</span> : null}</div></div>
+      <button className="btn btn-dark">{hasFull(i) ? "Read" : "Open"} →</button>
     </article>
   );
-  const mineRest = mine.filter((i) => i !== lead);
   return (
     <div className="content subpage">
       <div className="subpage-header">
-        <div><h1>Attack Hub</h1><p>The reading room. Every incident in your industry as a reading list, full analyst briefings first, then the rest of the world.</p></div>
+        <div><h1>Attack Hub</h1><p>The reading room. Every incident in your industry as a reading list, full reports and briefings first, then the rest of the world.</p></div>
         <button className="primary" onClick={() => go("alerts")}>Tune my alerts</button>
       </div>
       <div className="hub-layout">
         <aside className="panel filter-panel">
           <h3>Filter briefings</h3>
           <div className="filter-section"><span className="fs-title">Scope</span>
-            <label><input type="radio" name="hubScope" checked={scope === "mine"} onChange={() => setScope("mine")} /> {P.industry}</label>
-            <label><input type="radio" name="hubScope" checked={scope === "all"} onChange={() => setScope("all")} /> All industries</label>
+            <label><input type="radio" name="hubScope" checked={scope === "mine"} onChange={() => setScope("mine")} /> {P.industry} <span className="n">{mineAll.length}</span></label>
+            <label><input type="radio" name="hubScope" checked={scope === "all"} onChange={() => setScope("all")} /> All industries <span className="n">{hub ? `+${hub.world.length}` : "…"}</span></label>
           </div>
           <div className="filter-section"><span className="fs-title">Severity</span>
             {SEV_ORDER.map((s) => <label key={s}><input type="checkbox" checked={sev.has(s)} onChange={() => toggle(sev, setSev, s)} /> <span className={`sev s${s}`} style={{ padding: "2px 6px" }}><i />S{s} {SEVERITY[s]}</span></label>)}
           </div>
-          <div className="filter-section"><span className="fs-title">GUARD category</span>
+          <div className="filter-section"><span className="fs-title">GUARD category <button className="fs-all" onClick={() => setCats(cats.size === CATEGORIES.length ? new Set() : new Set(CATEGORIES.map(([c]) => c)))}>{cats.size === CATEGORIES.length ? "none" : "all"}</button></span>
             {CATEGORIES.map(([code, name]) => <label key={code}><input type="checkbox" checked={cats.has(code)} onChange={() => toggle(cats, setCats, code)} /> {name} <span className="n">{code}</span></label>)}
           </div>
         </aside>
         <section>
-          <div className="edition-head"><h2>Today's edition</h2><span className="mono">{fmtDay(P.latestDay)}</span></div>
-          {lead ? (
+          <div className="edition-head"><h2>{scope === "all" ? "Across all industries" : "Today's edition"}</h2><span className="mono">{fmtDay(P.latestDay)}</span></div>
+          {!hub && <div className="panel empty">Loading the full reading list…</div>}
+          {hub && (lead ? (
             <article className="panel lead" onClick={() => onOpen(lead)}>
-              <div className="lead-copy"><div className="kicker"><Sev i={lead} /><span>{lead.catName}</span><span>·</span><span>{lead.industry || ""}</span></div><h3>{lead.headline}</h3><p>{lead.body || lead.summary}</p><button className="btn btn-dark">{lead.body ? "Read the full briefing" : "Open the incident"} →</button></div>
+              <div className="lead-copy"><div className="kicker"><Sev i={lead} /><span>{lead.catName}</span><span>·</span><span>{lead.industry || ""}</span></div><h3>{lead.headline}</h3><p>{lead.body || lead.summary}</p><button className="btn btn-dark">{reportRefFor(lead.id) ? "Read the full report" : lead.body ? "Read the full briefing" : "Open the incident"} →</button></div>
               <div className="lead-side"><div className="fact"><span>Entity</span><b>{lead.entity || "—"}</b></div><div className="fact"><span>Where</span><b>{lead.place || lead.country || "—"}</b></div>{lead.n ? <><div className="fact"><span>Blast radius</span><b className="gold">{lead.n.blast} named entities</b></div><div className="fact"><span>GUARD controls</span><b className="gold">{lead.n.controls} mapped</b></div><div className="fact"><span>Sources</span><b>{lead.n.sources}</b></div></> : <div className="fact"><span>Category</span><b>{lead.cat} · {lead.subcat || lead.catName}</b></div>}</div>
             </article>
-          ) : <div className="panel empty">Nothing matches the current filters ({activeFilters}). Tick more severities or categories on the left.</div>}
-          <div className="hub-section"><h4>For {P.industry} <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: 0, textTransform: "none" }}>{mine.length} of {P.total} · {P.briefings} with a full briefing</span></h4><div className="hub-list">{mineRest.length ? mineRest.map((i) => <Row key={i.id} i={i} />) : <div className="empty">{mine.length ? "That is the only incident in your industry matching these filters." : `No ${P.industry} incidents match the current filters (${activeFilters}).`}</div>}</div></div>
-          <div className="hub-section"><h4>Across all sectors</h4><div className="hub-list">{(scope === "mine" ? others.slice(0, 6) : others.filter((i) => i !== lead)).map((i) => <Row key={i.id} i={i} />)}</div></div>
+          ) : <div className="panel empty">Nothing matches the current filters ({activeFilters}). Tick more severities or categories on the left.</div>)}
+          {hub && (
+            <div className="hub-section">
+              <h4>{scope === "all" ? "Newest first, every industry" : `For ${P.industry}`} <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: 0, textTransform: "none" }}>{scope === "all" ? `${merged.length} incidents` : `${mine.length} of ${mineAll.length} · ${fullCount} with a full report or briefing`}</span></h4>
+              <div className="hub-list">{rest.length ? rest.map((i) => <Row key={i.id} i={i} />) : <div className="empty">{merged.length ? "That is the only incident matching these filters." : `No incidents match the current filters (${activeFilters}).`}</div>}</div>
+            </div>
+          )}
+          {hub && scope === "mine" && world.length > 0 && (
+            <div className="hub-section"><h4>Across all sectors <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: 0, textTransform: "none" }}>latest S3+ elsewhere</span></h4><div className="hub-list">{world.slice(0, 6).map((i) => <Row key={i.id} i={i} />)}</div><button className="btn" style={{ marginTop: 10 }} onClick={() => setScope("all")}>See every industry →</button></div>
+          )}
         </section>
       </div>
     </div>
   );
 }
 
-function ConfigureAlerts({ P, profile, subscriber, onSaved, onIndustryChange, go, toast }) {
+// "Your plan" — the one place a signed-in reader sees their tier and switches
+// it. The nav's "Manage subscription" lands here (?subscriptions → alerts).
+function PlanPanel({ subscriber, tier, onSubscribe, toast }) {
+  const { setSubscribed } = useAuth();
+  const [busy, setBusy] = useState(false);
+  async function off() {
+    setBusy(true);
+    try { const t = await setSubscribed(false); toast(t === "free" ? "Subscription switched off." : `Tier is ${t}.`); }
+    catch (e) { toast(e?.message || "Could not switch off."); }
+    finally { setBusy(false); }
+  }
+  return (
+    <section className="panel plan-panel">
+      <div>
+        <div className="eyebrow">Your plan</div>
+        <h2>{subscriber ? (tier === "admin" ? "Admin" : "Subscriber") : "Free"}</h2>
+        <p>{subscriber
+          ? "Named blast radius, adaptive GUARD controls, the peer watchlist and full reports are open on every incident."
+          : "Every incident in your industry, classified, with the counts. Subscribe to see who each one reaches and what to do."}</p>
+      </div>
+      <div className="plan-actions">
+        {subscriber
+          ? (tier === "admin" ? <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>Admin accounts always have full access.</span>
+             : <button className="secondary" disabled={busy} onClick={off}>{busy ? "Switching…" : "Switch off"}</button>)
+          : <button className="primary" onClick={onSubscribe}>Subscribe →</button>}
+      </div>
+    </section>
+  );
+}
+
+function ConfigureAlerts({ P, profile, subscriber, tier, onSubscribe, onSaved, onIndustryChange, go, toast }) {
   const [industry, setIndustry] = useState(P.industry);
   const [role, setRole] = useState(profile?.role || "");
   const [cats, setCats] = useState(() => new Set(Array.isArray(profile?.watch_categories) && profile.watch_categories.length ? profile.watch_categories : CATEGORIES.map(([c]) => c)));
@@ -305,6 +355,7 @@ function ConfigureAlerts({ P, profile, subscriber, onSaved, onIndustryChange, go
         <div><h1>Configure alerts</h1><p>Choose what lands in your inbox. Your dashboard always keeps the full industry view.</p></div>
         <button className="secondary" onClick={() => { setCats(new Set(CATEGORIES.map(([c]) => c))); setMinSev(3); setOn(true); setFreq("daily"); toast("Defaults restored"); }}>Reset defaults</button>
       </div>
+      <PlanPanel subscriber={subscriber} tier={tier} onSubscribe={onSubscribe} toast={toast} />
       <div className="settings-layout">
         <section className="panel settings-card">
           <h2>Your intelligence feed</h2>
@@ -352,7 +403,64 @@ function ConfigureAlerts({ P, profile, subscriber, onSaved, onIndustryChange, go
   );
 }
 
-function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe }) {
+// ReportFrame — the baked full report (public/reports/<ref>.html) inside the
+// dashboard chrome. The file is same-origin, so once it loads we reach into
+// it: stamp the reader's licence, and for FREE readers lock the three subscriber
+// sections in place — "Who else is exposed" (#r-blast), "GUARD controls"
+// (#r-ctrl) and "Vendor intelligence" (#r-vend) — with the same rule the rest
+// of the product uses: what happened is free, who it reaches and what to do
+// is subscriber. Everything else in the report reads in full.
+const LOCKED_SECTIONS = ["r-blast", "r-ctrl", "r-vend"];
+function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
+  const ref = useRef(null);
+  // The report scrolls inside its own .reader wrapper (body overflow hidden),
+  // so the frame fills the viewport below the bar and the report scrolls
+  // within it — the same framing the ?hub page uses.
+  const [h, setH] = useState(800);
+  useEffect(() => {
+    const fit = () => { const fr = ref.current; if (!fr) return; setH(Math.max(480, window.innerHeight - fr.getBoundingClientRect().top - 6)); };
+    fit(); window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [reportRef]);
+  useEffect(() => {
+    const fr = ref.current; if (!fr) return;
+    const onLoad = () => {
+      let doc; try { doc = fr.contentDocument; } catch { return; }
+      if (!doc || !doc.body) return;
+      // Stamp the licence line the report prints.
+      try { fr.contentWindow.__ATTACKED_LICENSE__ = { name: readerName || "Registered reader", role: subscriber ? "Subscriber" : "Free reader" }; } catch { /* noop */ }
+      // Hide the report's own back-to-hub controls if any; the dashboard owns navigation.
+      doc.querySelectorAll('a[href*="?hub"], .r-back').forEach((el) => { el.style.display = "none"; });
+      if (subscriber) return;
+      if (!doc.getElementById("dash-lock-style")) {
+        const st = doc.createElement("style"); st.id = "dash-lock-style";
+        st.textContent = `
+          .dash-locked{position:relative;max-height:260px;overflow:hidden}
+          .dash-locked::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.75) 45%,#fff 100%);pointer-events:none}
+          .dash-locked > *:not(.r-sec-title):not(.dash-lock){filter:blur(4px);user-select:none}
+          .dash-lock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;display:flex;align-items:center;gap:12px;background:#0f0f0f;color:#fff;border:1px solid #F5B800;padding:12px 16px;border-radius:10px;font:600 13px/1.3 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.28);white-space:nowrap}
+          .dash-lock b{color:#F5B800;font-weight:700}
+          .dash-lock button{background:#F5B800;color:#0f0f0f;border:0;border-radius:7px;padding:8px 12px;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}`;
+        doc.head.appendChild(st);
+      }
+      for (const id of LOCKED_SECTIONS) {
+        const sec = doc.getElementById(id); if (!sec || sec.classList.contains("dash-locked")) continue;
+        sec.classList.add("dash-locked");
+        const box = doc.createElement("div"); box.className = "dash-lock";
+        box.innerHTML = "<span><b>Subscriber layer.</b> Who it reaches, and what to do about it.</span>";
+        const b = doc.createElement("button"); b.textContent = "Subscribe →"; b.onclick = () => onSubscribe?.();
+        box.appendChild(b); sec.appendChild(box);
+      }
+    };
+    fr.addEventListener("load", onLoad);
+    if (fr.contentDocument?.readyState === "complete" && fr.contentDocument.body?.children.length) onLoad();
+    return () => { fr.removeEventListener("load", onLoad); };
+  }, [reportRef, subscriber, onSubscribe, readerName]);
+  return <iframe ref={ref} className="report-frame" src={`/reports/${encodeURIComponent(reportRef)}.html`} title={i.headline} style={{ height: h }} />;
+}
+
+function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, readerName }) {
+  const reportRef = reportRefFor(incoming.id);
   const [detail, setDetail] = useState(null);
   const [err, setErr] = useState(null);
   // Rows from the Hub / cross-sector lists arrive without counts; fetch them
@@ -368,6 +476,18 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe }) 
   }, [i.id, subscriber]);
   const paras = (i.body || "").split(/\n{2,}|\r?\n(?=\S)/).map((p) => p.trim()).filter(Boolean);
   const facts = [["Entity", i.entity], ["Where", i.place || i.country], ["Industry", i.industry], ["Sector", i.sector], ["Confidence", i.confidence], ["Sources", i.n.sources]].filter(([, v]) => v);
+  if (reportRef) {
+    return (
+      <div className="content subpage article-wrap report-wrap">
+        <div className="report-bar">
+          <button className="back" onClick={back}>← {backLabel}</button>
+          <div className="report-bar-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><span className="mono" style={{ fontSize: 10, color: "var(--gold-deep)" }}>Full report · {reportRef}</span></div>
+          <a className="btn" href={`/?map&incident=${i.id}`} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> On map</a>
+        </div>
+        <ReportFrame i={i} reportRef={reportRef} subscriber={subscriber} onSubscribe={onSubscribe} readerName={readerName} />
+      </div>
+    );
+  }
   return (
     <div className="content subpage article-wrap">
       <button className="back" onClick={back}>← {backLabel}</button>
@@ -430,7 +550,13 @@ export function Dashboard({ initialPage = "dashboard" }) {
   const [P, setP] = useState(null);
   const [err, setErr] = useState(null);
   const [corpus, setCorpus] = useState(null);
-  const [subOpen, setSubOpen] = useState(false);
+  // ?subscribe on the URL means "open the Subscribe switch as soon as the
+  // dashboard is up" — the landing page and the map send readers here after
+  // sign-up so the intent survives the auth step.
+  const [subOpen, setSubOpen] = useState(() => { try { return new URLSearchParams(window.location.search).has("subscribe"); } catch { return false; } });
+  const [hub, setHub] = useState(null);
+  const [reportsReady, setReportsReady] = useState(false);
+  useEffect(() => { loadReportIndex().then(() => setReportsReady(true)); }, []);
   const [menu, setMenu] = useState(false);
   const [sideOpen, setSideOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
@@ -445,6 +571,15 @@ export function Dashboard({ initialPage = "dashboard" }) {
     return () => { dead = true; };
   }, [industry]);
   useEffect(() => { loadCorpus().then(setCorpus).catch(() => {}); }, []);
+  // The Hub's full reading list loads the first time the reader opens the Hub
+  // (or the article view arrived at from it), and again when the industry changes.
+  useEffect(() => { setHub(null); }, [industry]);
+  useEffect(() => {
+    if (!industry || hub || page !== "hub") return;
+    let dead = false;
+    loadHub(industry).then((h) => { if (!dead) setHub(h); }).catch(() => {});
+    return () => { dead = true; };
+  }, [industry, page, hub]);
 
   const go = useCallback((p) => { setPage(p); setSideOpen(false); setMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
   const openArticle = useCallback((i) => { setLastPage(page); setArticle(i); go("article"); }, [page, go]);
@@ -526,13 +661,13 @@ export function Dashboard({ initialPage = "dashboard" }) {
           {err && <div className="content"><div className="panel empty" style={{ color: "#B21F31" }}>Could not load your industry: {err}</div></div>}
           {!P && !err && <div className="content"><div className="panel empty mono">Loading {industry}…</div></div>}
           {P && page === "dashboard" && <YourIndustry P={P} corpus={corpus} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => setSubOpen(true)} go={go} />}
-          {P && page === "hub" && <AttackHub P={P} query={query} onOpen={openArticle} go={go} />}
-          {P && page === "alerts" && <ConfigureAlerts P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
-          {P && page === "article" && article && <ArticleView i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel={lastPage === "hub" ? "Back to the Attack Hub" : "Back to your industry"} onSubscribe={() => setSubOpen(true)} />}
+          {P && page === "hub" && <AttackHub P={P} hub={hub} query={query} onOpen={openArticle} go={go} />}
+          {P && page === "alerts" && <ConfigureAlerts tier={tier} onSubscribe={() => setSubOpen(true)} P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
+          {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel={lastPage === "hub" ? "Back to the Attack Hub" : "Back to your industry"} onSubscribe={() => setSubOpen(true)} />}
         </main>
       </div>
 
-      <SubscribeModal open={subOpen} onClose={() => setSubOpen(false)} onDone={() => toast("You are now a subscriber.")} />
+      <SubscribeModal open={subOpen} onClose={() => { setSubOpen(false); try { const u = new URL(window.location.href); if (u.searchParams.has("subscribe")) { u.searchParams.delete("subscribe"); window.history.replaceState(null, "", u.pathname + (u.search || "")); } } catch { /* noop */ } }} onDone={() => toast("You are now a subscriber.")} />
       {menu && (
         <div className="profile-menu open">
           <button onClick={() => go("alerts")}>Alert preferences</button>

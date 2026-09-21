@@ -462,13 +462,22 @@ export function AttackHub() {
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(0);
 
-  // Which incidents have a pre-baked full report at /reports/<id>.html.
+  // Which incidents have a pre-baked full report at /reports/<ref>.html.
+  // manifest.json v2 (2026-09-21) carries byIncident: { "<incident id>": "<ref>" }
+  // because hub_ref left the DB in the schema restructure. The legacy array
+  // shape is still accepted.
+  const [reportByIncident, setReportByIncident] = useState({});
   useEffect(() => {
     let cancelled = false;
     fetch("/reports/manifest.json")
       .then(r => r.ok ? r.json() : [])
-      .then(ids => { if (!cancelled) setReportIds(new Set(ids)); })
-      .catch(() => { if (!cancelled) setReportIds(new Set()); });
+      .then(m => {
+        if (cancelled) return;
+        const refs = Array.isArray(m) ? m : (m.refs || Object.values(m.byIncident || {}));
+        setReportIds(new Set(refs));
+        setReportByIncident((m && m.byIncident) || {});
+      })
+      .catch(() => { if (!cancelled) { setReportIds(new Set()); setReportByIncident({}); } });
     return () => { cancelled = true; };
   }, []);
 
@@ -517,7 +526,7 @@ export function AttackHub() {
           return {
             id: r.id,
             _key: `m-${r.id}`,
-            reportRef: r.hub_ref || null,
+            reportRef: r.hub_ref || reportByIncident[String(r.id)] || null,
             headline: r.headline,
             summary: r.summary || "",
             article_body: r.summary || "",   // full body loads on open
@@ -688,8 +697,10 @@ export function AttackHub() {
       <SiteNav active="hub" />
 
       {selected ? (
-        (reportIds && selected.reportRef && reportIds.has(selected.reportRef))
-          ? <ReportFrame article={selected} onBack={() => setSelected(null)} onMap={openMap} user={user} />
+        // Resolve the ref at render time: the manifest can arrive after the
+        // incident rows did, so the row's own reportRef may still be null.
+        (() => { const ref = selected.reportRef || reportByIncident[String(selected.id)] || null; return reportIds && ref && reportIds.has(ref); })()
+          ? <ReportFrame article={{ ...selected, reportRef: selected.reportRef || reportByIncident[String(selected.id)] }} onBack={() => setSelected(null)} onMap={openMap} user={user} />
           : <ArticleView article={selected} onBack={() => setSelected(null)} onMap={openMap} user={user} />
       ) : (
         <>

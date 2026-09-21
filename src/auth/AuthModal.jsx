@@ -45,7 +45,10 @@ const C = {
 // "can't type in the password box" bug).
 const Field = ({ children }) => <div style={{ marginBottom: 14 }}>{children}</div>;
 
-export function AuthModal({ open, onClose }) {
+// intent="subscribe": the reader pressed Subscribe while signed out. After the
+// session exists we send them to the dashboard with the Subscribe switch open
+// (?dashboard&subscribe) instead of dropping them on the landing page.
+export function AuthModal({ open, onClose, intent = null }) {
   const { signUpWithPassword, signInWithPassword, signIn, verifyCode, saveProfileBasics } = useAuth();
 
   const [view, setView] = useState("signup"); // "signup" | "signin" | "code"
@@ -83,8 +86,9 @@ export function AuthModal({ open, onClose }) {
     };
   }
 
-  function close() {
+  function close(signedIn = false) {
     setView("signup"); setError(null); setResent(false); setCode("");
+    if (signedIn && intent === "subscribe") { window.location.href = "/?dashboard&subscribe"; return; }
     onClose();
   }
 
@@ -103,7 +107,7 @@ export function AuthModal({ open, onClose }) {
       });
       // "Confirm email" switched off in Supabase → signUp returns a live session
       // and no code is ever sent. Save the profile and go straight in.
-      if (res?.session) { await saveProfileBasics(profileFields()); close(); return; }
+      if (res?.session) { await saveProfileBasics(profileFields()); close(true); return; }
       setCodeType("signup"); setCode(""); setResent(false); setView("code");
     } catch (err) {
       const m = err?.message || "Could not create the account.";
@@ -123,7 +127,7 @@ export function AuthModal({ open, onClose }) {
   async function submitSignin(e) {
     e?.preventDefault();
     setError(null); setBusy(true);
-    try { await signInWithPassword(cleanEmail, password); close(); }
+    try { await signInWithPassword(cleanEmail, password); close(true); }
     catch (err) { setError(err?.message || "Wrong email or password."); }
     finally { setBusy(false); }
   }
@@ -152,7 +156,7 @@ export function AuthModal({ open, onClose }) {
     try {
       await verifyCode(cleanEmail, code, codeType);
       if (codeType === "signup") await saveProfileBasics(profileFields());
-      close(); // session set; app re-renders signed in and lands on the dashboard
+      close(true); // session set; app re-renders signed in and lands on the dashboard
     } catch (err) {
       setError(err?.message || "That code didn't work — check it and try again.");
     } finally { setBusy(false); }

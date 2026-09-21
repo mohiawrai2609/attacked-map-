@@ -22,6 +22,7 @@ import { BRAND } from "../brand.js";
 export function SiteNav({ active }) {
   const { user, tier, profile, signOut } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
+  const [authIntent, setAuthIntent] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false); // account dropdown (signed-in)
   const [navOpen, setNavOpen] = useState(false);    // mobile hamburger panel
 
@@ -147,13 +148,13 @@ export function SiteNav({ active }) {
             </div>
           ) : (
             <>
-              <button onClick={() => setAuthOpen(true)} style={{
+              <button onClick={() => { setAuthIntent(null); setAuthOpen(true); }} style={{
                 padding: "8px 16px", background: "transparent", color: BRAND.white,
                 border: `1px solid ${BRAND.border}`, borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600,
                 letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 6,
               }}>Sign in</button>
-              <button onClick={() => setAuthOpen(true)} style={{
+              <button onClick={() => { setAuthIntent("subscribe"); setAuthOpen(true); }} style={{
                 padding: "8px 18px", background: BRAND.gold, color: BRAND.obsidian,
                 border: "none", borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700,
@@ -164,7 +165,7 @@ export function SiteNav({ active }) {
         </nav>
       </header>
 
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthModal open={authOpen} intent={authIntent} onClose={() => setAuthOpen(false)} />
     </>
   );
 }

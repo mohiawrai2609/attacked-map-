@@ -278,6 +278,11 @@ export function LandingPage() {
   const { user } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [authIntent, setAuthIntent] = useState(null);
+  // One Subscribe path for the whole page: a signed-in reader goes straight
+  // to the dashboard with the Subscribe switch open; a signed-out reader
+  // creates an account first and lands in the same place.
+  const startSubscribe = () => { if (user) window.location.href = "/?dashboard&subscribe"; else { setAuthIntent("subscribe"); setAuthOpen(true); } };
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const intel = useLiveIntel();
 
@@ -441,7 +446,7 @@ export function LandingPage() {
                 View the live map →
               </button>
               <button style={ghostBtn}
-                onClick={() => { if (user) window.location.href = "/?subscriptions"; else setAuthOpen(true); }}
+                onClick={() => { if (user) window.location.href = "/?subscriptions"; else { setAuthIntent(null); setAuthOpen(true); } }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = BRAND.gold; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = BRAND.border; }}>
                 {user ? "Manage your briefing" : "Get the daily brief"}
@@ -793,13 +798,13 @@ export function LandingPage() {
                 Every incident we catch — headline, severity, category and country.
                 The full day's breadth at a glance, in your inbox.
               </div>
-              <button onClick={() => { if (user) window.location.href = "/?subscriptions"; else setAuthOpen(true); }} style={{
+              <button onClick={() => { if (user) window.location.href = "/?subscriptions"; else { setAuthIntent(null); setAuthOpen(true); } }} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: "transparent", color: "#8A6D00",
                 border: `1px solid ${BRAND.gold}`, borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 11.5, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
-              }}>{user ? "Manage subscription →" : "Subscribe free →"}</button>
+              }}>{user ? "Configure alerts →" : "Get the free daily brief →"}</button>
             </div>
             {/* Subscriber Brief — featured (gold-tint) */}
             <div style={{
@@ -815,7 +820,7 @@ export function LandingPage() {
               <div style={{ marginTop: 10, fontSize: 13.5, lineHeight: 1.6, color: "#52525B" }}>
                 Full operational detail — named blast radius, adaptive GUARD controls, peer watchlist, historical analogues and vendor Defence Ratings.
               </div>
-              <button onClick={() => setSubscribeOpen(true)} style={{
+              <button onClick={startSubscribe} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: BRAND.gold, color: BRAND.obsidian,
                 border: "none", borderRadius: 0, cursor: "pointer",
@@ -924,12 +929,12 @@ export function LandingPage() {
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "center", flexWrap: "wrap" }}>
               <button
-                onClick={() => { dismissWelcome(); setAuthOpen(true); }}
+                onClick={() => { dismissWelcome(); setAuthIntent(null); setAuthOpen(true); }}
                 style={{ ...goldBtn, padding: "12px 24px" }}>
                 Sign up free →
               </button>
               <button
-                onClick={() => { dismissWelcome(); setSubscribeOpen(true); }}
+                onClick={() => { dismissWelcome(); startSubscribe(); }}
                 style={{ ...ghostBtn, padding: "12px 24px" }}>
                 Subscribe
               </button>
@@ -945,8 +950,8 @@ export function LandingPage() {
         </div>
       )}
 
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <SubscribeModal open={subscribeOpen} onClose={() => setSubscribeOpen(false)} onSignIn={() => { setSubscribeOpen(false); setAuthOpen(true); }} />
+      <AuthModal open={authOpen} intent={authIntent} onClose={() => setAuthOpen(false)} />
+      <SubscribeModal open={subscribeOpen} onClose={() => setSubscribeOpen(false)} onSignIn={() => { setSubscribeOpen(false); setAuthIntent("subscribe"); setAuthOpen(true); }} />
     </div>
   );
 }

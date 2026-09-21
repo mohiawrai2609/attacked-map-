@@ -139,3 +139,37 @@ export async function savePrefs({ watchIndustries, watchCategories, frequency, s
   });
   if (error) throw error;
 }
+
+// ── Attack Hub ─────────────────────────────────────────────────────────────
+// The reading room needs the WHOLE industry (not the 24-card window the home
+// view paints) plus a broad cross-sector feed, all as light rows. Loaded once
+// per industry when the reader first opens the Hub; the home view never waits
+// on it.
+export async function loadHub(industry) {
+  // Two light selects with no count embeds; they do not contend, so run both at once.
+  const [mine, world] = await Promise.all([
+    live(supabase.from("incidents").select(COLS_LIGHT).eq("industry", industry))
+      .order("incident_day", { ascending: false }).order("severity", { ascending: false }).order("id", { ascending: false }).limit(2000).then(throwing),
+    live(supabase.from("incidents").select(COLS_LIGHT).neq("industry", industry).gte("severity", 3))
+      .order("incident_day", { ascending: false }).order("severity", { ascending: false }).order("id", { ascending: false }).limit(300).then(throwing),
+  ]);
+  return { mine: mine.map(shape), world: world.map(shape) };
+}
+
+// ── Baked reports ──────────────────────────────────────────────────────────
+// 310 incidents carry a full pre-rendered briefing at public/reports/<ref>.html.
+// The DB no longer holds the ref (hub_ref went in the schema restructure), so
+// public/reports/manifest.json maps incident id -> ref, rebuilt from the
+// report titles on 2026-09-21. Cached for the session; {} on any failure so
+// callers fall back to the structured brief.
+let reportIndex = null;
+export async function loadReportIndex() {
+  if (reportIndex) return reportIndex;
+  try {
+    const r = await fetch("/reports/manifest.json", { cache: "force-cache" });
+    const m = await r.json();
+    reportIndex = (m && m.byIncident) || {};
+  } catch { reportIndex = {}; }
+  return reportIndex;
+}
+export const reportRefFor = (id) => (reportIndex ? reportIndex[String(id)] || null : null);

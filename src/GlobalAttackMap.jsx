@@ -9184,16 +9184,21 @@ export default function GlobalAttackMap() {
 
   // Deep-link: ?incident=<_id> auto-opens that incident's card once the sweep
   // has loaded, so a specific incident can be shared by direct URL. Fires once.
+  // Accepts either the map's synthetic _id ("2026-08-13-PHY-3") or the
+  // database id ("2583") the dashboard links with. The first incidents batch
+  // is the baked sweeps; a live-DB row can land later, so keep looking until
+  // it is found or the boot finishes.
   const deepLinkDone = useRef(false);
   useEffect(() => {
     if (deepLinkDone.current || !incidents.length) return;
     let want = null;
     try { want = new URLSearchParams(window.location.search).get("incident"); } catch { /* noop */ }
     if (!want) { deepLinkDone.current = true; return; }
-    const hit = incidents.find(i => String(i._id) === String(want));
-    if (hit) { setSelectedId(hit._id); }
-    deepLinkDone.current = true;
-  }, [incidents]);
+    const w = String(want);
+    const hit = incidents.find(i => String(i._id) === w) || incidents.find(i => i.id != null && String(i.id) === w);
+    if (hit) { setSelectedId(hit._id); deepLinkDone.current = true; return; }
+    if (!booting) deepLinkDone.current = true;
+  }, [incidents, booting]);
 
   const reporters = meta.newsroom || DEFAULT_REPORTERS;
 

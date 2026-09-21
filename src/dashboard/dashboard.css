@@ -128,7 +128,14 @@
 .dash .chip.active{background:var(--obsidian);color:#fff;border-color:var(--obsidian)}
 .dash .chip.active .n{color:var(--gold)}
 .dash .incident-grid{padding:0 12px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
-.dash .incident{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fff;display:flex;flex-direction:column;min-height:300px;transition:.18s ease;position:relative;min-width:0}
+.dash .incident{border:1px solid var(--line);border-radius:12px;padding:0;background:#fff;display:flex;flex-direction:column;min-height:300px;transition:.18s ease;position:relative;min-width:0;overflow:hidden;cursor:pointer}
+.dash .incident-img{position:relative;height:118px;background:var(--obsidian) center/cover no-repeat;flex:none}
+.dash .incident-img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.55) 100%)}
+.dash .incident-img .img-meta{position:absolute;left:11px;bottom:10px;z-index:1;display:flex;align-items:center;gap:7px}
+.dash .incident-img .img-meta .date{font-family:var(--mono);font-size:9.5px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.dash .incident-img .img-tag{position:absolute;right:10px;top:10px;z-index:1;font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;background:var(--gold);color:var(--obsidian);padding:4px 7px;border-radius:5px;font-weight:700}
+.dash .incident-body{padding:12px 14px 14px;display:flex;flex-direction:column;flex:1;min-width:0}
+.dash .incident-body .cat{margin-bottom:7px;display:block}
 .dash .incident:hover{transform:translateY(-1px);border-color:var(--line-2);box-shadow:0 10px 24px rgba(16,16,16,.07)}
 .dash .topline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-bottom:9px}
 .dash .meta{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);flex:none}
@@ -147,11 +154,14 @@
 .dash .who b{color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%}
 .dash .who span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash .teaser{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 10px}
+.dash .teaser.locked{cursor:pointer}
+.dash .teaser.locked:hover span.lk{background:var(--gold-tint-2);border-color:var(--gold)}
 .dash .teaser span{font-family:var(--mono);font-size:8.5px;color:var(--ink-2);background:var(--paper-3);border:1px solid var(--line);border-radius:5px;padding:4px 6px;white-space:nowrap;display:inline-flex;gap:4px;align-items:center}
 .dash .teaser span b{color:var(--ink);font-weight:600}
 .dash .teaser span.lk{background:var(--gold-tint);border-color:rgba(245,184,0,.35);color:var(--gold-deep)}
 .dash .teaser span.lk b{color:var(--ink)}
-.dash .card-actions{display:grid;grid-template-columns:1fr .8fr;gap:6px;margin-top:auto;padding-top:8px}
+.dash .card-actions{display:grid;grid-template-columns:1fr 36px;gap:6px;margin-top:auto;padding-top:8px}
+.dash .card-actions .btn.icon-only{padding:0;justify-content:center}
 .dash .card-actions .btn{height:33px;font-size:10.5px;padding:0 9px}
 .dash .sub-q{margin-top:7px;border:1px solid rgba(245,184,0,.4);background:var(--gold-tint);height:33px;border-radius:7px;display:flex;align-items:center;padding:0 9px;gap:7px;font-size:9.6px;font-weight:700;color:var(--ink-2);width:100%;cursor:pointer}
 .dash .sub-q:hover{background:var(--gold-tint-2)}
@@ -252,6 +262,8 @@
 .dash .hub-item .h-meta{font-family:var(--mono);font-size:9px;color:var(--ink-3);margin-top:7px;display:flex;gap:0 6px;flex-wrap:wrap;align-items:center}
 .dash .hub-item .h-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48ch}
 .dash .hub-item .h-meta span+span::before{content:"·";margin-right:6px;color:var(--ink-4)}
+.dash .hub-item .h-meta span.ind{color:var(--gold-deep);font-weight:600}
+.dash .filter-section .fs-all{float:right;border:0;background:transparent;font-family:var(--mono);font-size:9px;color:var(--gold-deep);cursor:pointer;text-transform:lowercase;letter-spacing:0;padding:0}
 .dash .hub-full{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-tint);border:1px solid rgba(245,184,0,.35);border-radius:4px;padding:3px 6px;margin-top:7px;display:inline-block;white-space:nowrap}
 .dash .hub-date{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:7px}
 .dash .settings-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
@@ -298,6 +310,16 @@
 .dash .email-body .ti span{font-size:8.5px;color:#A8A8A8;display:block;margin-top:3px}
 .dash .email-body .locked{margin-top:8px;font-size:9px;color:#A8A8A8;border-left:2px solid var(--gold);padding-left:8px;line-height:1.4}
 .dash .article-wrap{max-width:1000px;margin:0 auto}
+.dash .report-wrap{max-width:none;padding-left:0;padding-right:0}
+.dash .report-bar{display:flex;align-items:center;gap:14px;padding:10px 22px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.dash .report-bar .back{margin:0}
+.dash .report-bar-meta{display:flex;align-items:center;gap:10px;flex:1;min-width:0;flex-wrap:wrap}
+.dash .report-frame{width:100%;border:0;display:block;background:#fff}
+.dash .plan-panel{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 22px;margin-bottom:14px;border-color:rgba(245,184,0,.45);background:linear-gradient(90deg,var(--gold-tint) 0%,#fff 60%)}
+.dash .plan-panel .eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:4px}
+.dash .plan-panel h2{font-family:var(--serif);font-size:24px;margin:0 0 4px;font-weight:500}
+.dash .plan-panel p{font-size:12px;color:var(--ink-2);margin:0;max-width:60ch;line-height:1.5}
+.dash .plan-actions{flex:none}
 .dash .back{border:0;background:transparent;font-size:11px;font-weight:700;color:var(--ink-3);margin:0 0 14px;padding:0;display:flex;align-items:center;gap:6px}
 .dash .back:hover{color:var(--ink)}
 .dash .article{padding:28px}
