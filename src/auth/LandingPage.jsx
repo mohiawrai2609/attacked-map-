@@ -279,10 +279,9 @@ export function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [authIntent, setAuthIntent] = useState(null);
-  // One Subscribe path for the whole page: a signed-in reader goes straight
-  // to the dashboard with the Subscribe switch open; a signed-out reader
-  // creates an account first and lands in the same place.
-  const startSubscribe = () => { if (user) window.location.href = "/?dashboard&subscribe"; else { setAuthIntent("subscribe"); setAuthOpen(true); } };
+  // One Subscribe path for the whole page: the subscription page (/?subscribe).
+  // It reads signed out; sign-in is part of its flow.
+  const startSubscribe = () => { window.location.href = "/?subscribe"; };
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const intel = useLiveIntel();
 
@@ -606,7 +605,7 @@ export function LandingPage() {
             <div className="attacked-marquee-track" style={{ display: "flex", gap: 16, width: "max-content" }}>
               {[...intel.feedCards, ...intel.feedCards].map((c, i) => (
                 <article key={`${c.id}-${i}`}
-                  onClick={() => setAuthOpen(true)}
+                  onClick={() => { if (user) window.location.href = `/?map&incident=${c.id}${c.incident_day ? `&date=${c.incident_day}` : ""}`; else setAuthOpen(true); }}
                   style={{
                     flex: "0 0 auto", width: 320,
                     background: "#FFFFFF", border: `1px solid ${BRAND.lineDark}`,

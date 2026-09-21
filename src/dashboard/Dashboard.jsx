@@ -8,23 +8,31 @@
 // the COUNT of blast-radius entities / GUARD controls / peers per incident.
 // Subscribers (profiles.tier = 'enterprise' | 'admin') see the rows. There is
 // no application step any more — "Subscribe" flips the tier through
-// set_own_subscription() (supabase/migrations/20260921_set_own_subscription.sql).
+// set_own_subscription() (supabase/migrations/20260921_set_own_subscription.sql)
+// from the Subscription view (page === "subscribe"), the same component as
+// the public /?subscribe page.
 //
 // ?preview=free|subscriber renders it without an account (industry defaults to
 // Automotive & EV) so QA can click through.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import { SubscribeModal } from "../auth/SubscribeModal";
+import { SubscriptionPlans } from "../auth/SubscribePage";
+import { VendorApplicationModal } from "../auth/VendorApplicationModal";
 import { CATEGORIES, CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
 import { loadCorpus, loadCounts, loadHub, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
-import { incidentImage } from "../lib/images";
+import { incidentImage, incidentPhoto } from "../lib/images";
+import { prepareReportFrame } from "../lib/reportLock";
 import "./dashboard.css";
 
 const DEFAULT_INDUSTRY = "Automotive & EV";
 const SEV_ORDER = [5, 4, 3, 2, 1];
 const fmtDay = (iso) => iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "";
 const shortDay = (iso) => iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+// Deep link to the same incident on the live map. The map renders ONE day at a
+// time, so the day travels with the id (see the deep-link effect in
+// GlobalAttackMap.jsx, which also searches every live day as a fallback).
+const mapHref = (i) => `/?map&incident=${i.id}${i.day ? `&date=${i.day}` : ""}`;
 const previewParam = () => { try { return new URLSearchParams(window.location.search).get("preview"); } catch { return null; } };
 
 // ── icons ──────────────────────────────────────────────────────────────────
@@ -63,8 +71,9 @@ const Teaser = ({ i, subscriber, onSubscribe }) => i.n && (
   </div>
 );
 
-// One card, one destination. "Open" gives the best we have for the incident:
-// the full baked report where one exists, the structured brief otherwise.
+// One card, one destination: "Open in Attack Hub" opens the incident in the
+// reading view — the full baked report where one exists, the structured brief
+// otherwise (the tag on the picture says which).
 // The map pin is a secondary, icon-first link to the same incident on the
 // live map (deep-linked by DB id).
 function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
@@ -72,6 +81,9 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
   return (
     <article className="incident" onClick={() => onOpen(i)}>
       <div className="incident-img" style={{ backgroundImage: `url(${incidentImage(i)})` }}>
+        {/* The incident's real picture — the same one the live map shows — over a
+            category photo that stands in while it loads or if it fails. */}
+        <img className="incident-photo" src={incidentPhoto(i)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
         <div className="img-meta"><Sev i={i} /><span className="date">{shortDay(i.day)}</span></div>
         {(report || i.body) && <span className="img-tag">{report ? "Full report" : "Briefing"}</span>}
       </div>
@@ -81,8 +93,8 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
         <div className="who"><b>{i.entity || "—"}</b>{i.country ? <><span>·</span><span>{i.country}</span></> : null}</div>
         <Teaser i={i} subscriber={subscriber} onSubscribe={(e) => { e.stopPropagation(); onSubscribe(); }} />
         <div className="card-actions">
-          <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>{report ? "Read the report" : i.body ? "Read the briefing" : "Open"} →</button>
-          <a className="btn icon-only" href={`/?map&incident=${i.id}`} target="_blank" rel="noopener" title="Open on the live map" aria-label="Open on the live map" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 14, height: 14, flexBasis: 14 }} /></a>
+          <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>Open in Attack Hub →</button>
+          <a className="btn icon-only" href={mapHref(i)} target="_blank" rel="noopener" title="Open on the live map" aria-label="Open on the live map" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 14, height: 14, flexBasis: 14 }} /></a>
         </div>
       </div>
     </article>
@@ -407,10 +419,8 @@ function ConfigureAlerts({ P, profile, subscriber, tier, onSubscribe, onSaved, o
 // dashboard chrome. The file is same-origin, so once it loads we reach into
 // it: stamp the reader's licence, and for FREE readers lock the three subscriber
 // sections in place — "Who else is exposed" (#r-blast), "GUARD controls"
-// (#r-ctrl) and "Vendor intelligence" (#r-vend) — with the same rule the rest
-// of the product uses: what happened is free, who it reaches and what to do
-// is subscriber. Everything else in the report reads in full.
-const LOCKED_SECTIONS = ["r-blast", "r-ctrl", "r-vend"];
+// (#r-ctrl) and "Vendor intelligence" (#r-vend). The gate itself lives in
+// src/lib/reportLock.js and is shared with the public Attacked Hub.
 function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
   const ref = useRef(null);
   // The report scrolls inside its own .reader wrapper (body overflow hidden),
@@ -424,34 +434,7 @@ function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
   }, [reportRef]);
   useEffect(() => {
     const fr = ref.current; if (!fr) return;
-    const onLoad = () => {
-      let doc; try { doc = fr.contentDocument; } catch { return; }
-      if (!doc || !doc.body) return;
-      // Stamp the licence line the report prints.
-      try { fr.contentWindow.__ATTACKED_LICENSE__ = { name: readerName || "Registered reader", role: subscriber ? "Subscriber" : "Free reader" }; } catch { /* noop */ }
-      // Hide the report's own back-to-hub controls if any; the dashboard owns navigation.
-      doc.querySelectorAll('a[href*="?hub"], .r-back').forEach((el) => { el.style.display = "none"; });
-      if (subscriber) return;
-      if (!doc.getElementById("dash-lock-style")) {
-        const st = doc.createElement("style"); st.id = "dash-lock-style";
-        st.textContent = `
-          .dash-locked{position:relative;max-height:260px;overflow:hidden}
-          .dash-locked::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.75) 45%,#fff 100%);pointer-events:none}
-          .dash-locked > *:not(.r-sec-title):not(.dash-lock){filter:blur(4px);user-select:none}
-          .dash-lock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;display:flex;align-items:center;gap:12px;background:#0f0f0f;color:#fff;border:1px solid #F5B800;padding:12px 16px;border-radius:10px;font:600 13px/1.3 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.28);white-space:nowrap}
-          .dash-lock b{color:#F5B800;font-weight:700}
-          .dash-lock button{background:#F5B800;color:#0f0f0f;border:0;border-radius:7px;padding:8px 12px;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}`;
-        doc.head.appendChild(st);
-      }
-      for (const id of LOCKED_SECTIONS) {
-        const sec = doc.getElementById(id); if (!sec || sec.classList.contains("dash-locked")) continue;
-        sec.classList.add("dash-locked");
-        const box = doc.createElement("div"); box.className = "dash-lock";
-        box.innerHTML = "<span><b>Subscriber layer.</b> Who it reaches, and what to do about it.</span>";
-        const b = doc.createElement("button"); b.textContent = "Subscribe →"; b.onclick = () => onSubscribe?.();
-        box.appendChild(b); sec.appendChild(box);
-      }
-    };
+    const onLoad = () => { prepareReportFrame(fr, { subscriber, onSubscribe, readerName }); };
     fr.addEventListener("load", onLoad);
     if (fr.contentDocument?.readyState === "complete" && fr.contentDocument.body?.children.length) onLoad();
     return () => { fr.removeEventListener("load", onLoad); };
@@ -482,7 +465,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
         <div className="report-bar">
           <button className="back" onClick={back}>← {backLabel}</button>
           <div className="report-bar-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><span className="mono" style={{ fontSize: 10, color: "var(--gold-deep)" }}>Full report · {reportRef}</span></div>
-          <a className="btn" href={`/?map&incident=${i.id}`} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> On map</a>
+          <a className="btn" href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> On map</a>
         </div>
         <ReportFrame i={i} reportRef={reportRef} subscriber={subscriber} onSubscribe={onSubscribe} readerName={readerName} />
       </div>
@@ -492,7 +475,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
     <div className="content subpage article-wrap">
       <button className="back" onClick={back}>← {backLabel}</button>
       <article className="panel article">
-        <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span></div>
+        <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><a className="btn" style={{ marginLeft: "auto", height: 28, fontSize: 10, padding: "0 10px" }} href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 12, height: 12, flexBasis: 12 }} /> On map</a></div>
         <h1>{i.headline}</h1>
         <p className="dek">{i.summary}</p>
         <div className="article-info">{facts.map(([k, v]) => <span key={k}>{k} <b>{v}</b></span>)}</div>
@@ -537,23 +520,37 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
 }
 
 // ── shell ──────────────────────────────────────────────────────────────────
+// The subscription page inside the dashboard shell — same component as
+// /?subscribe, so the two never drift.
+function SubscriptionView({ go, toast }) {
+  const { user } = useAuth();
+  const [vendorOpen, setVendorOpen] = useState(false);
+  return (
+    <div className="content subpage">
+      <div className="subpage-header">
+        <div><h1>Subscription</h1><p>What Free gives you, what Subscriber unlocks on the Attack Map, and the organisation-level products behind it.</p></div>
+      </div>
+      <SubscriptionPlans embedded onSignIn={() => toast("Sign in to subscribe.")} onVendor={() => setVendorOpen(true)} onDashboard={() => go("dashboard")} />
+      <VendorApplicationModal open={vendorOpen} onClose={() => setVendorOpen(false)} defaultEmail={user?.email || ""} />
+    </div>
+  );
+}
+
 export function Dashboard({ initialPage = "dashboard" }) {
   const { user, tier, profile, loading: authLoading, signOut, setSubscribed, saveProfileBasics } = useAuth();
   const preview = previewParam();
   const subscriber = isSubscriber(tier);
   const [industry, setIndustry] = useState(() => profile?.industry || (preview ? DEFAULT_INDUSTRY : null));
   useEffect(() => { if (profile?.industry && profile.industry !== industry) setIndustry(profile.industry); }, [profile?.industry]); // eslint-disable-line
-  const [page, setPage] = useState(initialPage);
+  // ?dashboard&subscribe opens the Subscription view straight away — the
+  // landing page, the map and Create an account send readers here.
+  const [page, setPage] = useState(() => { try { return new URLSearchParams(window.location.search).has("subscribe") ? "subscribe" : initialPage; } catch { return initialPage; } });
   const [lastPage, setLastPage] = useState("dashboard");
   const [article, setArticle] = useState(null);
   const [query, setQuery] = useState("");
   const [P, setP] = useState(null);
   const [err, setErr] = useState(null);
   const [corpus, setCorpus] = useState(null);
-  // ?subscribe on the URL means "open the Subscribe switch as soon as the
-  // dashboard is up" — the landing page and the map send readers here after
-  // sign-up so the intent survives the auth step.
-  const [subOpen, setSubOpen] = useState(() => { try { return new URLSearchParams(window.location.search).has("subscribe"); } catch { return false; } });
   const [hub, setHub] = useState(null);
   const [reportsReady, setReportsReady] = useState(false);
   useEffect(() => { loadReportIndex().then(() => setReportsReady(true)); }, []);
@@ -630,8 +627,9 @@ export function Dashboard({ initialPage = "dashboard" }) {
           <div className="side-label">Subscriber</div>
           <nav className="nav">
             {[["radar", "Blast Radius"], ["shield", "GUARD Controls"], ["users", "Peer Watchlist"]].map(([ic, lbl]) => (
-              <button key={lbl} className="nav-btn" onClick={() => subscriber ? go("hub") : setSubOpen(true)}><Icon name={ic} />{lbl}<span className="tag" style={subscriber ? { background: "rgba(52,199,89,.18)", color: "#34C759" } : undefined}>{subscriber ? "ON" : "LOCKED"}</span></button>
+              <button key={lbl} className="nav-btn" onClick={() => subscriber ? go("hub") : go("subscribe")}><Icon name={ic} />{lbl}<span className="tag" style={subscriber ? { background: "rgba(52,199,89,.18)", color: "#34C759" } : undefined}>{subscriber ? "ON" : "LOCKED"}</span></button>
             ))}
+            <button className={`nav-btn ${page === "subscribe" ? "active" : ""}`} onClick={() => go("subscribe")}><Icon name="file" />Subscription</button>
           </nav>
           <div className="side-spacer" />
           {!subscriber && (
@@ -639,7 +637,7 @@ export function Dashboard({ initialPage = "dashboard" }) {
               <div className="eyebrow">Subscribe</div>
               <h4>See who is exposed, not just what happened.</h4>
               <p>Named blast radius, adaptive GUARD controls and the peer watchlist on every incident in your industry.</p>
-              <button onClick={() => setSubOpen(true)}>Subscribe →</button>
+              <button onClick={() => go("subscribe")}>Subscribe →</button>
             </div>
           )}
           <div className="side-footer">Free: every incident in your industry, classified.<br />Subscriber: who it reaches and what to do.</div>
@@ -660,20 +658,20 @@ export function Dashboard({ initialPage = "dashboard" }) {
 
           {err && <div className="content"><div className="panel empty" style={{ color: "#B21F31" }}>Could not load your industry: {err}</div></div>}
           {!P && !err && <div className="content"><div className="panel empty mono">Loading {industry}…</div></div>}
-          {P && page === "dashboard" && <YourIndustry P={P} corpus={corpus} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => setSubOpen(true)} go={go} />}
+          {P && page === "dashboard" && <YourIndustry P={P} corpus={corpus} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => go("subscribe")} go={go} />}
           {P && page === "hub" && <AttackHub P={P} hub={hub} query={query} onOpen={openArticle} go={go} />}
-          {P && page === "alerts" && <ConfigureAlerts tier={tier} onSubscribe={() => setSubOpen(true)} P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
-          {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel={lastPage === "hub" ? "Back to the Attack Hub" : "Back to your industry"} onSubscribe={() => setSubOpen(true)} />}
+          {page === "subscribe" && <SubscriptionView go={go} toast={toast} />}
+          {P && page === "alerts" && <ConfigureAlerts tier={tier} onSubscribe={() => go("subscribe")} P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
+          {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel={lastPage === "hub" ? "Back to the Attack Hub" : "Back to your industry"} onSubscribe={() => go("subscribe")} />}
         </main>
       </div>
 
-      <SubscribeModal open={subOpen} onClose={() => { setSubOpen(false); try { const u = new URL(window.location.href); if (u.searchParams.has("subscribe")) { u.searchParams.delete("subscribe"); window.history.replaceState(null, "", u.pathname + (u.search || "")); } } catch { /* noop */ } }} onDone={() => toast("You are now a subscriber.")} />
       {menu && (
         <div className="profile-menu open">
           <button onClick={() => go("alerts")}>Alert preferences</button>
           <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?profile">Profile</a>
           {subscriber && user && tier !== "admin" && <button onClick={async () => { try { await setSubscribed(false); toast("Subscription switched off."); } catch (e) { toast(e.message); } setMenu(false); }}>Switch off subscription</button>}
-          {!subscriber && <button onClick={() => { setMenu(false); setSubOpen(true); }}>Subscribe</button>}
+          {!subscriber && <button onClick={() => { setMenu(false); go("subscribe"); }}>Subscribe</button>}
           <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?home">Landing page</a>
           <button onClick={() => { setMenu(false); user ? signOut() : (window.location.href = "/?home"); }}>{user ? "Sign out" : "Exit preview"}</button>
         </div>

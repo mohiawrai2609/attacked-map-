@@ -1408,7 +1408,46 @@ async function loadFromSupabase() {
 // day's synthetic sweep, or null. The full loadFromSupabase still runs after to
 // enrich detail panels + populate the archive.
 // ─────────────────────────────────────────────────────────────────────────────
-async function loadIncidentsFast() {
+// Deep-link first paint: ONE day, straight from the DB. ?date= names the day;
+// a bare ?incident=<id> resolves it with a one-row lookup first. A single day
+// is a few hundred rows at most, so the linked incident is on screen in about
+// a second while the full light load (every day, ~10k rows) runs behind it.
+async function loadOneDayFast(day, incidentId) {
+  if (typeof window === "undefined" || typeof fetch !== "function") return null;
+  const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+  const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  let d = day;
+  if (!d && incidentId != null) {
+    const rows = await _fetchSupabaseTable(url, key, "incidents", `select=incident_day&id=eq.${encodeURIComponent(String(incidentId))}&limit=1`);
+    d = rows[0] && rows[0].incident_day ? String(rows[0].incident_day).slice(0, 10) : null;
+  }
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence";
+  const [reg, reporters] = await Promise.all([
+    _fetchSupabaseTable(url, key, "incidents", `select=${cols}&incident_day=eq.${d}&latitude=not.is.null&longitude=not.is.null&limit=2000`),
+    _fetchSupabaseTable(url, key, "reporters", "select=slug,name,desk,cats,color&limit=200"),
+  ]);
+  let newsroom = null;
+  if (reporters.length) { newsroom = {}; for (const r of reporters) if (r && r.slug) newsroom[r.slug] = { name: r.name, desk: r.desk, cats: r.cats || [], color: r.color }; }
+  const results = {};
+  for (const row of reg) {
+    const lat = typeof row.latitude === "string" ? parseFloat(row.latitude) : row.latitude;
+    const lng = typeof row.longitude === "string" ? parseFloat(row.longitude) : row.longitude;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    const inc = _reshapeIncident({ ...row, latitude: lat, longitude: lng });
+    const cat = inc.primary_category || "OPS";
+    if (!results[cat]) results[cat] = { incidents: [] };
+    results[cat].incidents.push(inc);
+  }
+  if (!Object.keys(results).length) return null;
+  return { day: d, sweep: { generated_at: `${d}T00:00:00.000Z`, schema_version: "daily-aggregated", newsroom: newsroom || undefined, results } };
+}
+
+// preferDay / incidentId: a deep link (?date= / ?incident=) pins the first
+// paint to that day instead of the newest one (loadOneDayFast has usually
+// painted it already; this pass adds every other day for liveDaysRef).
+async function loadIncidentsFast(preferDay = null, incidentId = null) {
   if (typeof window === "undefined" || typeof fetch !== "function") return null;
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
@@ -1456,13 +1495,25 @@ async function loadIncidentsFast() {
     if (byDay.size === 0) return null;
     const days = [...byDay.keys()].sort();
     const newest = days[days.length - 1];
-    const results = {};
-    for (const inc of byDay.get(newest)) {
-      const cat = inc.primary_category || "OPS";
-      if (!results[cat]) results[cat] = { incidents: [] };
-      results[cat].incidents.push(inc);
+    const toSweep = (day) => {
+      const results = {};
+      for (const inc of byDay.get(day)) {
+        const cat = inc.primary_category || "OPS";
+        if (!results[cat]) results[cat] = { incidents: [] };
+        results[cat].incidents.push(inc);
+      }
+      return { generated_at: `${day}T00:00:00.000Z`, schema_version: "daily-aggregated", newsroom: newsroom || undefined, results };
+    };
+    // Every day, light. Lets a ?incident= deep link resolve its day here and
+    // gives the deep-link effect somewhere to switch to before the full boot.
+    const sweepsByDay = new Map(days.map((d) => [d, toSweep(d)]));
+    let pick = preferDay && byDay.has(preferDay) ? preferDay : null;
+    if (!pick && incidentId != null) {
+      const w = String(incidentId);
+      for (const d of days) if (byDay.get(d).some((i) => i && i.id != null && String(i.id) === w)) { pick = d; break; }
     }
-    return { day: newest, sweep: { generated_at: `${newest}T00:00:00.000Z`, schema_version: "daily-aggregated", newsroom: newsroom || undefined, results } };
+    if (!pick) pick = newest;
+    return { day: pick, sweep: sweepsByDay.get(pick), sweepsByDay };
   } catch (e) {
     console.warn("Fast incident load failed:", e?.message || e);
     return null;
@@ -8980,6 +9031,8 @@ export default function GlobalAttackMap() {
   const [booting, setBooting] = useState(true);   // true while the initial data load runs
   const [tourActive, setTourActive] = useState(false); // guided narrated walkthrough overlay
   const tourStartedRef = useRef(false);
+  const liveDaysRef = useRef(null);          // every live day's sweep, for ?incident= links off the rendered day
+  const deepLinkSwitchedRef = useRef(false); // we already switched the day for a deep link
   const [mobilePreview, setMobilePreview] = useState(false); // mobile guided preview (auto-playing swipe deck)
   const mobilePreviewStartedRef = useRef(false);
   const [deckReady, setDeckReady] = useState(false); // mobile: brief delay so the globe focus+arcs are seen before the deck opens
@@ -9047,15 +9100,34 @@ export default function GlobalAttackMap() {
         // light incidents-only query, so the map never sits on an empty screen
         // while the heavy enrichment below loads. Applies to users AND admins.
         let fastDay = null;
+        // Deep links pin the boot to a day: ?date=YYYY-MM-DD, or ?incident=<id>
+        // whose day the first paint resolves. The archive swap below honours
+        // the pin, so nothing later moves the map off the linked incident.
+        let pinnedDay = null, wantIncident = null;
         try {
-          const fast = await loadIncidentsFast();
-          if (fast && !cancelled) {
-            setSweep(fast.sweep);
-            setSweepName(`daily_${fast.day}.json`);
-            setCurrentDate(fast.day);
-            fastDay = fast.day;
-          }
-        } catch (e) { console.warn("Fast paint skipped:", e?.message || e); }
+          const p = new URLSearchParams(window.location.search);
+          const d = p.get("date"); if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) pinnedDay = d;
+          wantIncident = p.get("incident");
+        } catch { /* noop */ }
+        const paint = (day, sweep) => {
+          if (cancelled) return;
+          setSweep(sweep); setSweepName(`daily_${day}.json`); setCurrentDate(day); fastDay = day;
+        };
+        // Both loads start now. For a deep link the single-day query (a few
+        // hundred rows) usually lands first and paints the linked incident;
+        // the every-day light load follows and fills liveDaysRef.
+        const oneP = (pinnedDay || wantIncident)
+          ? loadOneDayFast(pinnedDay, wantIncident).catch((e) => { console.warn("Deep-link day paint skipped:", e?.message || e); return null; })
+          : Promise.resolve(null);
+        const fastP = loadIncidentsFast(pinnedDay, wantIncident).catch((e) => { console.warn("Fast paint skipped:", e?.message || e); return null; });
+        oneP.then((one) => { if (one && !fastDay) { paint(one.day, one.sweep); if (wantIncident && !pinnedDay) pinnedDay = one.day; } });
+        const fast = await fastP;
+        if (fast && !cancelled) {
+          if (fast.sweepsByDay) liveDaysRef.current = fast.sweepsByDay;
+          if (!fastDay || fast.day === fastDay) paint(fast.day, fast.sweep);
+          if (wantIncident && !pinnedDay) pinnedDay = fast.day;
+        }
+        await oneP;
         if (cancelled) return;
 
         await verifyStorage();
@@ -9091,6 +9163,7 @@ export default function GlobalAttackMap() {
           if (!cancelled) setLiveDataError(e?.message || String(e));
         }
         if (cancelled) return;
+        if (supa && supa.sweepsByDay) liveDaysRef.current = supa.sweepsByDay;
         // A thrown error is not the only failure mode: _fetchSupabaseTable
         // swallows non-OK responses and returns [], so an exhausted egress
         // allowance or a revoked key comes back as a perfectly ordinary empty
@@ -9111,19 +9184,19 @@ export default function GlobalAttackMap() {
           // sweep so any tier (including free/?preview=free, who don't have
           // the archive button) can reach a past day. Falls back to newest.
           let target = idx[0]; // default: newest
-          let explicitDate = null;
-          try {
-            explicitDate = new URLSearchParams(window.location.search).get("date");
-            if (explicitDate && /^\d{4}-\d{2}-\d{2}$/.test(explicitDate)) {
-              const match = idx.find(x => x.date === explicitDate);
-              if (match) target = match;
-            } else { explicitDate = null; }
-          } catch { /* noop — fall back to newest */ }
+          let explicitDate = pinnedDay;   // ?date=, or the day a ?incident= deep link resolved to
+          let archiveHasDay = true;
+          if (explicitDate) {
+            const match = idx.find(x => x.date === explicitDate);
+            if (match) target = match; else archiveHasDay = false;
+          }
 
           // Don't DOWNGRADE the fast-painted day to an OLDER archived day (e.g.
           // baked May data when live shows June). Only swap in the archive
           // sweep if it's the same day (now enriched), newer, or ?date-requested.
-          if (!fastDay || explicitDate || target.date >= fastDay) {
+          // A pinned day the archive does not hold keeps the fast paint (which
+          // already shows it) instead of swapping in a different day.
+          if (archiveHasDay && (!fastDay || explicitDate || target.date >= fastDay)) {
             const json = await readSweep(target.date);
             if (cancelled) return;
             if (json) {
@@ -9184,10 +9257,15 @@ export default function GlobalAttackMap() {
 
   // Deep-link: ?incident=<_id> auto-opens that incident's card once the sweep
   // has loaded, so a specific incident can be shared by direct URL. Fires once.
-  // Accepts either the map's synthetic _id ("2026-08-13-PHY-3") or the
-  // database id ("2583") the dashboard links with. The first incidents batch
-  // is the baked sweeps; a live-DB row can land later, so keep looking until
-  // it is found or the boot finishes.
+  // Deep link: ?incident=<id> auto-opens that incident. Accepts the map's
+  // synthetic _id ("2026-08-13-PHY-3") or the database id ("2583") that the
+  // dashboard, the Hub and the landing page link with.
+  //
+  // The map renders ONE day at a time, so an incident from an earlier day is
+  // not in `incidents` at all. Callers pass &date=<day> so the boot lands on
+  // that day directly; if it is missing (or the archive lacks the day) we
+  // search every live day kept in liveDaysRef and switch to the one that
+  // holds the incident. Keeps trying until it is found or the boot finishes.
   const deepLinkDone = useRef(false);
   useEffect(() => {
     if (deepLinkDone.current || !incidents.length) return;
@@ -9196,8 +9274,21 @@ export default function GlobalAttackMap() {
     if (!want) { deepLinkDone.current = true; return; }
     const w = String(want);
     const hit = incidents.find(i => String(i._id) === w) || incidents.find(i => i.id != null && String(i.id) === w);
-    if (hit) { setSelectedId(hit._id); deepLinkDone.current = true; return; }
-    if (!booting) deepLinkDone.current = true;
+    if (hit) { console.info("[deep-link] selected", hit._id, "on", currentDate); setSelectedId(hit._id); deepLinkDone.current = true; return; }
+    const days = liveDaysRef.current;
+    console.info("[deep-link] not on rendered day", currentDate, "· live days:", days ? days.size : "none", "· booting:", booting);
+    if (days && !deepLinkSwitchedRef.current) {
+      for (const [day, sw] of days) {
+        const rows = Object.values(sw?.results || {}).flatMap(r => (r && r.incidents) || []);
+        if (rows.some(i => i && i.id != null && String(i.id) === w)) {
+          deepLinkSwitchedRef.current = true;
+          console.info("[deep-link] switching to", day);
+          setSweep(sw); setSweepName(`daily_${day}.json`); setCurrentDate(day);
+          return; // re-runs when `incidents` recomputes for the new day
+        }
+      }
+    }
+    if (!booting) { console.info("[deep-link] gave up"); deepLinkDone.current = true; }
   }, [incidents, booting]);
 
   const reporters = meta.newsroom || DEFAULT_REPORTERS;

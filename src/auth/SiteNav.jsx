@@ -8,7 +8,7 @@
 //   • "Attack Map"  — signed-in → /?map, anonymous → sign-in wall
 //   • "Attacked Hub" / "Pricing" — real in-app routes
 //   • signed-in → tier badge + "Open the map" + "Sign out"
-//   • anonymous → "Sign in" + "Subscribe" (both open the modal)
+//   • anonymous → "Sign in" (modal) + "Subscribe" (→ /?subscribe, the subscription page)
 //
 // Pass `active` ("map" | "hub" | "pricing") to highlight the current page.
 // ─────────────────────────────────────────────────────────────────────────
@@ -134,6 +134,7 @@ export function SiteNav({ active }) {
                     </div>
                     <a href="/?dashboard" style={{ fontWeight: 700 }}>My dashboard</a>
                     <a href="/?profile">Profile</a>
+                    <a href="/?subscribe">Subscription</a>
                     <a href="/?subscriptions">Configure alerts</a>
                     <button onClick={() => { setMenuOpen(false); enterMap(); }}>Open the live map</button>
                     <a href="/?hub">The Attacked Hub</a>
@@ -154,12 +155,13 @@ export function SiteNav({ active }) {
                 fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600,
                 letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 6,
               }}>Sign in</button>
-              <button onClick={() => { setAuthIntent("subscribe"); setAuthOpen(true); }} style={{
+              <a href="/?subscribe" style={{
+                textDecoration: "none", display: "inline-flex", alignItems: "center",
                 padding: "8px 18px", background: BRAND.gold, color: BRAND.obsidian,
                 border: "none", borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700,
                 letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 4,
-              }}>Subscribe</button>
+              }}>Subscribe</a>
             </>
           )}
         </nav>

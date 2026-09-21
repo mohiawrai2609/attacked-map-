@@ -12,8 +12,10 @@
 // that array, so it grows with the data. Clicking any incident opens the full
 // briefing in-hub (ArticleView) — no navigation away. CTAs route to the map.
 // ─────────────────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { isSubscriber } from "../lib/taxonomy";
+import { prepareReportFrame } from "../lib/reportLock";
 import { useAuth } from "./AuthProvider";
 import { AuthModal } from "./AuthModal";
 import { SiteNav } from "./SiteNav";
@@ -425,7 +427,18 @@ function ArticleView({ article, onBack, onMap, user }) {
 // (public/reports/<id>.html), render that exact report inside the hub via an
 // iframe, with a slim back/CTA bar on top. Faithful to the baked design; no
 // re-rendering. Falls back to ArticleView when no report file exists.
-function ReportFrame({ article, onBack, onMap, user }) {
+// Free readers get the report with the three subscriber sections locked
+// (src/lib/reportLock.js — the same gate the dashboard applies), so the public
+// Hub is not a way around the paywall.
+function ReportFrame({ article, onBack, onMap, user, subscriber }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const fr = ref.current; if (!fr) return;
+    const onLoad = () => { prepareReportFrame(fr, { subscriber, onSubscribe: () => { window.location.href = "/?subscribe"; }, readerName: user?.email || "" }); };
+    fr.addEventListener("load", onLoad);
+    if (fr.contentDocument?.readyState === "complete" && fr.contentDocument.body?.children.length) onLoad();
+    return () => fr.removeEventListener("load", onLoad);
+  }, [article?.reportRef, subscriber, user?.email]);
   return (
     <main style={{ background: "#FFFFFF", fontFamily: "Inter, sans-serif", position: "relative" }}>
       <button onClick={onBack} style={{
@@ -437,6 +450,7 @@ function ReportFrame({ article, onBack, onMap, user }) {
         fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
       }}>← Back to the feed</button>
       <iframe
+        ref={ref}
         src={`/reports/${encodeURIComponent(article.reportRef || article.id)}.html`}
         title={article.headline || article.id}
         style={{ width: "100%", height: "calc(100vh - 73px)", border: "none", display: "block" }}
@@ -446,7 +460,7 @@ function ReportFrame({ article, onBack, onMap, user }) {
 }
 
 export function AttackHub() {
-  const { user } = useAuth();
+  const { user, tier } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [reportIds, setReportIds] = useState(null);  // Set of incident ids with a baked report
   const [articles, setArticles] = useState([]);
@@ -515,13 +529,24 @@ export function AttackHub() {
           .order("incident_day", { ascending: false, nullsFirst: false })
           .order("severity", { ascending: false })
           .limit(1000);
+        // Every incident with a baked report is older than the 1000-row window
+        // (they rank 1277+ today), so fetch them separately — light columns,
+        // ~300 rows — and every report stays reachable from the Hub however
+        // far the feed moves on.
+        const repRes = await supabase.from("incidents")
+          .select("id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,event_date,incident_day")
+          .not("article_body", "is", null)
+          .order("incident_day", { ascending: false, nullsFirst: false })
+          .limit(400);
+        const seenIds = new Set();
+        const incRows = [...(incRes.data || []), ...(repRes.data || [])].filter(r => r && !seenIds.has(r.id) && seenIds.add(r.id));
 
         // True table size, for the counter in the gold strip. The rows we hold
         // are capped at 1000, so articles.length under-reports the corpus.
         const totalRes = await supabase.from("incidents")
           .select("id", { count: "exact", head: true });
 
-        const mapped = (incRes.data || []).map(r => {
+        const mapped = incRows.map(r => {
           const day = r.incident_day || r.event_date || null;
           return {
             id: r.id,
@@ -700,7 +725,7 @@ export function AttackHub() {
         // Resolve the ref at render time: the manifest can arrive after the
         // incident rows did, so the row's own reportRef may still be null.
         (() => { const ref = selected.reportRef || reportByIncident[String(selected.id)] || null; return reportIds && ref && reportIds.has(ref); })()
-          ? <ReportFrame article={{ ...selected, reportRef: selected.reportRef || reportByIncident[String(selected.id)] }} onBack={() => setSelected(null)} onMap={openMap} user={user} />
+          ? <ReportFrame article={{ ...selected, reportRef: selected.reportRef || reportByIncident[String(selected.id)] }} onBack={() => setSelected(null)} onMap={openMap} user={user} subscriber={isSubscriber(tier)} />
           : <ArticleView article={selected} onBack={() => setSelected(null)} onMap={openMap} user={user} />
       ) : (
         <>

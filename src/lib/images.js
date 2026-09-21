@@ -1,9 +1,18 @@
-// images.js — one place for the editorial photo pool the Hub page and the
-// dashboard share. Keyed by GUARD category so a Cyber incident and a
-// Geopolitical one never wear the same picture, with a hashed pick from the
-// whole pool for lists that would otherwise repeat one photo per category.
+// images.js — where an incident's picture comes from, shared by the dashboard
+// and the Hub page.
 //
-// Unsplash hotlinks, sized for cards. Swap for owned assets when they exist.
+// incidentPhoto(i)  — the REAL picture for this incident: the same source the
+//                     live map's incident card uses (MapIncidentImage in
+//                     GlobalAttackMap.jsx). A hand-made local image for the
+//                     incidents we generated pictures for, otherwise an
+//                     editorial photo generated from the exact headline. The
+//                     URL is byte-identical to the map's so both surfaces show
+//                     the same picture and share the generator's cache.
+// incidentImage(i)  — a category stock photo. Used as the placeholder while
+//                     the real picture loads and as the fallback if it fails.
+//
+// The local override list mirrors the one in GlobalAttackMap.jsx; keep the
+// two in step when adding a picture to public/incidents/.
 
 export const CATEGORY_IMG = {
   CYB: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&q=70&auto=format&fit=crop",
@@ -22,7 +31,6 @@ export const CATEGORY_IMG = {
   _default: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=900&q=70&auto=format&fit=crop",
 };
 
-// Second-choice photos per category so a single-category grid varies.
 const ALT_IMG = {
   CYB: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&q=70&auto=format&fit=crop",
   DAT: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=900&q=70&auto=format&fit=crop",
@@ -41,10 +49,43 @@ const ALT_IMG = {
 
 const hash = (v) => { let h = 5381; const s = String(v); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h; };
 
-// Stable per incident: alternates between the category's two photos by id.
+// Category stock photo, stable per incident (alternates between two per category).
 export function incidentImage(i) {
   const cat = i?.cat || i?.primary_category;
   const primary = CATEGORY_IMG[cat] || CATEGORY_IMG._default;
   const alt = ALT_IMG[cat];
   return alt && hash(i?.id) % 2 ? alt : primary;
+}
+
+// Hand-made pictures in public/incidents/, keyed by a headline fragment.
+// Same list as MapIncidentImage in GlobalAttackMap.jsx.
+const LOCAL_BY_HEADLINE = [
+  ["Rocket Lab", "/incidents/rocket_lab_iridium_1782896030009.png"],
+  ["The Founder-Fused Brand", "/incidents/corporate_reputation_crisis_1782896048377.png"],
+  ["EU Anti-Subsidy Duties", "/incidents/eu_chinese_ev_1782896064535.png"],
+  ["China's Rare-Earth Valve", "/incidents/rare_earth_valve_1782896707184.png"],
+  ["When the Balance Sheet Is the Breach", "/incidents/northvolt_fraud_probe_1782896738561.png"],
+  ["Concentration-Risk Ransomware", "/incidents/dealership_ransomware_1782896754530.png"],
+  ["The Yield Trap", "/incidents/yield_trap_gigafactory.png"],
+  ["BMW–Northvolt", "/incidents/bmw_northvolt_contract.png"],
+  ["The Fuse, Not the Shot", "/incidents/pentagon_catl_fuse.png"],
+  ["SPAC-Fraud Wells Notice", "/incidents/spac_fraud_faraday.png"],
+  ["Regulatory Enforcement Sets a New Recall-Compliance Bar", "/incidents/nhtsa_ford_recall.png"],
+  ["Strategic Repricing of a Legacy-OEM EV Program", "/incidents/ford_lightning_scrap.png"],
+  ["Cruise Robotaxi Exit", "/incidents/gm_cruise_exit.png"],
+  ["First-of-Kind FTC Enforcement", "/incidents/ftc_gm_onstar.png"],
+  ["California's First Data-Minimization Strike", "/incidents/california_gm_ccpa.png"],
+  ["The Sovereign Cost Reset", "/incidents/sovereign_cost_reset.png"],
+  ["When One Country Owns the Valve", "/incidents/drc_cobalt_ban.png"],
+  ["Akira's Battery-Supply Gambit", "/incidents/akira_lges_breach.png"],
+];
+
+// The real picture for an incident (see header).
+export function incidentPhoto(i) {
+  const h = i?.headline || "";
+  for (const [needle, src] of LOCAL_BY_HEADLINE) if (h.includes(needle)) return src;
+  if (i?.image_url) return i.image_url;
+  if (!h) return incidentImage(i);
+  const prompt = encodeURIComponent(`${h}, realistic news photography, editorial`);
+  return `https://image.pollinations.ai/prompt/${prompt}?width=800&height=500&nologo=true`;
 }

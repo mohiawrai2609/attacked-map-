@@ -45,9 +45,9 @@ const C = {
 // "can't type in the password box" bug).
 const Field = ({ children }) => <div style={{ marginBottom: 14 }}>{children}</div>;
 
-// intent="subscribe": the reader pressed Subscribe while signed out. After the
-// session exists we send them to the dashboard with the Subscribe switch open
-// (?dashboard&subscribe) instead of dropping them on the landing page.
+// intent="subscribe": the reader pressed Subscribe while signed out. Once the
+// session exists we send them back to the subscription page with
+// ?activate=subscriber, which finishes the switch for them.
 export function AuthModal({ open, onClose, intent = null }) {
   const { signUpWithPassword, signInWithPassword, signIn, verifyCode, saveProfileBasics } = useAuth();
 
@@ -88,7 +88,7 @@ export function AuthModal({ open, onClose, intent = null }) {
 
   function close(signedIn = false) {
     setView("signup"); setError(null); setResent(false); setCode("");
-    if (signedIn && intent === "subscribe") { window.location.href = "/?dashboard&subscribe"; return; }
+    if (signedIn && intent === "subscribe") { window.location.href = "/?subscribe&activate=subscriber"; return; }
     onClose();
   }
 

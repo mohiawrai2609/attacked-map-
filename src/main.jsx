@@ -4,8 +4,8 @@ import "./responsive.css";
 import GlobalAttackMap from "./GlobalAttackMap.jsx";
 import { AuthProvider, useAuth } from "./auth/AuthProvider.jsx";
 import { LandingPage } from "./auth/LandingPage.jsx";
+import { SubscribePage } from "./auth/SubscribePage.jsx";
 import { UnsubscribePage } from "./auth/UnsubscribePage.jsx";
-import { PricingPage } from "./auth/PricingPage.jsx";
 import { AttackHub } from "./auth/AttackHub.jsx";
 import { SubscriptionsPage } from "./auth/SubscriptionsPage.jsx";
 import { LegalPage } from "./auth/LegalPage.jsx";
@@ -89,6 +89,18 @@ function AppShell() {
   }
 
   // ?pricing — public marketing page. Accessible without auth.
+  // ?subscribe — the subscription page. Public: it reads signed out, and
+  // sign-in is part of its flow (Subscribe → Create an account → back here
+  // with ?activate=subscriber). ?dashboard&subscribe is the same content inside
+  // the dashboard shell and is handled by the dashboard route below.
+  const showSubscribe = (() => {
+    if (typeof window === "undefined") return false;
+    try { const p = new URLSearchParams(window.location.search); return p.has("subscribe") && !p.has("dashboard"); } catch { return false; }
+  })();
+  if (showSubscribe) {
+    return <SubscribePage />;
+  }
+
   const showPricing = (() => {
     if (typeof window === "undefined") return false;
     try {
@@ -96,8 +108,9 @@ function AppShell() {
       return p.has("pricing");
     } catch { return false; }
   })();
+  // ?pricing lands on the subscription page: one place for every plan and product.
   if (showPricing) {
-    return <PricingPage />;
+    return <SubscribePage />;
   }
 
   // ?hub — the Attacked Hub editorial feed. Public marketing surface like

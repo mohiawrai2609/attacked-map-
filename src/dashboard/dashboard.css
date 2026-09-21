@@ -130,6 +130,7 @@
 .dash .incident-grid{padding:0 12px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
 .dash .incident{border:1px solid var(--line);border-radius:12px;padding:0;background:#fff;display:flex;flex-direction:column;min-height:300px;transition:.18s ease;position:relative;min-width:0;overflow:hidden;cursor:pointer}
 .dash .incident-img{position:relative;height:118px;background:var(--obsidian) center/cover no-repeat;flex:none}
+.dash .incident-img .incident-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .dash .incident-img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.55) 100%)}
 .dash .incident-img .img-meta{position:absolute;left:11px;bottom:10px;z-index:1;display:flex;align-items:center;gap:7px}
 .dash .incident-img .img-meta .date{font-family:var(--mono);font-size:9.5px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
@@ -310,6 +311,7 @@
 .dash .email-body .ti span{font-size:8.5px;color:#A8A8A8;display:block;margin-top:3px}
 .dash .email-body .locked{margin-top:8px;font-size:9px;color:#A8A8A8;border-left:2px solid var(--gold);padding-left:8px;line-height:1.4}
 .dash .article-wrap{max-width:1000px;margin:0 auto}
+.dash .article-meta{align-items:center;flex-wrap:wrap}
 .dash .report-wrap{max-width:none;padding-left:0;padding-right:0}
 .dash .report-bar{display:flex;align-items:center;gap:14px;padding:10px 22px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:5;flex-wrap:wrap}
 .dash .report-bar .back{margin:0}
