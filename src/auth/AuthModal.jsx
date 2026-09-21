@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────
 // AuthModal — McKinsey-style "Create an account" flow (LIGHT / white theme).
 //
-//   signup  → full form (email, password, name, job title, function, country,
-//             consent, "I'm not a robot") → Supabase signUp(password).
+//   signup  → email, password, name, job title, industry, consent,
+//             "I'm not a robot" → Supabase signUp(password). Kept to what
+//             the product actually personalises on (industry, role).
 //   code    → "Enter your signup code" → 6-digit email code → verifyOtp.
 //   signin  → returning user: email + password (+ "email me a code" fallback).
 //
@@ -36,15 +37,7 @@ const C = {
 
 // Job titles come from src/lib/taxonomy.js (ROLES) so the dashboard, the
 // alerts page and the profile all show the same strings.
-const FUNCTIONS = [
-  "Security", "Risk & Compliance", "IT / Engineering",
-  "Executive / Leadership", "Finance", "Legal", "Operations", "Other",
-];
-const COUNTRIES = [
-  "India", "United States", "United Kingdom", "United Arab Emirates",
-  "Singapore", "Australia", "Canada", "Germany", "France", "Japan",
-  "Saudi Arabia", "South Africa", "Brazil", "Other",
-];
+
 
 // Field MUST be defined at module scope. If it lives inside AuthModal it is a
 // brand-new component type on every keystroke, so React unmounts/remounts the
@@ -68,10 +61,7 @@ export function AuthModal({ open, onClose }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
-  const [jobFunction, setJobFunction] = useState("");
-  const [country, setCountry] = useState("");
   const [industry, setIndustry] = useState("");
-  const [company, setCompany] = useState("");
   const [consent, setConsent] = useState(false);
   const [robot, setRobot] = useState(false);
   const [code, setCode] = useState("");
@@ -89,9 +79,7 @@ export function AuthModal({ open, onClose }) {
     return {
       full_name: `${firstName.trim()} ${lastName.trim()}`.trim() || null,
       role: jobTitle || null,
-      country: country || null,
       industry: industry || null,
-      company: company.trim() || null,
     };
   }
 
@@ -111,7 +99,7 @@ export function AuthModal({ open, onClose }) {
       const full_name = `${firstName.trim()} ${lastName.trim()}`.trim();
       const res = await signUpWithPassword(cleanEmail, password, {
         first_name: firstName.trim(), last_name: lastName.trim(), full_name,
-        job_title: jobTitle, job_function: jobFunction, country, industry, company: company.trim(), marketing_opt_in: consent,
+        job_title: jobTitle, industry, marketing_opt_in: consent,
       });
       // "Confirm email" switched off in Supabase → signUp returns a live session
       // and no code is ever sent. Save the profile and go straight in.
@@ -259,41 +247,22 @@ export function AuthModal({ open, onClose }) {
 
               {/* Industry decides what the dashboard and the daily brief lead
                   with, so it is required. Grouped by GICS sector, strings
-                  identical to incidents.industry (src/lib/taxonomy.js). */}
-              <div style={{ display: "flex", gap: 12 }}>
-                <Field><div style={{ flex: 1.2 }}>
-                  <label style={label}>Industry <span style={sub}>drives your dashboard</span></label>
-                  <select required value={industry} onChange={(e) => setIndustry(e.target.value)} style={{ ...sel, color: industry ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
-                    <option value="" disabled style={opt}>Select your industry</option>
-                    {SECTORS.map(([sector, list]) => (
-                      <optgroup key={sector} label={sector}>
-                        {list.map(i => <option key={i} value={i} style={opt}>{i}</option>)}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div></Field>
-                <Field><div style={{ flex: 1 }}>
-                  <label style={label}>Organisation</label>
-                  <input type="text" placeholder="Company or organisation" value={company} onChange={(e) => setCompany(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} />
-                </div></Field>
-              </div>
-
-              <div style={{ display: "flex", gap: 12 }}>
-                <Field><div style={{ flex: 1 }}>
-                  <label style={label}>Function</label>
-                  <select required value={jobFunction} onChange={(e) => setJobFunction(e.target.value)} style={{ ...sel, color: jobFunction ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
-                    <option value="" disabled style={opt}>Select your function</option>
-                    {FUNCTIONS.map(f => <option key={f} value={f} style={opt}>{f}</option>)}
-                  </select>
-                </div></Field>
-                <Field><div style={{ flex: 1 }}>
-                  <label style={label}>Country</label>
-                  <select required value={country} onChange={(e) => setCountry(e.target.value)} style={{ ...sel, color: country ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
-                    <option value="" disabled style={opt}>Select country</option>
-                    {COUNTRIES.map(c => <option key={c} value={c} style={opt}>{c}</option>)}
-                  </select>
-                </div></Field>
-              </div>
+                  identical to incidents.industry (src/lib/taxonomy.js).
+                  Function, country and organisation were dropped from sign-up
+                  on 2026-09-21: nothing in the product reads them yet, and
+                  the owner wants the form kept to what personalisation
+                  actually uses. Country/company stay editable on Profile. */}
+              <Field>
+                <label style={label}>Industry <span style={sub}>drives your dashboard and daily brief</span></label>
+                <select required value={industry} onChange={(e) => setIndustry(e.target.value)} style={{ ...sel, color: industry ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
+                  <option value="" disabled style={opt}>Select your industry</option>
+                  {SECTORS.map(([sector, list]) => (
+                    <optgroup key={sector} label={sector}>
+                      {list.map(i => <option key={i} value={i} style={opt}>{i}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </Field>
 
               <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "6px 0 14px", cursor: "pointer" }}>
                 <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 3, accentColor: C.gold }} />
