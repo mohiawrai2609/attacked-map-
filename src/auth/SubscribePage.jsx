@@ -1,13 +1,13 @@
 // SubscribePage — THE subscription page (?subscribe, and ?pricing lands here
 // too). Every "Subscribe" button in the product ends up on this page or on
-// its embedded twin inside the dashboard (page === "subscribe").
+// (the dashboard links here too — it is a full page, not a view inside the shell).
 //
 // Two groups, in the order a reader meets them:
 //   1. Attack Map — Free vs Subscriber. Subscriber is the self-service switch
 //      (set_own_subscription): press it and the tier flips, no application.
 //   2. Organisation intelligence · Premium — the products behind the map, from
 //      the approved free-dashboard design (Impact Assessments, Watchlists,
-//      Pathways & simulation, GUARD assurance). "Industry intelligence first.
+//      Pathways & simulation). "Industry intelligence first.
 //      Organisation intelligence when you need it."
 //   (Sector Reports / Vendor Promotion / Media Licence were dropped from this
 //    page on 2026-09-21 at the owner's request.)
@@ -61,7 +61,6 @@ const PREMIUM = [
   { key: "impact", name: "Impact Assessments", lead: "Organisation-specific impact assessment.", body: "Translate an incident into plausible exposure, stakeholders and materiality for your organisation — not just your sector.", subject: "Impact Assessments — enquiry" },
   { key: "watch", name: "Watchlists", lead: "Blast radius & dependencies for the entities you watch.", body: "Priority sweeps on your suppliers, assets, critical services and connected exposures, with the exposure channel named.", subject: "Watchlists — enquiry" },
   { key: "path", name: "Pathways & simulation", lead: "How an incident could evolve, and how your teams would respond.", body: "Plausible pathways from a sector signal to your organisation, run as a simulation with your stakeholders in the room.", subject: "Pathways & simulation — enquiry" },
-  { key: "guard", name: "GUARD™ control expectations & assurance", lead: "From sector intelligence to control validation.", body: "Control objectives and master controls mapped to your environment, so preparedness is checked rather than assumed.", subject: "GUARD assurance — enquiry" },
 ];
 
 const FONT = "Inter, system-ui, sans-serif";
@@ -100,8 +99,7 @@ function useFonts() {
 const activateParam = () => { try { return new URLSearchParams(window.location.search).get("activate"); } catch { return null; } };
 const stripParam = (k) => { try { const u = new URL(window.location.href); if (u.searchParams.has(k)) { u.searchParams.delete(k); window.history.replaceState(null, "", u.pathname + (u.search || "")); } } catch { /* noop */ } };
 
-// The plans, without page chrome — rendered by SubscribePage and, with
-// embedded=true, inside the dashboard shell.
+// The plans, without page chrome.
 export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
   const { user, tier, subscriber, setSubscribed } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -190,7 +188,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>♛ Organisation intelligence · Premium</div>
           <h2 style={{ ...S.h2, color: "#fff" }}>Industry intelligence first. Organisation intelligence when you need it.</h2>
           <p style={{ ...S.lede, color: "rgba(255,255,255,.72)" }}>Free and Subscriber keep you informed at sector level. Premium adds your organisation: its suppliers, dependencies, materiality and controls — what an incident could mean for you, not just for your industry.</p>
-          <div style={S.grid(250)}>
+          <div style={S.grid(280)}>
             {PREMIUM.map((p) => (
               <article key={p.key} style={{ ...S.card, background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.12)", color: "#fff" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>

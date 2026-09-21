@@ -9,18 +9,17 @@
 // Subscribers (profiles.tier = 'enterprise' | 'admin') see the rows. There is
 // no application step any more — "Subscribe" flips the tier through
 // set_own_subscription() (supabase/migrations/20260921_set_own_subscription.sql)
-// from the Subscription view (page === "subscribe"), the same component as
-// the public /?subscribe page.
+// on the subscription page (/?subscribe) — every Subscribe control in the
+// dashboard opens that full page.
 //
 // ?preview=free|subscriber renders it without an account (industry defaults to
 // Automotive & EV) so QA can click through.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import { SubscriptionPlans } from "../auth/SubscribePage";
 import { CATEGORIES, CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
 import { loadCorpus, loadCounts, loadHub, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
-import { incidentImage, incidentPhoto } from "../lib/images";
+import { incidentPhoto } from "../lib/images";
 import { prepareReportFrame } from "../lib/reportLock";
 import "./dashboard.css";
 
@@ -53,49 +52,42 @@ const ICONS = {
   pin: <><path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12Z" /><circle cx="12" cy="10" r="2.5" /></>,
   book: <><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v18H7.5A3.5 3.5 0 0 0 4 23z" /><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H13v18h3.5A3.5 3.5 0 0 1 20 23z" /></>,
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></>,
+  link: <><path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7" /></>,
 };
 const Icon = ({ name, style }) => <span className="icon" style={style}><svg viewBox="0 0 24 24">{ICONS[name]}</svg></span>;
 
 // ── small pieces ───────────────────────────────────────────────────────────
 const Sev = ({ i, small }) => <span className={`sev s${i.severity}`} style={small ? { padding: "2px 6px" } : undefined}><i />S{i.severity} {i.sevLabel || SEVERITY[i.severity]}</span>;
-const Cat = ({ i }) => <span className="cat"><b>{i.cat}</b> · {i.subcat || i.catName}</span>;
-// The locked counts ARE the upsell: for a free reader the whole strip is the
-// Subscribe trigger, so the card needs no separate gold "Subscribe" bar.
-const Teaser = ({ i, subscriber, onSubscribe }) => i.n && (
-  <div className={`teaser${subscriber ? "" : " locked"}`} onClick={subscriber ? undefined : onSubscribe} role={subscriber ? undefined : "button"} title={subscriber ? undefined : "Subscribe to see who is exposed and what to do"}>
-    <span className="lk">{!subscriber && <Icon name="lock" style={{ width: 10, height: 10, flexBasis: 10 }} />}<b>{i.n.blast}</b> in blast radius</span>
-    <span className="lk"><b>{i.n.controls}</b> GUARD controls</span>
-    {i.n.peers ? <span className="lk"><b>{i.n.peers}</b> peers</span> : null}
-    <span><b>{i.n.sources}</b> sources</span>
-  </div>
-);
-
-// One card, one destination: "Open in Attack Hub" opens the incident in the
-// reading view — the full baked report where one exists, the structured brief
-// otherwise (the tag on the picture says which).
-// The map pin is a secondary, icon-first link to the same incident on the
-// live map (deep-linked by DB id).
+// The card follows the approved free-dashboard design: severity and date on
+// top, headline, a readable three-line summary, topic chips, the sector-level
+// signals, the source line, two labelled actions and, for free readers, the
+// Premium strip that opens the Subscription view. No picture on the card; the
+// incident's real picture leads the article instead. "Open in Attack Hub"
+// opens the full baked report where one exists, the structured brief
+// otherwise (the tag next to the date says which).
 function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
   const report = !!reportRefFor(i.id);
+  const topics = [...new Set([i.entity, i.subcat || i.catName, ...i.secondary.map((s) => s.name)].filter(Boolean))].slice(0, 3);
   return (
     <article className="incident" onClick={() => onOpen(i)}>
-      <div className="incident-img" style={{ backgroundImage: `url(${incidentImage(i)})` }}>
-        {/* The incident's real picture — the same one the live map shows — over a
-            category photo that stands in while it loads or if it fails. */}
-        <img className="incident-photo" src={incidentPhoto(i)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-        <div className="img-meta"><Sev i={i} /><span className="date">{shortDay(i.day)}</span></div>
-        {(report || i.body) && <span className="img-tag">{report ? "Full report" : "Briefing"}</span>}
+      <div className="inc-top"><Sev i={i} /><span className="inc-date">{fmtDay(i.day)}</span>{(report || i.body) && <span className="inc-tag">{report ? "Full report" : "Briefing"}</span>}<span className="inc-chev">›</span></div>
+      <h3>{i.headline}</h3>
+      <p className="inc-sum">{i.summary}</p>
+      <div className="inc-chips">{topics.map((t) => <span key={t} title={t}>{t}</span>)}</div>
+      <div className="inc-sig-label">Sector-level signals</div>
+      <div className="inc-chips">
+        <span className="gold">Criticality: {i.sevLabel}</span>
+        <span className="gold">{i.cat} · {i.catName}</span>
+        {i.country ? <span className="gold">{i.country}</span> : null}
       </div>
-      <div className="incident-body">
-        <Cat i={i} />
-        <h3>{i.headline}</h3><p>{i.summary}</p>
-        <div className="who"><b>{i.entity || "—"}</b>{i.country ? <><span>·</span><span>{i.country}</span></> : null}</div>
-        <Teaser i={i} subscriber={subscriber} onSubscribe={(e) => { e.stopPropagation(); onSubscribe(); }} />
-        <div className="card-actions">
-          <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>Open in Attack Hub →</button>
-          <a className="btn icon-only" href={mapHref(i)} target="_blank" rel="noopener" title="Open on the live map" aria-label="Open on the live map" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 14, height: 14, flexBasis: 14 }} /></a>
-        </div>
+      <div className="inc-src"><Icon name="link" />Attacked.ai intelligence{i.n && i.n.sources ? ` · ${i.n.sources} sources` : ""}</div>
+      <div className="inc-actions">
+        <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>Open in Attack Hub →</button>
+        <a className="btn" href={mapHref(i)} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> View on Map</a>
       </div>
+      {!subscriber && (
+        <button className="inc-premium" onClick={(e) => { e.stopPropagation(); onSubscribe(); }}><span className="lk"><Icon name="lock" /></span><span>What could this mean for us?</span><span className="end">Premium →</span></button>
+      )}
     </article>
   );
 }
@@ -474,6 +466,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
     <div className="content subpage article-wrap">
       <button className="back" onClick={back}>← {backLabel}</button>
       <article className="panel article">
+        <div className="article-hero"><img src={incidentPhoto(i)} alt="" loading="lazy" onError={(e) => { e.currentTarget.parentElement.style.display = "none"; }} /></div>
         <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><a className="btn" style={{ marginLeft: "auto", height: 28, fontSize: 10, padding: "0 10px" }} href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 12, height: 12, flexBasis: 12 }} /> On map</a></div>
         <h1>{i.headline}</h1>
         <p className="dek">{i.summary}</p>
@@ -519,18 +512,8 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
 }
 
 // ── shell ──────────────────────────────────────────────────────────────────
-// The subscription page inside the dashboard shell — same component as
-// /?subscribe, so the two never drift.
-function SubscriptionView({ go, toast }) {
-  return (
-    <div className="content subpage">
-      <div className="subpage-header">
-        <div><h1>Subscription</h1><p>What Free gives you, what Subscriber unlocks on the Attack Map, and the organisation-level products behind it.</p></div>
-      </div>
-      <SubscriptionPlans embedded onSignIn={() => toast("Sign in to subscribe.")} onDashboard={() => go("dashboard")} />
-    </div>
-  );
-}
+// Every Subscribe control in the dashboard opens the full subscription page.
+const openSubscribe = () => { window.location.href = "/?subscribe"; };
 
 export function Dashboard({ initialPage = "dashboard" }) {
   const { user, tier, profile, loading: authLoading, signOut, setSubscribed, saveProfileBasics } = useAuth();
@@ -538,9 +521,7 @@ export function Dashboard({ initialPage = "dashboard" }) {
   const subscriber = isSubscriber(tier);
   const [industry, setIndustry] = useState(() => profile?.industry || (preview ? DEFAULT_INDUSTRY : null));
   useEffect(() => { if (profile?.industry && profile.industry !== industry) setIndustry(profile.industry); }, [profile?.industry]); // eslint-disable-line
-  // ?dashboard&subscribe opens the Subscription view straight away — the
-  // landing page, the map and Create an account send readers here.
-  const [page, setPage] = useState(() => { try { return new URLSearchParams(window.location.search).has("subscribe") ? "subscribe" : initialPage; } catch { return initialPage; } });
+  const [page, setPage] = useState(initialPage);
   const [lastPage, setLastPage] = useState("dashboard");
   const [article, setArticle] = useState(null);
   const [query, setQuery] = useState("");
@@ -623,9 +604,9 @@ export function Dashboard({ initialPage = "dashboard" }) {
           <div className="side-label">Subscriber</div>
           <nav className="nav">
             {[["radar", "Blast Radius"], ["shield", "GUARD Controls"], ["users", "Peer Watchlist"]].map(([ic, lbl]) => (
-              <button key={lbl} className="nav-btn" onClick={() => subscriber ? go("hub") : go("subscribe")}><Icon name={ic} />{lbl}<span className="tag" style={subscriber ? { background: "rgba(52,199,89,.18)", color: "#34C759" } : undefined}>{subscriber ? "ON" : "LOCKED"}</span></button>
+              <button key={lbl} className="nav-btn" onClick={() => subscriber ? go("hub") : openSubscribe()}><Icon name={ic} />{lbl}<span className="tag" style={subscriber ? { background: "rgba(52,199,89,.18)", color: "#34C759" } : undefined}>{subscriber ? "ON" : "LOCKED"}</span></button>
             ))}
-            <button className={`nav-btn ${page === "subscribe" ? "active" : ""}`} onClick={() => go("subscribe")}><Icon name="file" />Subscription</button>
+            <a className="nav-btn" href="/?subscribe"><Icon name="file" />Subscription</a>
           </nav>
           <div className="side-spacer" />
           {!subscriber && (
@@ -633,7 +614,7 @@ export function Dashboard({ initialPage = "dashboard" }) {
               <div className="eyebrow">Subscribe</div>
               <h4>See who is exposed, not just what happened.</h4>
               <p>Named blast radius, adaptive GUARD controls and the peer watchlist on every incident in your industry.</p>
-              <button onClick={() => go("subscribe")}>Subscribe →</button>
+              <button onClick={() => openSubscribe()}>Subscribe →</button>
             </div>
           )}
           <div className="side-footer">Free: every incident in your industry, classified.<br />Subscriber: who it reaches and what to do.</div>
@@ -654,11 +635,10 @@ export function Dashboard({ initialPage = "dashboard" }) {
 
           {err && <div className="content"><div className="panel empty" style={{ color: "#B21F31" }}>Could not load your industry: {err}</div></div>}
           {!P && !err && <div className="content"><div className="panel empty mono">Loading {industry}…</div></div>}
-          {P && page === "dashboard" && <YourIndustry P={P} corpus={corpus} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => go("subscribe")} go={go} />}
+          {P && page === "dashboard" && <YourIndustry P={P} corpus={corpus} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => openSubscribe()} go={go} />}
           {P && page === "hub" && <AttackHub P={P} hub={hub} query={query} onOpen={openArticle} go={go} />}
-          {page === "subscribe" && <SubscriptionView go={go} toast={toast} />}
-          {P && page === "alerts" && <ConfigureAlerts tier={tier} onSubscribe={() => go("subscribe")} P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
-          {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel={lastPage === "hub" ? "Back to the Attack Hub" : "Back to your industry"} onSubscribe={() => go("subscribe")} />}
+          {P && page === "alerts" && <ConfigureAlerts tier={tier} onSubscribe={() => openSubscribe()} P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
+          {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel={lastPage === "hub" ? "Back to the Attack Hub" : "Back to your industry"} onSubscribe={() => openSubscribe()} />}
         </main>
       </div>
 
@@ -667,7 +647,7 @@ export function Dashboard({ initialPage = "dashboard" }) {
           <button onClick={() => go("alerts")}>Alert preferences</button>
           <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?profile">Profile</a>
           {subscriber && user && tier !== "admin" && <button onClick={async () => { try { await setSubscribed(false); toast("Subscription switched off."); } catch (e) { toast(e.message); } setMenu(false); }}>Switch off subscription</button>}
-          {!subscriber && <button onClick={() => { setMenu(false); go("subscribe"); }}>Subscribe</button>}
+          {!subscriber && <button onClick={() => { setMenu(false); openSubscribe(); }}>Subscribe</button>}
           <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?home">Landing page</a>
           <button onClick={() => { setMenu(false); user ? signOut() : (window.location.href = "/?home"); }}>{user ? "Sign out" : "Exit preview"}</button>
         </div>

@@ -89,13 +89,12 @@ function AppShell() {
   }
 
   // ?pricing — public marketing page. Accessible without auth.
-  // ?subscribe — the subscription page. Public: it reads signed out, and
-  // sign-in is part of its flow (Subscribe → Create an account → back here
-  // with ?activate=subscriber). ?dashboard&subscribe is the same content inside
-  // the dashboard shell and is handled by the dashboard route below.
+  // ?subscribe — the subscription page, a full page for everyone. Public: it
+  // reads signed out, and sign-in is part of its flow (Subscribe → Create an
+  // account → back here with ?activate=subscriber).
   const showSubscribe = (() => {
     if (typeof window === "undefined") return false;
-    try { const p = new URLSearchParams(window.location.search); return p.has("subscribe") && !p.has("dashboard"); } catch { return false; }
+    try { return new URLSearchParams(window.location.search).has("subscribe"); } catch { return false; }
   })();
   if (showSubscribe) {
     return <SubscribePage />;
