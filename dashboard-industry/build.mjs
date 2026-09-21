@@ -10,6 +10,9 @@
 //
 //   node dashboard-industry/build.mjs            → dashboard-industry/index.html
 //   node dashboard-industry/build.mjs --industries 8
+//   node dashboard-industry/build.mjs --include "Oil & Gas (Integrated & E&P)|Pharmaceuticals" --cards 40
+//     --include  industries to bake regardless of size ("|"-separated), on top of the top N
+//     --cards    incident cards per industry (default 24)
 //
 // template.html holds the page; the string __DASHBOARD_DATA__ inside it is
 // replaced with the JSON payload, and the logo is inlined so the file stands
@@ -27,6 +30,8 @@ const env = Object.fromEntries(readFileSync(resolve(ROOT, ".env"), "utf8").split
 const URL_ = env.VITE_SUPABASE_URL, KEY = env.VITE_SUPABASE_ANON_KEY;
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 const N_IND = Number(process.argv[process.argv.indexOf("--industries") + 1]) || 6;
+const CARDS = Number(process.argv[process.argv.indexOf("--cards") + 1]) || 24;
+const INCLUDE = process.argv.includes("--include") ? process.argv[process.argv.indexOf("--include") + 1].split("|").map((s) => s.trim()).filter(Boolean) : [];
 
 async function rest(path, extra = {}) {
   const r = await fetch(`${URL_}/rest/v1/${path}`, { headers: { ...H, ...extra } });
@@ -70,7 +75,8 @@ for (const r of light) {
   if (r.country) b.countries.add(r.country);
 }
 const industries = Object.entries(byIndustry).sort((a, b) => b[1].total - a[1].total);
-const chosen = industries.slice(0, N_IND).map(([name]) => name);
+for (const n of INCLUDE) if (!byIndustry[n]) console.warn(`  --include: no incidents for "${n}"`);
+const chosen = [...new Set([...INCLUDE.filter((n) => byIndustry[n]), ...industries.slice(0, N_IND).map(([name]) => name)])];
 console.log(`  ${light.length} incidents · ${days.length} days · latest ${latestDay} · ${industries.length} industries`);
 console.log(`  personas: ${chosen.join(" | ")}`);
 
@@ -92,7 +98,7 @@ const shape = (r) => ({
 const personas = {};
 for (const name of chosen) {
   const enc = encodeURIComponent(name);
-  const rows = await rest(`incidents?select=${COLS}&industry=eq.${enc}&incident_day=not.is.null&latitude=not.is.null&order=incident_day.desc,severity.desc,id.desc&limit=24`);
+  const rows = await rest(`incidents?select=${COLS}&industry=eq.${enc}&incident_day=not.is.null&latitude=not.is.null&order=incident_day.desc,severity.desc,id.desc&limit=${CARDS}`);
   const agg = byIndustry[name];
   personas[name] = {
     name, total: agg.total, today: agg.today, week: agg.week, critical: agg.critical, countries: agg.countries.size,
@@ -114,12 +120,17 @@ for (const name of chosen) {
 // ── 3. latest cross-sector feed + hub edition ──────────────────────────────
 // Not just the latest day: while the sweeper is paused a single day can hold
 // two rows. Take the most recent high-severity incidents across every industry.
-const todayRows = await rest(`incidents?select=${COLS}&latitude=not.is.null&severity=gte.3&order=incident_day.desc,severity.desc,id.desc&limit=14`);
+const todayRows = await rest(`incidents?select=${COLS}&latitude=not.is.null&severity=gte.3&order=incident_day.desc,severity.desc,id.desc&limit=20`);
 // Hub edition: the most recent long-form briefings across ALL industries.
-const hubRows = await rest(`incidents?select=${COLS}&article_body=not.is.null&latitude=not.is.null&order=incident_day.desc,severity.desc&limit=30`);
+const hubRows = await rest(`incidents?select=${COLS}&article_body=not.is.null&latitude=not.is.null&order=incident_day.desc,severity.desc&limit=60`);
+
+// Incidents with a baked full report (public/reports/manifest.json v2) — the
+// prototype labels them; the report itself opens in the app.
+let reportIds = [];
+try { const m = JSON.parse(readFileSync(resolve(ROOT, "public/reports/manifest.json"), "utf8")); reportIds = Object.keys(m.byIncident || {}).map(Number); } catch { /* no manifest — no labels */ }
 
 const data = {
-  builtAt: new Date().toISOString(),
+  builtAt: new Date().toISOString(), reportIds,
   latestDay, days: days.length,
   totals: { incidents: light.length, countries: new Set(light.map((r) => r.country).filter(Boolean)).size, industries: industries.length, briefings: 0 },
   categories: Object.entries(CATEGORY).map(([code, name]) => ({ code, name })),
