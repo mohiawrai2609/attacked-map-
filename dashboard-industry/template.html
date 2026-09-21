@@ -458,11 +458,9 @@
         <span class="shortcut">⌘ K</span>
       </div>
       <div class="top-spacer"></div>
-      <div class="persona"><span>Preview as</span><select id="personaSelect" aria-label="Switch industry persona"></select></div>
-      <button class="circle-btn" title="Notifications"><span class="icon" data-icon="bell"></span><i class="dot"></i></button>
       <div class="profile" id="profileBtn">
-        <div class="avatar">JD</div>
-        <div class="profile-copy"><strong>James Davis</strong><span><span id="profileTier">FREE</span> · <span id="profileIndustry"></span></span></div>
+        <div class="avatar" id="avatar"></div>
+        <div class="profile-copy"><strong id="profileName"></strong><span><span id="profileTier">FREE</span> · <span id="profileIndustry"></span></span></div>
         <svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg>
       </div>
     </header>
@@ -473,7 +471,7 @@
         <section class="masthead">
           <div class="mast-copy">
             <div class="mast-eyebrow"><span class="live"></span>Your industry · <span id="mastEyebrowTier">free</span> intelligence · <span id="mastDate" class="mono"></span></div>
-            <h1><span id="greeting">Good morning</span>, James<strong id="mastIndustry"></strong></h1>
+            <h1><span id="greeting">Good morning</span>, <span id="mastName"></span><strong id="mastIndustry"></strong></h1>
             <p id="mastCopy"></p>
             <div class="mast-actions">
               <a class="btn btn-dark" id="mastMapLink" href="https://attackedmap.vercel.app/?map" target="_blank" rel="noopener">Open on the Attack Map →</a>
@@ -694,7 +692,11 @@ function hydrateIcons(root=document){root.querySelectorAll('[data-icon]').forEac
    SUB is the demo subscriber switch: the Subscription page flips it and the
    whole dashboard re-renders (tags, premium strips, locked panel), the way
    set_own_subscription() does in the product. */
-let P = D.personas['Automotive & EV'] || D.personas[Object.keys(D.personas)[0]];
+// The signed-in reader this file shows. Edit here.
+const READER = { name: 'babita asutakar', industry: 'Oil & Gas (Integrated & E&P)' };
+const firstName = READER.name.split(' ')[0].replace(/^./, (c) => c.toUpperCase());
+const initials = READER.name.trim().split(' ').filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('');
+let P = D.personas[READER.industry] || D.personas['Automotive & EV'] || D.personas[Object.keys(D.personas)[0]];
 let filter = 'all', query = '', lastPage = 'dashboard', SUB = false;
 const REPORT = new Set(D.reportIds || []);                       // incidents with a baked full report
 const ALL = () => { const seen = new Set(), out = []; for (const arr of [...Object.values(D.personas).flatMap(p => [p.incidents, p.briefs || []]), D.today, D.hub]) for (const i of arr) if (!seen.has(i.id)) { seen.add(i.id); out.push(i); } return out; };
@@ -743,7 +745,9 @@ const card = (i) => {
 function renderPersona() {
   const name = P.name;
   document.getElementById('profileIndustry').textContent = name;
-  document.getElementById('personaSelect').value = name;
+  document.getElementById('profileName').textContent = READER.name;
+  document.getElementById('avatar').textContent = initials;
+  document.getElementById('mastName').textContent = firstName;
   document.getElementById('mastIndustry').textContent = name;
   document.getElementById('artIndustry').textContent = name;
   document.getElementById('artTotal').textContent = P.total;
@@ -862,7 +866,7 @@ function renderAlerts() {
     <div class="plan-actions">${SUB ? `<button class="secondary" data-unsubscribe>Switch off</button>` : `<button class="primary" data-page-link="subscribe">Subscribe →</button>`}</div>`;
   const lead = [...P.incidents].sort((a, b) => b.severity - a.severity).slice(0, 3);
   document.getElementById('previewDate').textContent = fmtDay(D.latestDay);
-  document.getElementById('previewBody').innerHTML = `<p class="greet">Hey James, <b>${P.today || P.week} incidents</b> hit ${esc(P.name)} ${P.today ? 'in the latest sweep' : 'this week'}. Here is what moved.</p>` + lead.map(i => `<div class="email-item">${sevBadge(i)}<div><b>${esc(i.headline)}</b><span>${esc(i.entity || '')} · ${esc(i.catName)}</span></div></div>`).join('') + `<p class="foot">${SUB ? 'Your brief carries the full operational layer: blast radius, controls, peers.' : 'Free brief: what happened. Subscribe for who it reaches and what to do.'}</p>`;
+  document.getElementById('previewBody').innerHTML = `<p class="greet">Hey ${esc(firstName)}, <b>${P.today || P.week} incidents</b> hit ${esc(P.name)} ${P.today ? 'in the latest sweep' : 'this week'}. Here is what moved.</p>` + lead.map(i => `<div class="email-item">${sevBadge(i)}<div><b>${esc(i.headline)}</b><span>${esc(i.entity || '')} · ${esc(i.catName)}</span></div></div>`).join('') + `<p class="foot">${SUB ? 'Your brief carries the full operational layer: blast radius, controls, peers.' : 'Free brief: what happened. Subscribe for who it reaches and what to do.'}</p>`;
   bind();
 }
 
@@ -978,9 +982,7 @@ document.querySelectorAll('.nav-btn[data-page]').forEach(b => b.onclick = () => 
 document.getElementById('articleBack').onclick = () => showPage(lastPage);
 document.getElementById('globalSearch').addEventListener('input', (e) => { query = e.target.value; renderIncidents(); renderHub(); });
 document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('globalSearch').focus(); } });
-document.getElementById('personaSelect').innerHTML = Object.values(D.personas).map(p => `<option value="${esc(p.name)}">${esc(p.name)} · ${p.total}</option>`).join('');
-document.getElementById('personaSelect').onchange = (e) => { P = D.personas[e.target.value]; query = ''; document.getElementById('globalSearch').value = ''; renderPersona(); toast(`Previewing as a ${P.name} reader`); };
-document.getElementById('industrySelect').onchange = (e) => { if (D.personas[e.target.value]) { P = D.personas[e.target.value]; document.getElementById('personaSelect').value = P.name; renderPersona(); } else toast(`${e.target.value}: data for this industry is not baked into the preview`); };
+document.getElementById('industrySelect').onchange = (e) => { if (D.personas[e.target.value]) { P = D.personas[e.target.value]; renderPersona(); toast(`Dashboard now leads with ${P.name}`); } else toast(`${e.target.value}: data for this industry is not baked into this file`); };
 document.addEventListener('click', (e) => { const c = e.target.closest('.choice'); if (!c) return; const inp = c.querySelector('input'); if (inp.type === 'radio') { c.parentElement.querySelectorAll('.choice').forEach(x => x.classList.remove('selected')); c.classList.add('selected'); } else { c.classList.toggle('selected', inp.checked); } });
 document.getElementById('digestSwitch').onclick = (e) => e.currentTarget.classList.toggle('on');
 document.getElementById('saveAlerts').onclick = () => toast('Preferences saved to your profile');
