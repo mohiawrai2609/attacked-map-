@@ -19,7 +19,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "../auth/AuthProvider";
 import { CATEGORIES, CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
 import { loadCorpus, loadCounts, loadHub, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
-import { incidentPhoto } from "../lib/images";
+import { incidentImage, incidentPhoto } from "../lib/images";
 import { prepareReportFrame } from "../lib/reportLock";
 import "./dashboard.css";
 
@@ -61,8 +61,8 @@ const Sev = ({ i, small }) => <span className={`sev s${i.severity}`} style={smal
 // The card follows the approved free-dashboard design: severity and date on
 // top, headline, a readable three-line summary, topic chips, the sector-level
 // signals, the source line, two labelled actions and, for free readers, the
-// Premium strip that opens the Subscription view. No picture on the card; the
-// incident's real picture leads the article instead. "Open in Attack Hub"
+// Premium strip that opens the subscription page. The incident's real picture
+// (the same one the live map shows) sits on top. "Open in Attack Hub"
 // opens the full baked report where one exists, the structured brief
 // otherwise (the tag next to the date says which).
 function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
@@ -70,7 +70,12 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
   const topics = [...new Set([i.entity, i.subcat || i.catName, ...i.secondary.map((s) => s.name)].filter(Boolean))].slice(0, 3);
   return (
     <article className="incident" onClick={() => onOpen(i)}>
-      <div className="inc-top"><Sev i={i} /><span className="inc-date">{fmtDay(i.day)}</span>{(report || i.body) && <span className="inc-tag">{report ? "Full report" : "Briefing"}</span>}<span className="inc-chev">›</span></div>
+      <div className="inc-img" style={{ backgroundImage: `url(${incidentImage(i)})` }}>
+        <img className="incident-photo" src={incidentPhoto(i)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        {(report || i.body) && <span className="inc-tag on-img">{report ? "Full report" : "Briefing"}</span>}
+      </div>
+      <div className="inc-body">
+      <div className="inc-top"><Sev i={i} /><span className="inc-date">{fmtDay(i.day)}</span><span className="inc-chev">›</span></div>
       <h3>{i.headline}</h3>
       <p className="inc-sum">{i.summary}</p>
       <div className="inc-chips">{topics.map((t) => <span key={t} title={t}>{t}</span>)}</div>
@@ -88,6 +93,7 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
       {!subscriber && (
         <button className="inc-premium" onClick={(e) => { e.stopPropagation(); onSubscribe(); }}><span className="lk"><Icon name="lock" /></span><span>What could this mean for us?</span><span className="end">Premium →</span></button>
       )}
+      </div>
     </article>
   );
 }
@@ -466,7 +472,6 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
     <div className="content subpage article-wrap">
       <button className="back" onClick={back}>← {backLabel}</button>
       <article className="panel article">
-        <div className="article-hero"><img src={incidentPhoto(i)} alt="" loading="lazy" onError={(e) => { e.currentTarget.parentElement.style.display = "none"; }} /></div>
         <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><a className="btn" style={{ marginLeft: "auto", height: 28, fontSize: 10, padding: "0 10px" }} href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 12, height: 12, flexBasis: 12 }} /> On map</a></div>
         <h1>{i.headline}</h1>
         <p className="dek">{i.summary}</p>
