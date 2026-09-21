@@ -221,22 +221,30 @@ function AttackHub({ P, query, onOpen, go }) {
   const toggle = (set, setter, v) => { const n = new Set(set); n.has(v) ? n.delete(v) : n.add(v); setter(n); };
   const q = query.trim().toLowerCase();
   const ok = (i) => sev.has(i.severity) && cats.has(i.cat) && (!q || `${i.headline} ${i.summary} ${i.entity}`.toLowerCase().includes(q));
+  // "For your industry" is EVERY incident in the industry, not only the ones
+  // with a long-form essay. Only 310 of ~2,300 incidents carry an essay and
+  // they cluster in a few industries, so requiring one left most readers with
+  // an empty Hub while their industry page was full. Essays lead and carry a
+  // "Full briefing" mark; the rest open as the summary + classification.
   const seen = new Set();
-  const mine = [...P.briefs, ...P.incidents.filter((i) => i.body)].filter((i) => !seen.has(i.id) && seen.add(i.id) && ok(i));
+  const dedupe = (arr) => arr.filter((i) => !seen.has(i.id) && seen.add(i.id));
+  const mine = dedupe([...P.briefs, ...P.incidents]).filter(ok)
+    .sort((a, b) => (b.body ? 1 : 0) - (a.body ? 1 : 0) || (b.day > a.day ? 1 : b.day < a.day ? -1 : 0) || b.severity - a.severity);
   const others = P.hub.filter((i) => i.industry !== P.industry && ok(i));
   const lead = (scope === "mine" ? mine : [...mine, ...others].sort((a, b) => (b.day > a.day ? 1 : b.day < a.day ? -1 : b.severity - a.severity)))[0];
+  const activeFilters = `${sev.size} of 5 severities, ${cats.size} of 13 categories${q ? `, matching “${q}”` : ""}`;
   const Row = ({ i }) => (
     <article className="panel hub-item" onClick={() => onOpen(i)}>
-      <div><Sev i={i} /><div className="hub-date">{shortDay(i.day)}</div></div>
-      <div><h3>{i.headline}</h3><p>{i.summary}</p><div className="h-meta"><span>{i.cat} · {i.subcat || i.catName}</span><span>{i.entity || ""}</span><span>{i.industry || ""}</span></div></div>
-      <button className="btn btn-dark">Read →</button>
+      <div><Sev i={i} /><div className="hub-date">{shortDay(i.day)}</div>{i.body ? <div className="hub-full">Full briefing</div> : null}</div>
+      <div><h3>{i.headline}</h3><p>{i.summary}</p><div className="h-meta"><span>{i.cat} · {i.subcat || i.catName}</span>{i.entity ? <span title={i.entity}>{i.entity}</span> : null}{i.industry && i.industry !== P.industry ? <span>{i.industry}</span> : null}</div></div>
+      <button className="btn btn-dark">{i.body ? "Read" : "Open"} →</button>
     </article>
   );
   const mineRest = mine.filter((i) => i !== lead);
   return (
     <div className="content subpage">
       <div className="subpage-header">
-        <div><h1>Attack Hub</h1><p>The reading room. Long-form analyst briefings on the incidents that matter, led by your industry, then the rest of the world.</p></div>
+        <div><h1>Attack Hub</h1><p>The reading room. Every incident in your industry as a reading list, full analyst briefings first, then the rest of the world.</p></div>
         <button className="primary" onClick={() => go("alerts")}>Tune my alerts</button>
       </div>
       <div className="hub-layout">
@@ -257,11 +265,11 @@ function AttackHub({ P, query, onOpen, go }) {
           <div className="edition-head"><h2>Today's edition</h2><span className="mono">{fmtDay(P.latestDay)}</span></div>
           {lead ? (
             <article className="panel lead" onClick={() => onOpen(lead)}>
-              <div className="lead-copy"><div className="kicker"><Sev i={lead} /><span>{lead.catName}</span><span>·</span><span>{lead.industry || ""}</span></div><h3>{lead.headline}</h3><p>{lead.body || lead.summary}</p><button className="btn btn-dark">Read the full briefing →</button></div>
+              <div className="lead-copy"><div className="kicker"><Sev i={lead} /><span>{lead.catName}</span><span>·</span><span>{lead.industry || ""}</span></div><h3>{lead.headline}</h3><p>{lead.body || lead.summary}</p><button className="btn btn-dark">{lead.body ? "Read the full briefing" : "Open the incident"} →</button></div>
               <div className="lead-side"><div className="fact"><span>Entity</span><b>{lead.entity || "—"}</b></div><div className="fact"><span>Where</span><b>{lead.place || lead.country || "—"}</b></div>{lead.n ? <><div className="fact"><span>Blast radius</span><b className="gold">{lead.n.blast} named entities</b></div><div className="fact"><span>GUARD controls</span><b className="gold">{lead.n.controls} mapped</b></div><div className="fact"><span>Sources</span><b>{lead.n.sources}</b></div></> : <div className="fact"><span>Category</span><b>{lead.cat} · {lead.subcat || lead.catName}</b></div>}</div>
             </article>
-          ) : <div className="panel empty">No briefing matches these filters.</div>}
-          <div className="hub-section"><h4>For {P.industry}</h4><div className="hub-list">{mineRest.length ? mineRest.map((i) => <Row key={i.id} i={i} />) : <div className="empty">{mine.length ? "That is the only briefing in your industry matching these filters." : "No long-form briefings in your industry match. Widen the filters."}</div>}</div></div>
+          ) : <div className="panel empty">Nothing matches the current filters ({activeFilters}). Tick more severities or categories on the left.</div>}
+          <div className="hub-section"><h4>For {P.industry} <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: 0, textTransform: "none" }}>{mine.length} of {P.total} · {P.briefings} with a full briefing</span></h4><div className="hub-list">{mineRest.length ? mineRest.map((i) => <Row key={i.id} i={i} />) : <div className="empty">{mine.length ? "That is the only incident in your industry matching these filters." : `No ${P.industry} incidents match the current filters (${activeFilters}).`}</div>}</div></div>
           <div className="hub-section"><h4>Across all sectors</h4><div className="hub-list">{(scope === "mine" ? others.slice(0, 6) : others.filter((i) => i !== lead)).map((i) => <Row key={i.id} i={i} />)}</div></div>
         </section>
       </div>
@@ -471,10 +479,12 @@ export function Dashboard({ initialPage = "dashboard" }) {
     <div className="dash">
       <div className="app">
         <aside className={`sidebar ${sideOpen ? "open" : ""}`}>
-          <div className="brand">
+          {/* Logo returns to the public landing page; the landing nav has a
+              "My dashboard" button back here, so the two are one click apart. */}
+          <a className="brand" href="/?home" title="Attacked.ai home" style={{ textDecoration: "none" }}>
             <img src="/attacked-ai-logo.svg" alt="" />
             <div><div className="brand-name">Attacked<i>.ai</i><sup style={{ fontSize: 8, marginLeft: 1 }}>™</sup></div><div className="brand-tag">Global risk intelligence</div></div>
-          </div>
+          </a>
           <div className="side-label">Intelligence</div>
           <nav className="nav">
             <button className={`nav-btn ${page === "dashboard" || (page === "article" && lastPage === "dashboard") ? "active" : ""}`} onClick={() => go("dashboard")}><Icon name="home" />Your Industry</button>

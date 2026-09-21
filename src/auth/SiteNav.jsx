@@ -76,6 +76,15 @@ export function SiteNav({ active }) {
           ) : (
             <a href="/?pricing" style={linkColor("pricing")}>Pricing</a>
           )}
+          {user && (
+            // The signed-in home. The landing page stays reachable (logo, ?home)
+            // but the dashboard is one click from anywhere on the public site.
+            <a href="/?dashboard" style={{
+              marginLeft: 6, padding: "8px 14px", background: BRAND.gold, color: BRAND.obsidian,
+              textDecoration: "none", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap",
+            }}>My dashboard</a>
+          )}
           {user ? (
             // Signed in — McKinsey-style account dropdown (avatar → menu).
             <div style={{ position: "relative", marginLeft: 8 }}>
@@ -122,8 +131,9 @@ export function SiteNav({ active }) {
                       <div style={{ fontSize: 9.5, color: "#8A6D00", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "Inter, sans-serif" }}>Signed in</div>
                       <div style={{ fontSize: 12.5, color: "#101010", fontWeight: 600, marginTop: 4, fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
                     </div>
+                    <a href="/?dashboard" style={{ fontWeight: 700 }}>My dashboard</a>
                     <a href="/?profile">Profile</a>
-                    <a href="/?subscriptions">Manage subscription</a>
+                    <a href="/?subscriptions">Configure alerts</a>
                     <button onClick={() => { setMenuOpen(false); enterMap(); }}>Open the live map</button>
                     <a href="/?hub">The Attacked Hub</a>
                     {tier === "admin" && (

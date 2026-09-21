@@ -225,7 +225,7 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.rpc("set_own_subscription", { p_on: !!on });
     if (error) {
       if (/set_own_subscription|not find the function|42883/i.test(error.message)) {
-        throw new Error("Subscribe is not wired up yet: apply supabase/migrations/20260921_set_own_subscription.sql.");
+        throw new Error("Subscribe is not switched on in the database yet. Owner: run supabase/migrations/20260921_set_own_subscription.sql once in the Supabase SQL editor.");
       }
       throw error;
     }
