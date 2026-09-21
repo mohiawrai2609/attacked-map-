@@ -111,6 +111,20 @@ select:focus{outline:none;border-color:var(--border-gold)}
 .sec-why .sec-code{font-family:'JetBrains Mono';font-size:9px;color:var(--text-muted);margin-left:6px;letter-spacing:.05em}
 .sec-why p{font-size:12.5px;color:var(--text-secondary);line-height:1.55;margin-top:5px}
 
+/* classification tags — category, subcategory, secondary categories, each labelled */
+.tax{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 14px;align-items:baseline;
+  margin:10px 0 4px;padding:9px 0 9px 12px;border-left:2px solid var(--border-gold)}
+.tax-lbl{font-family:'JetBrains Mono';font-size:9.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.tax-val{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.tax-code{font-family:'JetBrains Mono';font-size:9.5px;color:var(--text-muted);letter-spacing:.05em}
+.tax .secmap{display:block;margin-top:0}
+.tax .secmap-chips{margin-top:0}
+.tax .secmap-toggle{margin-top:3px}
+.secmap .lbl-open{display:none}
+.secmap[data-open="1"] .lbl-open{display:inline}
+.secmap[data-open="1"] .lbl-closed{display:none}
+@media(max-width:600px){.tax{grid-template-columns:minmax(0,1fr);gap:3px}.tax-lbl{margin-top:7px}.tax-lbl:first-child{margin-top:0}}
+
 /* updates to earlier incidents */
 .dev-chip{font-family:'JetBrains Mono';font-size:10px;font-weight:500;color:var(--obsidian);background:var(--gold);
   border-radius:var(--radius-sm);padding:3px 8px;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0}
@@ -199,11 +213,24 @@ function secMap(list){
           ${s.why?`<p>${esc(s.why)}</p>`:""}
         </div>`).join("");
   return `
-      <div class="secmap" data-open="0">
-        <button class="secmap-toggle" type="button"><span class="secmap-caret">▸</span> Also mapped to <b>${list.length}</b> ${list.length===1?"category":"categories"}</button>
-        <div class="secmap-chips">${shown}${rest>0?`<span class="sec-more">+${rest} more</span>`:""}</div>
-        <div class="secmap-detail">${detail}</div>
-      </div>`;
+        <div class="tax-val secmap" data-open="0">
+          <div class="secmap-chips">${shown}${rest>0?`<span class="sec-more">+${rest} more</span>`:""}</div>
+          <button class="secmap-toggle" type="button"><span class="secmap-caret">▸</span> <span class="lbl-closed">${rest>0?`Show all ${list.length} with reasons`:"Show reasons"}</span><span class="lbl-open">Hide reasons</span></button>
+          <div class="secmap-detail">${detail}</div>
+        </div>`;
+}
+
+// Classification tags for one incident: primary category → its subcategory → the secondary categories it also
+// maps to. Each is labelled — an unlabelled chip gives the reader no way to tell a subcategory from a secondary mapping.
+function taxBlock(m){
+  const sec = Array.isArray(m.secondary) ? m.secondary : [];
+  const rows = [
+    m.category ? `<span class="tax-lbl">Category</span><div class="tax-val"><span class="cat-chip">${esc(m.category)}</span></div>` : "",
+    m.subcategory ? `<span class="tax-lbl">Subcategory</span><div class="tax-val"><span class="subcat-chip">${esc(m.subcategory)}</span>${m.subcategory_code?`<span class="tax-code">${esc(m.subcategory_code)}</span>`:""}</div>` : "",
+    sec.length ? `<span class="tax-lbl">Secondary categories</span>${secMap(sec)}` : "",
+  ].filter(Boolean);
+  return rows.length ? `
+      <div class="tax">${rows.join("")}</div>` : "";
 }
 
 const DEV_LABEL = {root_cause:"Root cause",leadership_change:"Leadership change",regulatory_action:"Regulator action",
@@ -295,12 +322,10 @@ function render(data){
       <div class="top">
         <span class="badge ${t[1]}">${t[0]} · S${m.severity}</span>
         <span class="hl">${m.headline}</span>
-        <span class="cat-chip">${m.category}</span>
-        ${m.subcategory?`<span class="subcat-chip">${esc(m.subcategory)}</span>`:''}
       </div>
       <div class="meta">${CC[m.country]||''} <span>${m.entity||''}</span>${m.sector?` · ${m.sector}`:''}${m.threat_actor?` · ⚔ ${m.threat_actor}`:''}${m.confidence?` · ${m.confidence} conf.`:''}</div>
+      ${taxBlock(m)}
       ${m.summary?`<div class="summary">${summaryHtml(m.summary)}</div>`:''}
-      ${secMap(m.secondary)}
     </div>`;}).join("");
 
   document.getElementById("app").innerHTML = `

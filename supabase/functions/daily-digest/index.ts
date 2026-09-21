@@ -295,8 +295,11 @@ function incidentCard(i: any, isPartner: boolean): string {
   const detail = isPartner
     ? (i.entity ? `<div style="font-family:${INTER};font-size:11px;color:${GOLD};letter-spacing:0.06em;margin-bottom:10px;font-weight:700;text-transform:uppercase;">${escape(i.entity)}</div>` : "") +
       `<p style="font-family:${INTER};font-size:13px;color:#D2D2D2;line-height:1.6;margin:0 0 12px;">${escape((i.summary || "").slice(0, 360))}${(i.summary && i.summary.length > 360) ? "…" : ""}</p>` +
-      (i.if_you_operate_x_then_y
-        ? `<div style="padding:11px 13px;background:rgba(245,184,0,0.07);border-left:3px solid ${GOLD};border-radius:0 4px 4px 0;font-family:${INTER};font-size:12px;color:#FFF;line-height:1.55;margin-bottom:14px;"><b style="color:${GOLD};">What to do →</b> ${escape(i.if_you_operate_x_then_y)}</div>`
+      // Partner-only callout. Was the "if you operate X then Y" advisory until
+      // that column was dropped; `severity_rationale` is what survives, so the
+      // label says what the text actually is rather than promising an action.
+      (i.severity_rationale
+        ? `<div style="padding:11px 13px;background:rgba(245,184,0,0.07);border-left:3px solid ${GOLD};border-radius:0 4px 4px 0;font-family:${INTER};font-size:12px;color:#FFF;line-height:1.55;margin-bottom:14px;"><b style="color:${GOLD};">Why it matters →</b> ${escape(i.severity_rationale)}</div>`
         : "")
     : `<p style="font-family:${INTER};font-size:13px;color:${MUTED};line-height:1.6;margin:0 0 14px;">${place || "Live incident"}. Named blast radius, recommended actions and vendor Defence Ratings are <b style="color:#FFF;">partner-only</b>.</p>`;
 
@@ -524,7 +527,12 @@ Deno.serve(async (req) => {
   // Daily readers use the targetDay slice. industry/primary_category drive the
   // personalised partition; incident_day drives the daily/weekly split.
   const weekIncidents: any[] = await pgFetch(
-    `incidents?select=id,headline,summary,entity,sector,industry,country,severity,primary_category,if_you_operate_x_then_y,incident_day` +
+    // `if_you_operate_x_then_y` was dropped from incidents in the 2026-07-28
+    // restructure. PostgREST rejects the WHOLE select on one unknown column, so
+    // asking for it 400'd this query and crashed every run of this function with
+    // a 500 — silently, because the only caller is a trigger. `severity_rationale`
+    // is the surviving analytical field and now feeds the partner callout.
+    `incidents?select=id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day` +
     `&incident_day=gte.${weekStart}&incident_day=lte.${targetDay}` +
     `&latitude=not.is.null&longitude=not.is.null&order=incident_day.asc,severity.desc.nullslast,id.desc&limit=800`,
   );
