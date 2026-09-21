@@ -2,14 +2,15 @@
 // too). Every "Subscribe" button in the product ends up on this page or on
 // its embedded twin inside the dashboard (page === "subscribe").
 //
-// Three groups, in the order a reader meets them:
+// Two groups, in the order a reader meets them:
 //   1. Attack Map — Free vs Subscriber. Subscriber is the self-service switch
 //      (set_own_subscription): press it and the tier flips, no application.
 //   2. Organisation intelligence · Premium — the products behind the map, from
 //      the approved free-dashboard design (Impact Assessments, Watchlists,
 //      Pathways & simulation, GUARD assurance). "Industry intelligence first.
 //      Organisation intelligence when you need it."
-//   3. Reports, vendors & media — the standalone revenue lines.
+//   (Sector Reports / Vendor Promotion / Media Licence were dropped from this
+//    page on 2026-09-21 at the owner's request.)
 //
 // Sign-in is part of the flow, not a wall in front of it: the page reads
 // without an account; pressing Subscribe while signed out opens Create an
@@ -23,7 +24,6 @@ import { useAuth } from "./AuthProvider";
 import { AuthModal } from "./AuthModal";
 import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
-import { VendorApplicationModal } from "./VendorApplicationModal";
 import { BRAND } from "../brand.js";
 
 const CONTACT_EMAIL = "hello@attacked.ai";
@@ -64,12 +64,6 @@ const PREMIUM = [
   { key: "guard", name: "GUARD™ control expectations & assurance", lead: "From sector intelligence to control validation.", body: "Control objectives and master controls mapped to your environment, so preparedness is checked rather than assumed.", subject: "GUARD assurance — enquiry" },
 ];
 
-const ARTEFACTS = [
-  { key: "reports", name: "Sector Reports", price: "₹9,999", period: "per report", note: "Quarterly · annual subscription available", features: ["Sector-specific quarterly deep dive", "Full findings, control mappings, vendor breakdowns", "Boilerplate detection and absence signals", "Citable PDF plus interactive companion"], cta: { label: "Browse upcoming reports →", subject: "Sector reports — interest" } },
-  { key: "vendor", name: "Vendor Promotion", price: "₹4,999", period: "per month", note: "Featured listing · multi-tier available", features: ["Profile page, open access — drives leads", "Featured in incident vendor sections", "Capability tags and control coverage", "Verified badge after submission review"], cta: { label: "List your company →", kind: "vendor" } },
-  { key: "media", name: "Media Licence", price: "Custom", period: "per slice", note: "Names by agreement", features: ["On-demand causal analysis of a specific incident", "Transmission mechanism and chain breakdown", "Publishable findings — a defined slice", "Named entities by mutual agreement"], cta: { label: "Discuss a licence →", subject: "Media licence enquiry" } },
-];
-
 const FONT = "Inter, system-ui, sans-serif";
 const MONO = "'JetBrains Mono', ui-monospace, monospace";
 const SERIF = "'Cormorant Garamond', Georgia, serif";
@@ -108,7 +102,7 @@ const stripParam = (k) => { try { const u = new URL(window.location.href); if (u
 
 // The plans, without page chrome — rendered by SubscribePage and, with
 // embedded=true, inside the dashboard shell.
-export function SubscriptionPlans({ embedded = false, onSignIn, onVendor, onDashboard }) {
+export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
   const { user, tier, subscriber, setSubscribed } = useAuth();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -190,7 +184,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onVendor, onDash
       </section>
 
       {/* 2 · Organisation intelligence */}
-      <section style={{ ...S.section, paddingTop: 10 }}>
+      <section style={{ ...S.section, paddingTop: 10, paddingBottom: embedded ? 20 : 56 }}>
         <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 16, padding: "28px 26px 26px", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 85% 20%, rgba(245,184,0,.16), transparent 30%)", pointerEvents: "none" }} />
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>♛ Organisation intelligence · Premium</div>
@@ -213,26 +207,6 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onVendor, onDash
         </div>
       </section>
 
-      {/* 3 · Reports, vendors & media */}
-      <section style={{ ...S.section, paddingTop: 10, paddingBottom: embedded ? 20 : 56 }}>
-        <div style={S.eyebrow}>Reports · vendors · media</div>
-        <h2 style={S.h2}>The standalone lines.</h2>
-        <p style={S.lede}>Bought on their own, by anyone, with or without a map subscription.</p>
-        <div style={S.grid(280)}>
-          {ARTEFACTS.map((a) => (
-            <article key={a.key} style={S.card}>
-              <h3 style={S.name}>{a.name}</h3>
-              <div style={S.price}>{a.price}<span style={S.period}>{a.period}</span></div>
-              <div style={S.note}>{a.note}</div>
-              <ul style={S.list}>{a.features.map((f) => <li key={f} style={S.li}><span style={S.tick}>✓</span><span>{f}</span></li>)}</ul>
-              {a.cta.kind === "vendor"
-                ? <button style={S.primary} onClick={() => onVendor?.()}>{a.cta.label}</button>
-                : <a style={S.secondary} href={mailto(a.cta.subject)}>{a.cta.label}</a>}
-            </article>
-          ))}
-        </div>
-        <p style={{ marginTop: 22, fontSize: 12, color: BRAND.muted }}>Questions? <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: BRAND.goldDeep, fontWeight: 600 }}>{CONTACT_EMAIL}</a></p>
-      </section>
     </div>
   );
 }
@@ -242,7 +216,6 @@ export function SubscribePage() {
   const { user, subscriber } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authIntent, setAuthIntent] = useState("subscribe");
-  const [vendorOpen, setVendorOpen] = useState(false);
   return (
     <div style={{ background: BRAND.paper, minHeight: "100vh", color: BRAND.ink }}>
       <SiteNav active="subscribe" />
@@ -254,10 +227,9 @@ export function SubscribePage() {
           {user && <div style={{ marginTop: 18, fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,.6)" }}>Signed in as {user.email} · {subscriber ? "Subscriber" : "Free"}</div>}
         </div>
       </header>
-      <SubscriptionPlans onSignIn={(kind) => { setAuthIntent(kind === "free" ? null : "subscribe"); setAuthOpen(true); }} onVendor={() => setVendorOpen(true)} />
+      <SubscriptionPlans onSignIn={(kind) => { setAuthIntent(kind === "free" ? null : "subscribe"); setAuthOpen(true); }} />
       <SiteFooter />
       <AuthModal open={authOpen} intent={authIntent} onClose={() => setAuthOpen(false)} />
-      <VendorApplicationModal open={vendorOpen} onClose={() => setVendorOpen(false)} defaultEmail={user?.email || ""} />
     </div>
   );
 }

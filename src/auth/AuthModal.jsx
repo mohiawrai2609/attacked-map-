@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 // AuthModal — McKinsey-style "Create an account" flow (LIGHT / white theme).
 //
-//   signup  → email, password, name, job title, industry, consent,
+//   signup  → email, password, name, job title, company, industry, consent,
 //             "I'm not a robot" → Supabase signUp(password). Kept to what
 //             the product actually personalises on (industry, role).
 //   code    → "Enter your signup code" → 6-digit email code → verifyOtp.
@@ -64,6 +64,7 @@ export function AuthModal({ open, onClose, intent = null }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [consent, setConsent] = useState(false);
   const [robot, setRobot] = useState(false);
@@ -82,6 +83,7 @@ export function AuthModal({ open, onClose, intent = null }) {
     return {
       full_name: `${firstName.trim()} ${lastName.trim()}`.trim() || null,
       role: jobTitle || null,
+      company: company.trim() || null,
       industry: industry || null,
     };
   }
@@ -103,7 +105,7 @@ export function AuthModal({ open, onClose, intent = null }) {
       const full_name = `${firstName.trim()} ${lastName.trim()}`.trim();
       const res = await signUpWithPassword(cleanEmail, password, {
         first_name: firstName.trim(), last_name: lastName.trim(), full_name,
-        job_title: jobTitle, industry, marketing_opt_in: consent,
+        job_title: jobTitle, company: company.trim(), industry, marketing_opt_in: consent,
       });
       // "Confirm email" switched off in Supabase → signUp returns a live session
       // and no code is ever sent. Save the profile and go straight in.
@@ -249,13 +251,16 @@ export function AuthModal({ open, onClose, intent = null }) {
                 </select>
               </Field>
 
+              <Field>
+                <label style={label}>Company</label>
+                <input type="text" required placeholder="Your organisation" value={company} onChange={(e) => setCompany(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} autoComplete="organization" />
+              </Field>
+
               {/* Industry decides what the dashboard and the daily brief lead
                   with, so it is required. Grouped by GICS sector, strings
                   identical to incidents.industry (src/lib/taxonomy.js).
-                  Function, country and organisation were dropped from sign-up
-                  on 2026-09-21: nothing in the product reads them yet, and
-                  the owner wants the form kept to what personalisation
-                  actually uses. Country/company stay editable on Profile. */}
+                  Company was added back on 2026-09-21 (owner's call); it is
+                  saved to profiles.company. Country stays on Profile. */}
               <Field>
                 <label style={label}>Industry <span style={sub}>drives your dashboard and daily brief</span></label>
                 <select required value={industry} onChange={(e) => setIndustry(e.target.value)} style={{ ...sel, color: industry ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>

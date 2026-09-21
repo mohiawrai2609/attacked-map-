@@ -18,7 +18,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { SubscriptionPlans } from "../auth/SubscribePage";
-import { VendorApplicationModal } from "../auth/VendorApplicationModal";
 import { CATEGORIES, CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
 import { loadCorpus, loadCounts, loadHub, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
 import { incidentImage, incidentPhoto } from "../lib/images";
@@ -523,15 +522,12 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
 // The subscription page inside the dashboard shell — same component as
 // /?subscribe, so the two never drift.
 function SubscriptionView({ go, toast }) {
-  const { user } = useAuth();
-  const [vendorOpen, setVendorOpen] = useState(false);
   return (
     <div className="content subpage">
       <div className="subpage-header">
         <div><h1>Subscription</h1><p>What Free gives you, what Subscriber unlocks on the Attack Map, and the organisation-level products behind it.</p></div>
       </div>
-      <SubscriptionPlans embedded onSignIn={() => toast("Sign in to subscribe.")} onVendor={() => setVendorOpen(true)} onDashboard={() => go("dashboard")} />
-      <VendorApplicationModal open={vendorOpen} onClose={() => setVendorOpen(false)} defaultEmail={user?.email || ""} />
+      <SubscriptionPlans embedded onSignIn={() => toast("Sign in to subscribe.")} onDashboard={() => go("dashboard")} />
     </div>
   );
 }
