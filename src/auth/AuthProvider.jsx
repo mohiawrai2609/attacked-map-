@@ -4,7 +4,7 @@
 //
 // Exposes via useAuth():
 //   • user      — Supabase auth user object, or null
-//   • tier      — 'public' | 'free' | 'partner' | 'admin'
+//   • tier      — 'public' | 'free' | 'enterprise' (= Subscriber) | 'admin'
 //                 (anonymous = 'public'; signed-in defaults to 'free' until
 //                  the profile row is loaded; flips to whatever profiles.tier
 //                  says)
@@ -17,6 +17,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { SUBSCRIBER_TIER, isSubscriber } from "../lib/taxonomy";
 
 const AuthContext = createContext({
   user: null,
@@ -26,12 +27,15 @@ const AuthContext = createContext({
   signOut: async () => {},
 });
 
-// Honour ?preview=partner / ?preview=free / ?preview=public for dev testing.
+// Honour ?preview=subscriber / ?preview=free / ?preview=public / ?preview=admin
+// for QA without a real account. 'partner' is accepted as an alias of
+// 'subscriber' so old links keep working; Design Partner itself is retired.
 function getPreviewTier() {
   if (typeof window === "undefined") return null;
   try {
     const p = new URLSearchParams(window.location.search).get("preview");
-    if (p === "public" || p === "free" || p === "partner" || p === "admin") return p;
+    if (p === "subscriber" || p === "partner") return SUBSCRIBER_TIER;
+    if (p === "public" || p === "free" || p === "admin") return p;
   } catch { /* noop */ }
   return null;
 }
@@ -101,13 +105,25 @@ export function AuthProvider({ children }) {
   // Create an account with a password (McKinsey-style signup). The form fields
   // ride along as user metadata; the basics are copied to `profiles` after the
   // email code is verified. Supabase then emails a 6-digit "Confirm signup" code.
+  //
+  // When the email already exists AND is confirmed, GoTrue does NOT error: to
+  // stop attackers enumerating registered addresses it returns 200 with a decoy
+  // user, logs user_repeated_signup, and sends NO email. The documented tell is
+  // an empty identities array. Surface it as a typed error so the modal can
+  // route to sign-in instead of stranding the reader on an empty code screen.
   const signUpWithPassword = useCallback(async (email, password, meta = {}) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: String(email || "").trim().toLowerCase(),
       password,
       options: { data: meta },
     });
     if (error) throw error;
+    if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      const err = new Error("That email already has an account — sign in instead.");
+      err.code = "user_already_exists";
+      throw err;
+    }
+    return data;
   }, []);
 
   // Returning user — email + password.
@@ -132,8 +148,9 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
-  // Persist the signup form basics onto the profile row (RLS disabled on this
-  // project). Best-effort — never blocks the sign-in.
+  // Persist the signup form basics onto the profile row. identity.profiles has
+  // an own-row UPDATE policy, so this writes only the caller's row. Best-effort
+  // — never blocks the sign-in.
   const saveProfileBasics = useCallback(async (fields) => {
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -200,6 +217,23 @@ export function AuthProvider({ children }) {
     return true;
   }, [user]);
 
+  // Subscriber self-service: flips profiles.tier free <-> enterprise through
+  // set_own_subscription() (supabase/migrations/20260921_set_own_subscription.sql).
+  // Returns the resulting tier, or throws with a readable message.
+  const setSubscribed = useCallback(async (on) => {
+    if (!user) throw new Error("Sign in first.");
+    const { data, error } = await supabase.rpc("set_own_subscription", { p_on: !!on });
+    if (error) {
+      if (/set_own_subscription|not find the function|42883/i.test(error.message)) {
+        throw new Error("Subscribe is not wired up yet: apply supabase/migrations/20260921_set_own_subscription.sql.");
+      }
+      throw error;
+    }
+    const fresh = await fetchProfile(user.id);
+    setProfile(fresh);
+    return data;
+  }, [user]);
+
   // Re-pull the profile row — used after the onboarding wizard saves, so the
   // app immediately stops showing the wizard and reflects the new preferences.
   const refreshProfile = useCallback(async () => {
@@ -216,7 +250,7 @@ export function AuthProvider({ children }) {
   else if (user) tier = profile?.tier || "free";
 
   return (
-    <AuthContext.Provider value={{ user, tier, loading, signIn, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, refreshProfile }}>
+    <AuthContext.Provider value={{ user, tier, subscriber: isSubscriber(tier), loading, signIn, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, setSubscribed, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

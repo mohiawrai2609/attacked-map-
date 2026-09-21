@@ -16,6 +16,7 @@
 import React, { useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { supabase } from "../lib/supabaseClient";
+import { SECTORS, ROLES } from "../lib/taxonomy";
 
 // Light / paper palette — white + ink + strong gold brand accent.
 const C = {
@@ -33,11 +34,8 @@ const C = {
   ok: "#1E7A3D",
 };
 
-const JOB_TITLES = [
-  "CEO / Founder", "CISO / Head of Security", "CIO / CTO",
-  "Risk / Compliance Lead", "Security Analyst", "IT Manager",
-  "Consultant / Advisor", "Board Member / Director", "Student", "Other",
-];
+// Job titles come from src/lib/taxonomy.js (ROLES) so the dashboard, the
+// alerts page and the profile all show the same strings.
 const FUNCTIONS = [
   "Security", "Risk & Compliance", "IT / Engineering",
   "Executive / Leadership", "Finance", "Legal", "Operations", "Other",
@@ -72,6 +70,8 @@ export function AuthModal({ open, onClose }) {
   const [jobTitle, setJobTitle] = useState("");
   const [jobFunction, setJobFunction] = useState("");
   const [country, setCountry] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [company, setCompany] = useState("");
   const [consent, setConsent] = useState(false);
   const [robot, setRobot] = useState(false);
   const [code, setCode] = useState("");
@@ -83,6 +83,18 @@ export function AuthModal({ open, onClose }) {
   const codeReady = (() => { const n = code.replace(/\D/g, "").length; return n >= 6 && n <= 10; })();
   const pwOk = password.length >= 8;
 
+  // What we copy from the registration form onto profiles after the account
+  // exists. industry is the string the dashboard and the daily brief key on.
+  function profileFields() {
+    return {
+      full_name: `${firstName.trim()} ${lastName.trim()}`.trim() || null,
+      role: jobTitle || null,
+      country: country || null,
+      industry: industry || null,
+      company: company.trim() || null,
+    };
+  }
+
   function close() {
     setView("signup"); setError(null); setResent(false); setCode("");
     onClose();
@@ -92,18 +104,31 @@ export function AuthModal({ open, onClose }) {
     e?.preventDefault();
     setError(null);
     if (!pwOk) { setError("Password must be at least 8 characters."); return; }
+    if (!industry) { setError("Please choose your industry — it decides what your dashboard and daily brief lead with."); return; }
     if (!robot) { setError("Please confirm you're not a robot."); return; }
     setBusy(true);
     try {
       const full_name = `${firstName.trim()} ${lastName.trim()}`.trim();
-      await signUpWithPassword(cleanEmail, password, {
+      const res = await signUpWithPassword(cleanEmail, password, {
         first_name: firstName.trim(), last_name: lastName.trim(), full_name,
-        job_title: jobTitle, job_function: jobFunction, country, marketing_opt_in: consent,
+        job_title: jobTitle, job_function: jobFunction, country, industry, company: company.trim(), marketing_opt_in: consent,
       });
+      // "Confirm email" switched off in Supabase → signUp returns a live session
+      // and no code is ever sent. Save the profile and go straight in.
+      if (res?.session) { await saveProfileBasics(profileFields()); close(); return; }
       setCodeType("signup"); setCode(""); setResent(false); setView("code");
     } catch (err) {
       const m = err?.message || "Could not create the account.";
-      setError(/already registered/i.test(m) ? "That email already has an account — sign in instead." : m);
+      // Already registered arrives two ways: a real "User already registered"
+      // error, or the silent decoy success AuthProvider converts to
+      // user_already_exists. Either way the code screen would strand them —
+      // Supabase never emails a signup code to a confirmed account.
+      if (err?.code === "user_already_exists" || /already registered/i.test(m)) {
+        setPassword(""); setView("signin");
+        setError("That email already has an account. Sign in below, or use “Email me a code”.");
+      } else {
+        setError(m);
+      }
     } finally { setBusy(false); }
   }
 
@@ -138,14 +163,8 @@ export function AuthModal({ open, onClose }) {
     setError(null); setBusy(true);
     try {
       await verifyCode(cleanEmail, code, codeType);
-      if (codeType === "signup") {
-        await saveProfileBasics({
-          full_name: `${firstName.trim()} ${lastName.trim()}`.trim() || null,
-          role: jobTitle || null,
-          country: country || null,
-        });
-      }
-      close(); // session set; app re-renders signed in
+      if (codeType === "signup") await saveProfileBasics(profileFields());
+      close(); // session set; app re-renders signed in and lands on the dashboard
     } catch (err) {
       setError(err?.message || "That code didn't work — check it and try again.");
     } finally { setBusy(false); }
@@ -234,9 +253,30 @@ export function AuthModal({ open, onClose }) {
                 <label style={label}>Job title</label>
                 <select required value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} style={{ ...sel, color: jobTitle ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
                   <option value="" disabled style={opt}>Select your job title</option>
-                  {JOB_TITLES.map(j => <option key={j} value={j} style={opt}>{j}</option>)}
+                  {ROLES.map(j => <option key={j} value={j} style={opt}>{j}</option>)}
                 </select>
               </Field>
+
+              {/* Industry decides what the dashboard and the daily brief lead
+                  with, so it is required. Grouped by GICS sector, strings
+                  identical to incidents.industry (src/lib/taxonomy.js). */}
+              <div style={{ display: "flex", gap: 12 }}>
+                <Field><div style={{ flex: 1.2 }}>
+                  <label style={label}>Industry <span style={sub}>drives your dashboard</span></label>
+                  <select required value={industry} onChange={(e) => setIndustry(e.target.value)} style={{ ...sel, color: industry ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
+                    <option value="" disabled style={opt}>Select your industry</option>
+                    {SECTORS.map(([sector, list]) => (
+                      <optgroup key={sector} label={sector}>
+                        {list.map(i => <option key={i} value={i} style={opt}>{i}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div></Field>
+                <Field><div style={{ flex: 1 }}>
+                  <label style={label}>Organisation</label>
+                  <input type="text" placeholder="Company or organisation" value={company} onChange={(e) => setCompany(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} />
+                </div></Field>
+              </div>
 
               <div style={{ display: "flex", gap: 12 }}>
                 <Field><div style={{ flex: 1 }}>
