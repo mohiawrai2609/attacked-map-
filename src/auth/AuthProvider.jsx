@@ -173,14 +173,27 @@ export function AuthProvider({ children }) {
   // the address was when the code was sent, so try the requested type first
   // and the other on a type mismatch. Only a genuine expiry/mismatch on both
   // is reported.
+  //
+  // Leading zeros: this project issues 8-digit codes and a code such as
+  // 05339579 loses its zero somewhere between the inbox and the box often
+  // enough (mail clients, copy, autofill) that a 7-digit entry is almost always
+  // that code minus its zero. So every candidate is also tried zero-padded to
+  // the configured length. scripts/set-auth-templates.mjs sets the length to 6.
+  const OTP_LENGTHS = [8, 6];
   const verifyCode = useCallback(async (email, token, type = "email") => {
-    const clean = { email: String(email || "").trim().toLowerCase(), token: String(token || "").replace(/\D/g, "") };
-    const other = type === "signup" ? "email" : "signup";
-    const first = await supabase.auth.verifyOtp({ ...clean, type });
-    if (!first.error) return first.data;
-    const second = await supabase.auth.verifyOtp({ ...clean, type: other });
-    if (!second.error) return second.data;
-    throw first.error;
+    const em = String(email || "").trim().toLowerCase();
+    const raw = String(token || "").replace(/\D/g, "");
+    const tokens = [raw, ...OTP_LENGTHS.filter((n) => raw.length < n).map((n) => raw.padStart(n, "0"))];
+    const types = [type, type === "signup" ? "email" : "signup"];
+    let firstError = null;
+    for (const tk of tokens) {
+      for (const ty of types) {
+        const { data, error } = await supabase.auth.verifyOtp({ email: em, token: tk, type: ty });
+        if (!error) return data;
+        firstError = firstError || error;
+      }
+    }
+    throw firstError;
   }, []);
 
   // Persist the signup form basics onto the profile row. identity.profiles has

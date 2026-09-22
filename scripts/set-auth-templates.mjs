@@ -1,7 +1,11 @@
 #!/usr/bin/env node
-// set-auth-templates.mjs — put the 6-digit-code email into BOTH Supabase auth
-// templates through the Management API, so every email sign-in and sign-up
-// (signInWithOtp, since 2026-09-22) delivers a code instead of a link.
+// set-auth-templates.mjs — make every sign-in email a 6-DIGIT CODE, through the
+// Supabase Management API:
+//   • both auth templates (Confirm signup + Magic Link) become otp_code.html, so
+//     new AND returning addresses receive the code — no more login links
+//   • the code length becomes 6 (the project issued 8; codes starting with 0
+//     kept losing the zero between the inbox and the box → "expired or invalid")
+//   • the code stays valid for 1 hour
 //
 //   Confirm signup  → sent to a NEW address that signs up through the code flow
 //   Magic Link      → sent to an EXISTING address that signs in with a code
@@ -38,7 +42,9 @@ const SUBJECT = "Your Attacked.ai sign-in code: {{ .Token }}";
 
 const API = `https://api.supabase.com/v1/projects/${ref}/config/auth`;
 const H = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+const OTP_LENGTH = 6, OTP_EXP = 3600;
 const show = (c) => ({
+  otp_length: c.mailer_otp_length, otp_exp_seconds: c.mailer_otp_exp,
   magic_link_subject: c.mailer_subjects_magic_link,
   magic_link_has_token: /\{\{\s*\.Token\s*\}\}/.test(c.mailer_templates_magic_link_content || ""),
   confirm_signup_subject: c.mailer_subjects_confirmation,
@@ -49,9 +55,11 @@ const before = await fetch(API, { headers: H });
 if (!before.ok) { console.error(`GET ${before.status}: ${await before.text()}`); process.exit(1); }
 console.log(`project ${ref} — before:`, show(await before.json()));
 
-if (dry) { console.log("--dry-run: nothing changed. Would set both templates to otp_code.html with subject:", SUBJECT); process.exit(0); }
+if (dry) { console.log(`--dry-run: nothing changed. Would set both templates to otp_code.html (subject: ${SUBJECT}), otp length ${OTP_LENGTH}, expiry ${OTP_EXP}s`); process.exit(0); }
 
 const body = {
+  mailer_otp_length: OTP_LENGTH,
+  mailer_otp_exp: OTP_EXP,
   mailer_subjects_magic_link: SUBJECT,
   mailer_templates_magic_link_content: html,
   mailer_subjects_confirmation: SUBJECT,
