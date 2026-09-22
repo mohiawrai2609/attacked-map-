@@ -5,6 +5,7 @@ import { AuthModal } from "./auth/AuthModal.jsx";
 import { PartnerFeedbackModal } from "./auth/PartnerFeedbackModal.jsx";
 import { SubscribeModal } from "./auth/SubscribeModal.jsx";
 import { isSubscriber } from "./lib/taxonomy";
+import { supabase } from "./lib/supabaseClient";
 import { Logo } from "./auth/Logo.jsx";
 import { SiteNav } from "./auth/SiteNav.jsx";
 import Globe3D from "./Globe3D.jsx";
@@ -1100,6 +1101,13 @@ async function loadBakedSweeps() {
 // silently truncated. To bypass this we paginate via the `Range` header,
 // fetching 1000 rows at a time until the server returns fewer than asked.
 // Hard safety cap at 20 pages (20 000 rows) per table.
+// The signed-in reader's access token. PostgREST then applies THEIR row policies:
+// after Phase 2 (migration 20260922_subscriber_layer_lock.sql) the subscriber
+// layer is subscriber-only, and a subscriber on the map still gets the rows.
+// Signed out, the anon key is used as before. Set from the map component.
+let _readerToken = null;
+export function setReaderToken(t) { _readerToken = t || null; }
+
 async function _fetchSupabaseTable(url, key, table, query = "") {
   const PAGE = 1000;
   const sep = query ? "&" : "";
@@ -1113,7 +1121,7 @@ async function _fetchSupabaseTable(url, key, table, query = "") {
         cache: "no-store",
         headers: {
           apikey: key,
-          Authorization: `Bearer ${key}`,
+          Authorization: `Bearer ${_readerToken || key}`,
           Range: `${from}-${to}`,
           "Range-Unit": "items",
         },
@@ -8974,6 +8982,14 @@ export default function GlobalAttackMap() {
   //                 operator UI by typing the param).
   //   ?role=user  → force user mode on (lets admins screenshot the user view).
   const { tier: chromeTier } = useAuth();
+  // Forward the reader's session token to every PostgREST read the map makes
+  // (see setReaderToken). Kept in step with sign-in / sign-out.
+  useEffect(() => {
+    let sub = null;
+    supabase.auth.getSession().then(({ data }) => setReaderToken(data?.session?.access_token)).catch(() => {});
+    try { sub = supabase.auth.onAuthStateChange((_e, s) => setReaderToken(s?.access_token))?.data?.subscription || null; } catch { /* noop */ }
+    return () => { try { sub?.unsubscribe?.(); } catch { /* noop */ } };
+  }, []);
   const isUserMode = useMemo(() => {
     let override = null;
     if (typeof window !== "undefined") {
@@ -9354,7 +9370,7 @@ export default function GlobalAttackMap() {
         const url = env.VITE_SUPABASE_URL, key = env.VITE_SUPABASE_ANON_KEY;
         if (!url || !key) return;
         const res = await fetch(`${url}/rest/v1/blast_radius?select=*&incident_id=eq.${encodeURIComponent(dbId)}`, {
-          headers: { apikey: key, Authorization: `Bearer ${key}` },
+          headers: { apikey: key, Authorization: `Bearer ${_readerToken || key}` },
         });
         const rows = await res.json();
         if (cancelled || !Array.isArray(rows) || !rows.length) return;
@@ -9398,7 +9414,7 @@ export default function GlobalAttackMap() {
         ...CHILD_RELATIONS.map(async ([rel, prop, sel]) => {
           try {
             const res = await fetch(`${url}/rest/v1/${rel}?${sel}&${eq}`, {
-              headers: { apikey: key, Authorization: `Bearer ${key}` },
+              headers: { apikey: key, Authorization: `Bearer ${_readerToken || key}` },
             });
             if (!res.ok) return;
             const rows = await res.json();
@@ -9435,7 +9451,7 @@ export default function GlobalAttackMap() {
           try {
             const res = await fetch(
               `${url}/rest/v1/incidents?select=secondary_mappings&id=eq.${encodeURIComponent(dbId)}`,
-              { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+              { headers: { apikey: key, Authorization: `Bearer ${_readerToken || key}` } });
             if (!res.ok) return;
             const rows = await res.json();
             if (cancelled || !Array.isArray(rows) || !rows.length) return;

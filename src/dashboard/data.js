@@ -2,9 +2,16 @@
 //
 // All reads go through the public `incidents` view with the anon/user key, the
 // same way the map does. The free view never fetches subscriber-only ROWS; it
-// asks PostgREST for embedded COUNTS (blast_radius(count) etc.) so the reader
-// sees the shape of what is locked without the detail. Subscribers (and admins)
-// additionally load the rows for the incident they open.
+// asks for COUNTS so the reader sees the shape of what is locked without the
+// detail. Subscribers (and admins) additionally load the rows for the incident
+// they open — with their own JWT, so the row policies let them through.
+//
+// Counts come in one of two shapes, detected once per session:
+//   "layer" — after Phase 2 Part A (supabase/migrations/20260922_subscriber_
+//             layer_lock.sql): incidents?select=...,layer_counts(*), a computed
+//             relationship on a view that bypasses the row lock, so free readers
+//             keep the counts after the rows are locked.
+//   "embed" — before it: the five (count) sub-selects on the public views.
 //
 // One stale column name 400s the whole select (see reference: PostgREST column
 // drift), so the column list is defined ONCE here and reused.
@@ -13,18 +20,34 @@ import { supabase } from "../lib/supabaseClient";
 import { subscriberLayer } from "../lib/api";
 import { CATEGORY_NAME, SEVERITY } from "../lib/taxonomy";
 
-export const COLS =
+// Columns without counts. Used for list rows where the counts are not shown
+// until the reader opens the incident; loadCounts() fills them in then.
+export const COLS_LIGHT =
   "id,headline,summary,entity,sector,industry,country,location_name,severity,severity_rationale,confidence," +
-  "primary_category,primary_subcategory_code,primary_subcategory_name,secondary_mappings,incident_day,event_date,article_body," +
-  "sources(count),blast_radius(count),peer_watchlist(count),adaptive_controls(count),historical_analogues(count)";
+  "primary_category,primary_subcategory_code,primary_subcategory_name,secondary_mappings,incident_day,event_date,article_body";
+const COUNT_EMBEDS = "sources(count),blast_radius(count),peer_watchlist(count),adaptive_controls(count),historical_analogues(count)";
+// Legacy full list (embed shape); kept for anything that still imports it.
+export const COLS = `${COLS_LIGHT},${COUNT_EMBEDS}`;
 
-// Same columns without the five count sub-selects. Used for list rows (Hub,
-// cross-sector feed, briefings) where the counts are not shown until the
-// reader opens the incident; loadCounts() fills them in then.
-export const COLS_LIGHT = COLS.slice(0, COLS.indexOf(",sources(count)"));
+let countsMode = null; // "layer" | "embed"
+export async function detectCountsMode() {
+  if (countsMode) return countsMode;
+  const { error } = await supabase.from("incident_layer_counts").select("incident_id").limit(1);
+  countsMode = error ? "embed" : "layer";
+  return countsMode;
+}
+// The card column list for the current session's counts shape.
+export async function cols() { return `${COLS_LIGHT},${(await detectCountsMode()) === "layer" ? "layer_counts(*)" : COUNT_EMBEDS}`; }
+const countsSelect = async () => `id,${(await detectCountsMode()) === "layer" ? "layer_counts(*)" : COUNT_EMBEDS}`;
 
 const cnt = (x) => (Array.isArray(x) && x[0] ? Number(x[0].count) : 0);
-const hasCounts = (r) => Array.isArray(r.blast_radius);
+const layer = (r) => (Array.isArray(r.layer_counts) ? r.layer_counts[0] : r.layer_counts) || null;
+const hasCounts = (r) => Array.isArray(r.blast_radius) || !!layer(r);
+const counts = (r) => {
+  const l = layer(r);
+  if (l) return { sources: Number(l.sources) || 0, blast: Number(l.blast) || 0, peers: Number(l.peers) || 0, controls: Number(l.controls) || 0, analogues: Number(l.analogues) || 0 };
+  return { sources: cnt(r.sources), blast: cnt(r.blast_radius), peers: cnt(r.peer_watchlist), controls: cnt(r.adaptive_controls), analogues: cnt(r.historical_analogues) };
+};
 
 export function shape(r) {
   return {
@@ -36,7 +59,7 @@ export function shape(r) {
     secondary: Array.isArray(r.secondary_mappings)
       ? r.secondary_mappings.slice(0, 4).map((s) => ({ cat: s.category, name: s.subcategory_name })) : [],
     day: r.incident_day, date: r.event_date, body: r.article_body || null,
-    n: hasCounts(r) ? { sources: cnt(r.sources), blast: cnt(r.blast_radius), peers: cnt(r.peer_watchlist), controls: cnt(r.adaptive_controls), analogues: cnt(r.historical_analogues) } : null,
+    n: hasCounts(r) ? counts(r) : null,
   };
 }
 
@@ -49,8 +72,9 @@ const throwing = ({ data, error }) => { if (error) throw error; return data || [
 // Firing all eight at once tripped the anon statement timeout: the count
 // sub-selects are cheap alone but contend with each other in parallel.
 export async function loadIndustry(industry) {
+  const C = await cols();
   const [cards, light, briefTotalRes, dayRes] = await Promise.all([
-    live(supabase.from("incidents").select(COLS).eq("industry", industry))
+    live(supabase.from("incidents").select(C).eq("industry", industry))
       .order("incident_day", { ascending: false }).order("severity", { ascending: false }).order("id", { ascending: false }).limit(24).then(throwing),
     // light rows for the category breakdown + week/today counts (whole industry)
     live(supabase.from("incidents").select("primary_category,severity,incident_day,country").eq("industry", industry)).limit(2000).then(throwing),
@@ -97,7 +121,7 @@ export async function loadIndustryExtras(industry) {
 // COLS_LIGHT and are now being opened.
 export async function loadCounts(id) {
   const rows = await supabase.from("incidents")
-    .select("id,sources(count),blast_radius(count),peer_watchlist(count),adaptive_controls(count),historical_analogues(count)")
+    .select(await countsSelect())
     .eq("id", id).limit(1).then(throwing);
   return rows[0] ? shape({ ...rows[0], severity: 1 }).n : { sources: 0, blast: 0, peers: 0, controls: 0, analogues: 0 };
 }
