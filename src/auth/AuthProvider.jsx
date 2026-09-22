@@ -18,6 +18,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { SUBSCRIBER_TIER, isSubscriber } from "../lib/taxonomy";
+import { setSubscription } from "../lib/api";
 
 const AuthContext = createContext({
   user: null,
@@ -240,12 +241,20 @@ export function AuthProvider({ children }) {
   // Returns the resulting tier, or throws with a readable message.
   const setSubscribed = useCallback(async (on) => {
     if (!user) throw new Error("Sign in first.");
-    const { data, error } = await supabase.rpc("set_own_subscription", { p_on: !!on });
-    if (error) {
-      if (/set_own_subscription|not find the function|42883/i.test(error.message)) {
-        throw new Error("Subscribe is not switched on in the database yet. Owner: run supabase/migrations/20260921_set_own_subscription.sql once in the Supabase SQL editor.");
+    // Through the API when VITE_API_URL is set; the SQL function directly
+    // otherwise, or when the API cannot be reached.
+    let data = null;
+    try { data = await setSubscription(!!on); }
+    catch (e) { if (e && e.status) throw new Error(e.message); }
+    if (data == null) {
+      const res = await supabase.rpc("set_own_subscription", { p_on: !!on });
+      if (res.error) {
+        if (/set_own_subscription|not find the function|42883/i.test(res.error.message)) {
+          throw new Error("Subscribe is not switched on in the database yet. Owner: run supabase/migrations/20260921_set_own_subscription.sql once in the Supabase SQL editor.");
+        }
+        throw res.error;
       }
-      throw error;
+      data = res.data;
     }
     const fresh = await fetchProfile(user.id);
     setProfile(fresh);

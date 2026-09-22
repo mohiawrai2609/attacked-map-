@@ -10,6 +10,7 @@
 // drift), so the column list is defined ONCE here and reused.
 
 import { supabase } from "../lib/supabaseClient";
+import { subscriberLayer } from "../lib/api";
 import { CATEGORY_NAME, SEVERITY } from "../lib/taxonomy";
 
 export const COLS =
@@ -102,7 +103,12 @@ export async function loadCounts(id) {
 }
 
 // Subscriber layer for one incident. Free readers never call this.
+// Through the API when VITE_API_URL is set (the server checks the tier and,
+// after RLS closes these tables, is the only reader); PostgREST otherwise, or
+// when the API cannot be reached.
 export async function loadIncidentDetail(id) {
+  try { const viaApi = await subscriberLayer(id); if (viaApi) return viaApi; }
+  catch (e) { if (e && e.status) throw new Error(e.message); }
   const eq = (t, cols) => supabase.from(t).select(cols).eq("incident_id", id).then(throwing);
   const [blast, controls, peers, analogues, sources] = await Promise.all([
     eq("blast_radius", "id,name,type,country,exposure_group,reason,impact_score,transmission_mechanism,impact_horizon,recommended_action_for_them"),

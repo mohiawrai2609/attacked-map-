@@ -16,6 +16,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { isSubscriber } from "../lib/taxonomy";
 import { prepareReportFrame } from "../lib/reportLock";
+import { reportHtml } from "../lib/api";
 import { useAuth } from "./AuthProvider";
 import { AuthModal } from "./AuthModal";
 import { SiteNav } from "./SiteNav";
@@ -432,6 +433,14 @@ function ArticleView({ article, onBack, onMap, user }) {
 // Hub is not a way around the paywall.
 function ReportFrame({ article, onBack, onMap, user, subscriber }) {
   const ref = useRef(null);
+  const reportRef = article.reportRef || article.id;
+  // Server-locked HTML via srcdoc when the API is on (see src/lib/api.js).
+  const [doc, setDoc] = useState(undefined);
+  useEffect(() => {
+    let dead = false; setDoc(undefined);
+    reportHtml(reportRef).then((html) => { if (!dead) setDoc(html || null); }).catch(() => { if (!dead) setDoc(null); });
+    return () => { dead = true; };
+  }, [reportRef]);
   useEffect(() => {
     const fr = ref.current; if (!fr) return;
     const onLoad = () => { prepareReportFrame(fr, { subscriber, onSubscribe: () => { window.location.href = "/?subscribe"; }, readerName: user?.email || "" }); };
@@ -449,12 +458,12 @@ function ReportFrame({ article, onBack, onMap, user, subscriber }) {
         color: "#3A362E", cursor: "pointer", fontFamily: "Inter, sans-serif",
         fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
       }}>← Back to the feed</button>
-      <iframe
+      {doc === undefined ? null : <iframe
         ref={ref}
-        src={`/reports/${encodeURIComponent(article.reportRef || article.id)}.html`}
+        {...(doc ? { srcDoc: doc } : { src: `/reports/${encodeURIComponent(reportRef)}.html` })}
         title={article.headline || article.id}
         style={{ width: "100%", height: "calc(100vh - 73px)", border: "none", display: "block" }}
-      />
+      />}
     </main>
   );
 }

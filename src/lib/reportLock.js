@@ -34,7 +34,8 @@ export function lockReportForFreeReader(doc, onSubscribe) {
   let n = 0;
   for (const id of LOCKED_SECTIONS) {
     const sec = doc.getElementById(id);
-    if (!sec || sec.classList.contains("dash-locked")) continue;
+    // data-locked="server": the API already replaced this section (api/app/routers/reports.py)
+    if (!sec || sec.classList.contains("dash-locked") || sec.dataset.locked) continue;
     sec.classList.add("dash-locked");
     const box = doc.createElement("div"); box.className = "dash-lock";
     box.innerHTML = "<span><b>Subscriber layer.</b> Who it reaches, and what to do about it.</span>";

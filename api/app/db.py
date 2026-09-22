@@ -1,0 +1,96 @@
+"""Data access — PostgREST over HTTP, the same API the browser uses today.
+
+Two modes, chosen per request:
+  service role  — when SUPABASE_SERVICE_ROLE_KEY is set: the API reads as the
+                  server and applies the tier rules itself. This is what lets
+                  RLS lock the subscriber tables to anon in phase 2.
+  as the reader — otherwise the reader's own JWT is forwarded and RLS applies
+                  exactly as if the browser had asked. Fine for development.
+
+No DB connection string is needed; everything goes through /rest/v1 with the
+column lists the frontend already uses (src/dashboard/data.js).
+"""
+from __future__ import annotations
+
+from typing import Any
+
+import httpx
+from fastapi import HTTPException
+
+from .config import settings
+
+REST = f"{settings.supabase_url}/rest/v1"
+_client: httpx.AsyncClient | None = None
+
+
+def client() -> httpx.AsyncClient:
+    global _client
+    if _client is None:
+        _client = httpx.AsyncClient(timeout=20.0)
+    return _client
+
+
+def _headers(user_token: str | None, prefer: str | None = None) -> dict[str, str]:
+    bearer = settings.supabase_service_role_key or user_token or settings.supabase_anon_key
+    h = {"apikey": settings.supabase_anon_key, "Authorization": f"Bearer {bearer}", "Accept": "application/json"}
+    if prefer:
+        h["Prefer"] = prefer
+    return h
+
+
+async def get(table: str, params: dict[str, str], user_token: str | None = None) -> list[dict[str, Any]]:
+    r = await client().get(f"{REST}/{table}", params=params, headers=_headers(user_token))
+    if r.status_code >= 400:
+        raise HTTPException(502, f"database read failed ({r.status_code}): {r.text[:200]}")
+    return r.json()
+
+
+async def rpc(name: str, body: dict[str, Any], user_token: str | None) -> Any:
+    """Call a SQL function AS THE READER (auth.uid() must be theirs), never as the server."""
+    h = {"apikey": settings.supabase_anon_key, "Authorization": f"Bearer {user_token}", "Content-Type": "application/json"}
+    r = await client().post(f"{REST}/rpc/{name}", json=body, headers=h)
+    if r.status_code >= 400:
+        raise HTTPException(502, f"{name} failed ({r.status_code}): {r.text[:200]}")
+    return r.json()
+
+
+async def insert(table: str, rows: list[dict[str, Any]]) -> int:
+    """Server-side write; requires the service role."""
+    if not settings.supabase_service_role_key:
+        raise HTTPException(503, "writes need SUPABASE_SERVICE_ROLE_KEY on the API")
+    h = {"apikey": settings.supabase_anon_key, "Authorization": f"Bearer {settings.supabase_service_role_key}",
+         "Content-Type": "application/json", "Prefer": "return=minimal,resolution=merge-duplicates"}
+    r = await client().post(f"{REST}/{table}", json=rows, headers=h)
+    if r.status_code >= 400:
+        raise HTTPException(502, f"insert into {table} failed ({r.status_code}): {r.text[:300]}")
+    return len(rows)
+
+
+# ── what the routes need ──────────────────────────────────────────────────
+PROFILE_COLS = "id,tier,industry,full_name,company,role,email_subscribed,digest_frequency,watch_industries,watch_categories"
+
+
+async def get_profile(user_id: str, user_token: str | None) -> dict[str, Any] | None:
+    rows = await get("profiles", {"select": PROFILE_COLS, "id": f"eq.{user_id}", "limit": "1"}, user_token)
+    return rows[0] if rows else None
+
+
+LAYER = {
+    "blast_radius": "id,name,type,country,exposure_group,reason,impact_score,transmission_mechanism,impact_horizon,recommended_action_for_them",
+    "adaptive_controls": "id,control_id,parent_mc_id,statement,rationale,kind",
+    "peer_watchlist": "id,name,country,exposure_reason",
+    "historical_analogues": "id,event_name,entity,year,summary,outcome",
+    "sources": "id,title,url,publisher",
+}
+
+
+async def subscriber_layer(incident_id: int, user_token: str | None) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = {}
+    for table, cols in LAYER.items():
+        out[table] = await get(table, {"select": cols, "incident_id": f"eq.{incident_id}"}, user_token)
+    return out
+
+
+async def incident_exists(incident_id: int, user_token: str | None) -> bool:
+    rows = await get("incidents", {"select": "id", "id": f"eq.{incident_id}", "limit": "1"}, user_token)
+    return bool(rows)
