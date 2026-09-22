@@ -92,12 +92,30 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Passwordless fallback — email a 6-digit code (no magic link, no redirect →
-  // immune to the Site-URL / link-prefetch problems that broke the old flow).
-  const signIn = useCallback(async (email) => {
+  // Passwordless — email a 6-digit code (no magic link, no redirect → immune
+  // to the Site-URL / link-prefetch problems that broke the old flow). This is
+  // the ONLY email path now: sign-up and sign-in both go email → code. A new
+  // address is created on the spot; `meta` (name, role, company, industry)
+  // rides along as user metadata and is copied to profiles after the code.
+  const signIn = useCallback(async (email, meta = null) => {
     const { error } = await supabase.auth.signInWithOtp({
       email: String(email || "").trim().toLowerCase(),
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: true, ...(meta ? { data: meta } : {}) },
+    });
+    if (error) throw error;
+  }, []);
+
+  // Social sign-in — Google / LinkedIn / GitHub / Microsoft through Supabase
+  // OAuth. The provider must be switched on in the Supabase dashboard
+  // (Authentication → Providers) and redirectTo allow-listed (Authentication
+  // → URL configuration); until then Supabase answers "provider is not
+  // enabled" and the modal says so. Supabase redirects back with ?code=,
+  // supabase-js exchanges it for a session on load, and onAuthStateChange
+  // above picks it up like any other sign-in.
+  const signInWithProvider = useCallback(async (provider, redirectTo) => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: redirectTo || (typeof window !== "undefined" ? `${window.location.origin}/?dashboard` : undefined) },
     });
     if (error) throw error;
   }, []);
@@ -250,7 +268,7 @@ export function AuthProvider({ children }) {
   else if (user) tier = profile?.tier || "free";
 
   return (
-    <AuthContext.Provider value={{ user, tier, subscriber: isSubscriber(tier), loading, signIn, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, setSubscribed, refreshProfile }}>
+    <AuthContext.Provider value={{ user, tier, subscriber: isSubscriber(tier), loading, signIn, signInWithProvider, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, setSubscribed, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
