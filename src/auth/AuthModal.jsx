@@ -46,7 +46,7 @@ const C = {
 // brand-new component type on every keystroke, so React unmounts/remounts the
 // inputs each render and they lose focus after a single character (the
 // "can't type in the password box" bug).
-const Field = ({ children }) => <div style={{ marginBottom: 14 }}>{children}</div>;
+const Field = ({ children }) => <div style={{ marginBottom: 10 }}>{children}</div>;
 
 // Supabase provider id, label, brand mark. Which of these are SHOWN comes from
 // VITE_AUTH_PROVIDERS (comma-separated ids, e.g. "google,linkedin_oidc"); unset
@@ -180,17 +180,17 @@ export function AuthModal({ open, onClose, intent = null }) {
   }
 
   // ── shared styles (light) ──
-  const label = { display: "block", fontFamily: "Inter, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 6 };
+  const label = { display: "block", fontFamily: "Inter, sans-serif", fontSize: 11.5, color: C.ink, fontWeight: 600, marginBottom: 4 };
   const sub = { fontSize: 11, color: C.ink4, fontWeight: 400, marginLeft: 6 };
   const field = {
-    width: "100%", padding: "11px 13px", background: C.paper, color: C.ink,
+    width: "100%", padding: "9px 12px", background: C.paper, color: C.ink,
     border: `1px solid ${C.line2}`, borderRadius: 4, boxSizing: "border-box",
-    fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none",
+    fontFamily: "Inter, sans-serif", fontSize: 13.5, outline: "none",
   };
   const sel = { ...field, appearance: "none", cursor: "pointer" };
   const opt = { color: C.ink, background: C.paper };
   const goldBtn = (disabled) => ({
-    width: "100%", padding: "13px 16px",
+    width: "100%", padding: "12px 16px",
     background: disabled ? "rgba(245,184,0,0.55)" : C.gold, color: "#1A1A1A",
     border: "none", borderRadius: 4, fontFamily: "Inter, sans-serif", fontSize: 13.5,
     fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
@@ -203,17 +203,17 @@ export function AuthModal({ open, onClose, intent = null }) {
   // "Continue with …" — under the email form on both screens: an "Or" rule,
   // then the enabled providers.
   const Social = () => PROVIDERS.length === 0 ? null : (
-    <div style={{ marginTop: 18 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 12px", color: C.ink3, fontSize: 12, fontFamily: "Inter, sans-serif" }}>
+    <div style={{ marginTop: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 10px", color: C.ink3, fontSize: 11.5, fontFamily: "Inter, sans-serif" }}>
         <span style={{ flex: 1, height: 1, background: C.line }} />Or continue with<span style={{ flex: 1, height: 1, background: C.line }} />
       </div>
-      <div style={{ display: "grid", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {PROVIDERS.map(([id, label, icon]) => (
           <button key={id} type="button" disabled={busy} onClick={() => social(id, label)} style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%",
-            padding: "11px 14px", background: C.paper, color: C.ink, border: `1px solid ${C.line2}`, borderRadius: 4,
-            fontFamily: "Inter, sans-serif", fontSize: 13.5, fontWeight: 600, cursor: busy ? "wait" : "pointer",
-          }}><span style={{ width: 18, height: 18, display: "inline-flex" }} dangerouslySetInnerHTML={{ __html: icon }} />Continue with {label}</button>
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minWidth: 0,
+            padding: "9px 8px", background: C.paper, color: C.ink, border: `1px solid ${C.line2}`, borderRadius: 4,
+            fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 600, cursor: busy ? "wait" : "pointer", whiteSpace: "nowrap",
+          }}><span style={{ width: 16, height: 16, display: "inline-flex", flex: "none" }} dangerouslySetInnerHTML={{ __html: icon }} />Continue with {label}</button>
         ))}
       </div>
     </div>
@@ -223,12 +223,12 @@ export function AuthModal({ open, onClose, intent = null }) {
     <div onClick={close} style={{
       position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,15,15,0.55)",
       backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start",
-      justifyContent: "center", padding: "5vh 18px", overflowY: "auto",
+      justifyContent: "center", padding: "3vh 18px", overflowY: "auto",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
-        width: "min(480px, 100%)", background: C.paper,
+        width: "min(500px, 100%)", background: C.paper,
         border: `1px solid ${C.line}`, borderRadius: 10,
-        padding: "26px 26px 28px", boxShadow: "0 24px 70px rgba(16,16,16,0.28)",
+        padding: "20px 24px 22px", boxShadow: "0 24px 70px rgba(16,16,16,0.28)",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: C.goldDeep, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
@@ -240,12 +240,12 @@ export function AuthModal({ open, onClose, intent = null }) {
         {/* ───────── SIGN UP ───────── */}
         {view === "signup" && (
           <>
-            <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 26, color: C.ink, lineHeight: 1.2, marginTop: 12, letterSpacing: "-0.015em" }}>Create an account</h2>
-            <p style={{ marginTop: 8, marginBottom: 6, fontSize: 13, color: C.ink3 }}>
+            <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Create an account</h2>
+            <p style={{ marginTop: 6, marginBottom: 14, fontSize: 12.5, color: C.ink3, fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>
               Already have an account?{" "}
               <button type="button" onClick={() => { setView("signin"); setError(null); }} style={linkBtn}>Sign in</button>
+              <span style={{ margin: "0 8px", color: C.line2 }}>·</span>No password — we email you a 6-digit code.
             </p>
-            <p style={{ margin: "0 0 16px", fontSize: 12.5, color: C.ink3 }}>No password. We email you a 6-digit code to confirm the address.</p>
 
             <form onSubmit={submitSignup}>
               <Field>
@@ -254,29 +254,30 @@ export function AuthModal({ open, onClose, intent = null }) {
                   onChange={(e) => { setEmail(e.target.value); error && setError(null); }} style={field} onFocus={onFocus} onBlur={onBlur} />
               </Field>
 
-              <div style={{ display: "flex", gap: 12 }}>
-                <Field><div style={{ flex: 1 }}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}><Field>
                   <label style={label}>First name</label>
                   <input type="text" required placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} />
-                </div></Field>
-                <Field><div style={{ flex: 1 }}>
+                </Field></div>
+                <div style={{ flex: 1, minWidth: 0 }}><Field>
                   <label style={label}>Last name</label>
                   <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} />
-                </div></Field>
+                </Field></div>
               </div>
 
-              <Field>
-                <label style={label}>Job title</label>
-                <select required value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} style={{ ...sel, color: jobTitle ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
-                  <option value="" disabled style={opt}>Select your job title</option>
-                  {ROLES.map(j => <option key={j} value={j} style={opt}>{j}</option>)}
-                </select>
-              </Field>
-
-              <Field>
-                <label style={label}>Company</label>
-                <input type="text" required placeholder="Your organisation" value={company} onChange={(e) => setCompany(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} autoComplete="organization" />
-              </Field>
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}><Field>
+                  <label style={label}>Job title</label>
+                  <select required value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} style={{ ...sel, color: jobTitle ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
+                    <option value="" disabled style={opt}>Select</option>
+                    {ROLES.map(j => <option key={j} value={j} style={opt}>{j}</option>)}
+                  </select>
+                </Field></div>
+                <div style={{ flex: 1, minWidth: 0 }}><Field>
+                  <label style={label}>Company</label>
+                  <input type="text" required placeholder="Your organisation" value={company} onChange={(e) => setCompany(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} autoComplete="organization" />
+                </Field></div>
+              </div>
 
               {/* Industry decides what the dashboard and the daily brief lead
                   with, so it is required. Grouped by GICS sector, strings
@@ -295,16 +296,16 @@ export function AuthModal({ open, onClose, intent = null }) {
                 </select>
               </Field>
 
-              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "6px 0 14px", cursor: "pointer" }}>
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 3, accentColor: C.gold }} />
-                <span style={{ fontSize: 11.5, color: C.ink2, lineHeight: 1.5 }}>
-                  Receive occasional informational emails about Attacked.ai, including account notifications and updates. You can unsubscribe at any time.
+              <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "2px 0 10px", cursor: "pointer" }}>
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 2, accentColor: C.gold }} />
+                <span style={{ fontSize: 11, color: C.ink2, lineHeight: 1.45, fontFamily: "Inter, sans-serif" }}>
+                  Occasional emails about Attacked.ai, including account notifications. Unsubscribe any time.
                 </span>
               </label>
 
-              <label style={{ display: "flex", gap: 10, alignItems: "center", margin: "0 0 16px", padding: "12px 14px", border: `1px solid ${C.line2}`, borderRadius: 4, background: C.paper2, cursor: "pointer", maxWidth: 220 }}>
-                <input type="checkbox" checked={robot} onChange={(e) => setRobot(e.target.checked)} style={{ width: 18, height: 18, accentColor: C.gold }} />
-                <span style={{ fontSize: 12.5, color: C.ink }}>I'm not a robot</span>
+              <label style={{ display: "flex", gap: 10, alignItems: "center", margin: "0 0 12px", padding: "8px 12px", border: `1px solid ${C.line2}`, borderRadius: 4, background: C.paper2, cursor: "pointer", maxWidth: 220 }}>
+                <input type="checkbox" checked={robot} onChange={(e) => setRobot(e.target.checked)} style={{ width: 16, height: 16, accentColor: C.gold }} />
+                <span style={{ fontSize: 12, color: C.ink, fontFamily: "Inter, sans-serif" }}>I'm not a robot</span>
               </label>
 
               {error && <div style={{ marginBottom: 12, fontSize: 12, color: C.err }}>{error}</div>}
@@ -317,8 +318,8 @@ export function AuthModal({ open, onClose, intent = null }) {
         {/* ───────── SIGN IN ───────── */}
         {view === "signin" && (
           <>
-            <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 26, color: C.ink, lineHeight: 1.2, marginTop: 12, letterSpacing: "-0.015em" }}>Sign in</h2>
-            <p style={{ marginTop: 8, marginBottom: 20, fontSize: 13, color: C.ink3 }}>
+            <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Sign in</h2>
+            <p style={{ marginTop: 6, marginBottom: 14, fontSize: 12.5, color: C.ink3, fontFamily: "Inter, sans-serif" }}>
               New here?{" "}
               <button type="button" onClick={() => { setView("signup"); setError(null); }} style={linkBtn}>Create an account</button>
             </p>
@@ -350,7 +351,7 @@ export function AuthModal({ open, onClose, intent = null }) {
         {/* ───────── CODE ───────── */}
         {view === "code" && (
           <>
-            <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 26, color: C.ink, lineHeight: 1.2, marginTop: 12, letterSpacing: "-0.015em" }}>Enter your code.</h2>
+            <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Enter your code.</h2>
             <p style={{ marginTop: 12, marginBottom: 20, fontSize: 13.5, color: C.ink3, lineHeight: 1.55 }}>
               We emailed your code to <b style={{ color: C.ink }}>{cleanEmail}</b>. Enter it below — it expires in an hour.
             </p>

@@ -844,7 +844,7 @@ export function LandingPage() {
             The blast radius
           </div>
           <h2 style={{
-            margin: 0, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700,
+            margin: 0, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800,
             fontSize: "clamp(40px, 5.6vw, 70px)", lineHeight: 1.03, letterSpacing: "-0.005em", color: "#fff",
           }}>
             Every incident has a<br /><span style={{ fontStyle: "italic", color: BRAND.gold }}>blast radius.</span>

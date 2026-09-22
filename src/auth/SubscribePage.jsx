@@ -65,7 +65,7 @@ const PREMIUM = [
 
 const FONT = "Inter, system-ui, sans-serif";
 const MONO = "'JetBrains Mono', ui-monospace, monospace";
-const SERIF = "'Cormorant Garamond', Georgia, serif";
+const SERIF = FONT; // brand: Inter everywhere, headings included
 const S = {
   section: { maxWidth: 1180, margin: "0 auto", padding: "34px 24px" },
   eyebrow: { fontFamily: MONO, fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: BRAND.goldDeep, fontWeight: 700 },
@@ -91,7 +91,7 @@ function useFonts() {
   useEffect(() => {
     if (document.getElementById("attacked-subscribe-fonts")) return;
     const link = document.createElement("link"); link.id = "attacked-subscribe-fonts"; link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap";
     document.head.appendChild(link);
   }, []);
 }
