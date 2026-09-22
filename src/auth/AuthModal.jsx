@@ -200,9 +200,13 @@ export function AuthModal({ open, onClose, intent = null }) {
   const onFocus = (e) => (e.target.style.borderColor = C.gold);
   const onBlur = (e) => (e.target.style.borderColor = C.line2);
 
-  // "Continue with …" — the enabled providers, then an "Or" rule.
+  // "Continue with …" — under the email form on both screens: an "Or" rule,
+  // then the enabled providers.
   const Social = () => PROVIDERS.length === 0 ? null : (
-    <div style={{ margin: "0 0 18px" }}>
+    <div style={{ marginTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 12px", color: C.ink3, fontSize: 12, fontFamily: "Inter, sans-serif" }}>
+        <span style={{ flex: 1, height: 1, background: C.line }} />Or continue with<span style={{ flex: 1, height: 1, background: C.line }} />
+      </div>
       <div style={{ display: "grid", gap: 8 }}>
         {PROVIDERS.map(([id, label, icon]) => (
           <button key={id} type="button" disabled={busy} onClick={() => social(id, label)} style={{
@@ -211,9 +215,6 @@ export function AuthModal({ open, onClose, intent = null }) {
             fontFamily: "Inter, sans-serif", fontSize: 13.5, fontWeight: 600, cursor: busy ? "wait" : "pointer",
           }}><span style={{ width: 18, height: 18, display: "inline-flex" }} dangerouslySetInnerHTML={{ __html: icon }} />Continue with {label}</button>
         ))}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0 4px", color: C.ink3, fontSize: 12, fontFamily: "Inter, sans-serif" }}>
-        <span style={{ flex: 1, height: 1, background: C.line }} />Or with your email<span style={{ flex: 1, height: 1, background: C.line }} />
       </div>
     </div>
   );
@@ -244,9 +245,7 @@ export function AuthModal({ open, onClose, intent = null }) {
               Already have an account?{" "}
               <button type="button" onClick={() => { setView("signin"); setError(null); }} style={linkBtn}>Sign in</button>
             </p>
-            <p style={{ margin: "0 0 18px", fontSize: 12.5, color: C.ink3 }}>No password. We email you a 6-digit code to confirm the address.</p>
-
-            <Social />
+            <p style={{ margin: "0 0 16px", fontSize: 12.5, color: C.ink3 }}>No password. We email you a 6-digit code to confirm the address.</p>
 
             <form onSubmit={submitSignup}>
               <Field>
@@ -311,6 +310,7 @@ export function AuthModal({ open, onClose, intent = null }) {
               {error && <div style={{ marginBottom: 12, fontSize: 12, color: C.err }}>{error}</div>}
               <button type="submit" disabled={busy} style={goldBtn(busy)}>{busy ? "Sending your code…" : "Create your account →"}</button>
             </form>
+            <Social />
           </>
         )}
 
@@ -322,7 +322,6 @@ export function AuthModal({ open, onClose, intent = null }) {
               New here?{" "}
               <button type="button" onClick={() => { setView("signup"); setError(null); }} style={linkBtn}>Create an account</button>
             </p>
-            <Social />
             <form onSubmit={submitSignin}>
               <Field>
                 <label style={label}>Email</label>
@@ -344,6 +343,7 @@ export function AuthModal({ open, onClose, intent = null }) {
                        : <>Set a password earlier? <span style={{ color: C.goldDeep, textDecoration: "underline", fontWeight: 600 }}>Sign in with it</span></>}
               </button>
             </div>
+            <Social />
           </>
         )}
 
