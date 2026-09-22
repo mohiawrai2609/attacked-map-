@@ -102,14 +102,22 @@ if (cut < 0) throw new Error("Deno.serve( not found — daily-digest layout chan
 let core = fnSrc.slice(0, cut)
   .replace(/^import \{ SMTPClient \}[^\n]*\n/m, "const SMTPClient = class {};\n")
   .replace(/Deno\.env\.get\(/g, "((k) => process.env[k])(");
-core += "\nexport { buildForProfile, freeDigestHtml, partnerDigestHtml };\n";
+core += "\nexport { buildForProfile, partitionForProfile, makeLayer, freeDigestHtml, partnerDigestHtml };\n";
 const corePath = resolve(OUT, "_digest-core.ts");
 writeFileSync(corePath, core);
-const { buildForProfile } = await import(pathToFileURL(corePath).href);
+const { buildForProfile, makeLayer } = await import(pathToFileURL(corePath).href);
 
 // Target day: --day, else the richest recent day so the preview is
 // representative (yesterday may hold 0 rows while the sweeper is paused).
-const argDay = process.argv.indexOf("--day") > -1 ? process.argv[process.argv.indexOf("--day") + 1] : null;
+// --industry sets the preview reader's industry (default: the one with the
+// most incidents on the target day). --layer <file.json> feeds the
+// subscriber-only rows ({blast_radius, adaptive_controls, peer_watchlist,
+// sources} keyed by incident id) — the anon key cannot read them since the
+// Phase 2 lock, so the preview takes them from a fixture.
+const argOf = (flag) => (process.argv.indexOf(flag) > -1 ? process.argv[process.argv.indexOf(flag) + 1] : null);
+const argDay = argOf("--day");
+const argIndustry = argOf("--industry");
+const argLayer = argOf("--layer");
 const hdr = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 async function rest(path) {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: hdr });
@@ -126,8 +134,8 @@ if (!targetDay) {
 const d = new Date(`${targetDay}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - 6);
 const weekStart = d.toISOString().slice(0, 10);
 
-// Same select the (fixed) function uses.
-const COLS = "id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day";
+// Same select the function uses (layer_counts(*) = the public counts embed).
+const COLS = "id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day,layer_counts(*)";
 const weekIncidents = await rest(
   `incidents?select=${COLS}&incident_day=gte.${weekStart}&incident_day=lte.${targetDay}` +
   `&latitude=not.is.null&longitude=not.is.null&order=incident_day.asc,severity.desc.nullslast,id.desc&limit=800`,
@@ -135,18 +143,38 @@ const weekIncidents = await rest(
 const dayIncidents = weekIncidents.filter((i) => i.incident_day === targetDay);
 console.log(`\n  digest data: day ${targetDay} → ${dayIncidents.length} incidents · week ${weekStart}..${targetDay} → ${weekIncidents.length}`);
 
+// The preview reader's industry: --industry, else the busiest one that day.
+let industry = argIndustry;
+if (!industry) {
+  const byInd = {};
+  for (const i of dayIncidents) if (i.industry) byInd[i.industry] = (byInd[i.industry] || 0) + 1;
+  industry = Object.entries(byInd).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+}
+// A quiet-day reader: an industry with nothing on the target day but
+// something earlier in the week, so the "nothing new" variant renders.
+const onDay = new Set(dayIncidents.map((i) => i.industry));
+const quietIndustry = [...new Set(weekIncidents.filter((i) => i.industry && (i.severity || 0) >= 3).map((i) => i.industry))].find((x) => !onDay.has(x)) || null;
+const layer = argLayer ? makeLayer(JSON.parse(readFileSync(resolve(argLayer), "utf8"))) : undefined;
+console.log(`  preview reader: industry "${industry}" · quiet-day reader: "${quietIndustry}" · subscriber rows: ${argLayer ? "from " + argLayer : "none (pass --layer)"}`);
+
+const base = { unsubscribe_token: "PREVIEW", digest_frequency: "daily", watch_industries: null, watch_categories: null, min_severity: 3 };
 const profiles = [
-  ["2a-daily-brief-FREE.html",     { email: "reader@example.com",  tier: "free",    unsubscribe_token: "PREVIEW", digest_frequency: "daily", watch_industries: null, watch_categories: null },
-    "Free tier daily brief — headline-only cards, partner-only lockout, upsell block"],
-  ["2b-daily-brief-PARTNER.html",  { email: "partner@example.com", tier: "partner", unsubscribe_token: "PREVIEW", digest_frequency: "daily", watch_industries: null, watch_categories: null },
-    "Design-partner daily brief — full summaries, gold rationale callout, open-on-map"],
+  ["2a-daily-brief-FREE.html",        { ...base, email: "reader@example.com", full_name: "Priya Nair", tier: "free", industry },
+    "Free daily brief — your industry leads, locked counts line, Hub + map buttons, Premium strip"],
+  ["2b-daily-brief-SUBSCRIBER.html",  { ...base, email: "subscriber@example.com", full_name: "Daniel Okafor", tier: "enterprise", industry },
+    "Subscriber daily brief — same brief plus rationale, named blast radius, GUARD controls, peers, source"],
+  ["2c-daily-brief-FREE-quiet.html",  { ...base, email: "reader@example.com", full_name: "Priya Nair", tier: "free", industry: quietIndustry },
+    "Free daily brief on a QUIET day — nothing new in the industry, earlier this week, cross-sector"],
+  ["2d-daily-brief-SUBSCRIBER-weekly.html", { ...base, email: "subscriber@example.com", full_name: "Daniel Okafor", tier: "enterprise", industry, digest_frequency: "weekly", min_severity: 4 },
+    "Subscriber WEEKLY brief — the 7-day window, minimum severity S4"],
 ];
 for (const [outName, profile, label] of profiles) {
-  const b = buildForProfile(profile, dayIncidents, weekIncidents, targetDay, weekStart);
+  if (!profile.industry) { console.log(`- ${outName.padEnd(32)} skipped (no industry available for this variant)`); continue; }
+  const b = buildForProfile(profile, dayIncidents, weekIncidents, targetDay, weekStart, layer);
   const embedded = await embedImages(b.html);
-  const stamped = embedded.replace("<body", `<!-- subject: ${b.subject} | rendered ${new Date().toISOString()} from daily-digest/index.ts against live incidents for ${targetDay} -->\n<body`);
+  const stamped = embedded.replace("<body", `<!-- subject: ${b.subject} | rendered ${new Date().toISOString()} from daily-digest/index.ts (v17) against live incidents for ${targetDay} -->\n<body`);
   writeFileSync(resolve(OUT, outName), stamped);
   console.log(`✓ ${outName.padEnd(32)} ${(stamped.length / 1024).toFixed(0).padStart(5)} KB  ${label}`);
-  console.log(`    subject: ${b.subject}`);
+  console.log(`    subject: ${b.subject}   [in industry ${b.matched} · hidden ${b.hidden} · earlier this week ${b.weekMatched} · elsewhere ${b.elsewhere}]`);
 }
 console.log(`\nAll files in ${OUT}`);

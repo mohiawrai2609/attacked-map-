@@ -262,18 +262,26 @@ function ConfigureAlerts({ P, profile, subscriber, tier, onSubscribe, onSaved, o
   const [industry, setIndustry] = useState(P.industry);
   const [role, setRole] = useState(profile?.role || "");
   const [cats, setCats] = useState(() => new Set(Array.isArray(profile?.watch_categories) && profile.watch_categories.length ? profile.watch_categories : CATEGORIES.map(([c]) => c)));
-  const [minSev, setMinSev] = useState(3);
+  // Stored on profiles.min_severity (migration 20260922_brief_prefs.sql); the
+  // brief only mails incidents at or above it. Default S3 = Medium and above.
+  const [minSev, setMinSev] = useState(() => { const v = Number(profile?.min_severity); return v >= 1 && v <= 5 ? v : 3; });
   const [on, setOn] = useState(profile?.email_subscribed !== false);
   const [freq, setFreq] = useState(profile?.digest_frequency || "daily");
   const [busy, setBusy] = useState(false);
   const { saveProfileBasics, user } = useAuth();
-  const lead = [...P.incidents].sort((a, b) => b.severity - a.severity).slice(0, 3);
+  // The inbox preview applies the same filters the brief does, so the reader
+  // sees the effect of their choices before saving.
+  const lead = [...P.incidents].filter((i) => cats.has(i.cat) && i.severity >= minSev).sort((a, b) => b.severity - a.severity).slice(0, 3);
   const toggleCat = (c) => { const n = new Set(cats); n.has(c) ? n.delete(c) : n.add(c); setCats(n); };
   async function save() {
     if (!user) { toast("Sign in to save preferences."); return; }
     setBusy(true);
     try {
       await saveProfileBasics({ industry, role: role || null });
+      // Separate call on purpose: until the owner applies the min_severity
+      // migration PostgREST rejects the whole update on the unknown column,
+      // and that must not take industry/role down with it.
+      await saveProfileBasics({ min_severity: minSev });
       await savePrefs({ watchIndustries: [industry], watchCategories: [...cats], frequency: freq, subscribed: on });
       toast("Preferences saved to your profile");
       onSaved(); if (industry !== P.industry) onIndustryChange(industry);
@@ -308,7 +316,7 @@ function ConfigureAlerts({ P, profile, subscriber, tier, onSubscribe, onSaved, o
           </div>
           <div className="setting-group">
             <h3>Email delivery</h3>
-            <div className="switch-row"><div><strong>Daily intelligence brief</strong><span>Every incident in your industry from the latest sweep, led by your categories.</span></div><button className={`switch ${on ? "on" : ""}`} aria-label="toggle daily brief" onClick={() => setOn(!on)} /></div>
+            <div className="switch-row"><div><strong>Daily intelligence brief</strong><span>Incidents in your industry at or above your minimum severity, in your categories — plus anything high or critical elsewhere.</span></div><button className={`switch ${on ? "on" : ""}`} aria-label="toggle daily brief" onClick={() => setOn(!on)} /></div>
             <div className="select-row" style={{ marginTop: 6 }}>
               <div className="field"><label>Frequency</label><select value={freq} onChange={(e) => setFreq(e.target.value)}><option value="daily">Daily</option><option value="weekly">Weekly (Monday)</option></select></div>
               <div className="field"><label>Sends at</label><input value="08:00 UTC · after the morning sweep" disabled /></div>
@@ -323,7 +331,7 @@ function ConfigureAlerts({ P, profile, subscriber, tier, onSubscribe, onSaved, o
           <div className="email">
             <div className="email-head"><b>Attacked<i>.ai</i></b><span>{fmtDay(P.latestDay)}</span></div>
             <div className="email-body">
-              <p className="greet">Hey there, <b>{P.today || P.week} incidents</b> hit {P.industry} {P.today ? "in the latest sweep" : "this week"}. Here is what moved.</p>
+              <p className="greet">{lead.length ? <>Hey there, <b>{lead.length} {lead.length === 1 ? "incident" : "incidents"}</b> in {industry} cleared your filters (S{minSev}+). Here is what moved.</> : <>Hey there, nothing new in {industry} cleared your filters (S{minSev}+). You still get anything high or critical elsewhere.</>}</p>
               {lead.map((i) => <div key={i.id} className="ti"><div className="sv" style={{ color: `var(--s${i.severity})` }}>S{i.severity} {SEVERITY[i.severity]} · {i.cat}</div><b>{i.headline}</b><span>{i.entity || ""} · {i.country || ""}</span></div>)}
               {!subscriber && <div className="locked">Named blast radius, recommended actions and vendor defence ratings are subscriber-only.</div>}
             </div>

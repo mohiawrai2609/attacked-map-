@@ -1,42 +1,62 @@
 // daily-digest — Supabase Edge Function (Gmail SMTP backend)
-// Sends the incident digest to all email_subscribed=true profiles.
+// Sends the personalised daily brief to every email_subscribed=true profile.
 //
-// ── v16 · PERSONALISED ──────────────────────────────────────────────────────
-// Each reader's brief now leads with THEIR watchlist. Onboarding / Manage
-// Subscription capture two preference axes plus a cadence:
-//   • watch_industries  jsonb[]  — granular industry names (matches
-//                                  incidents.industry exactly). Empty or all-43
-//                                  ⇒ "watch everything" (no industry focus).
-//   • watch_categories  jsonb[]  — GUARD codes (matches incidents
-//                                  .primary_category). Empty or all-13 ⇒
-//                                  "all risks" (no category focus).
-//   • digest_frequency  text     — "daily" (every send) | "weekly" (Mondays,
-//                                  covering the prior 7 days).
+// ── v17 · INDUSTRY-LED (2026-09-22) ─────────────────────────────────────────
+// One brief, two depths. Every reader's mail is built from four preferences
+// captured at sign-up and on the dashboard's Configure alerts page:
+//   • profiles.industry          the ONE primary industry from sign-up. It
+//                                decides what leads the brief ("In your
+//                                industry"). watch_industries (the legacy
+//                                list) adds extra industries when present.
+//   • profiles.watch_categories  GUARD codes (= incidents.primary_category).
+//                                Empty or all 13 ⇒ every category.
+//   • profiles.min_severity      1..5 (default 3). Only incidents at or above
+//                                it are mailed; the rest are counted in a
+//                                "below your threshold" line. Column added by
+//                                migration 20260922_brief_prefs.sql — until
+//                                it is applied the default applies.
+//   • profiles.digest_frequency  "daily" (each sweep) | "weekly" (Mondays,
+//                                covering the prior 7 days).
 //
-// When a reader has a focus, the brief shows a "FOR YOU" block of the incidents
-// that match their watchlist, then "the rest of the day" below — so we honour
-// BOTH promises: curation ("we don't send you everything") AND the free-tier
-// value of full breadth at a glance. Readers who watch everything get the
-// classic non-personalised brief (fully backward-compatible).
+// Sections, in order:
+//   1. Hey {name} — what moved, the reader's own filter line, Configure alerts.
+//   2. IN YOUR INDUSTRY — full cards for the matching incidents (lead cards,
+//      then a numbered list). Quiet sweep ⇒ "nothing new" + what the industry
+//      saw earlier this week, so the mail is never empty by accident.
+//   3. ACROSS ALL SECTORS — HIGH/CRITICAL incidents outside the reader's
+//      industry as a numbered list (their categories still apply).
+//   4. Free: the Premium strip (→ /?subscribe). Subscriber: dashboard link.
 //
-// TIER DIFFERENTIATION (per founder access model v2):
-//   free    → headlines + sector + category + severity for every incident.
-//             Hidden: source, named blast radius, full summary, advisory,
-//             adaptive controls, vendor ratings. CTA → unlock (Gate 2).
-//   subscriber (tier enterprise) → source, named blast radius, adaptive controls, vendor ratings,
-//             full report. Full-detail blocks.
-//   admin   → treated as subscriber.
+// TIER DEPTH
+//   free        headline, summary, entity, classification, and a LOCKED line
+//               with the COUNTS of what a subscriber would see (from the
+//               public incident_layer_counts view). Buttons open the incident
+//               on the Attacked Hub (/?hub&open=<id>) and on the map
+//               (/?map&incident=<id>&date=<day>).
+//   subscriber  (tier enterprise, admin) the same card plus "Why it matters",
+//               the named blast radius (top 3), GUARD controls (top 2), the
+//               peer watchlist and the lead source. Rows come from the
+//               subscriber-only tables, read with the service role because the
+//               Phase 2 lock (20260922_subscriber_layer_lock.sql) hides them
+//               from everyone else.
+//
+// SEND RULE: a reader is skipped only when nothing cleared their filters in
+// their industry (today, and earlier this week for daily readers) AND nothing
+// HIGH/CRITICAL happened elsewhere.
 //
 // TESTING (zero send / zero spam risk):
-//   POST { "dryRun": true }            → renders + partitions every subscriber,
-//                                        returns per-user {matched,rest,subject},
+//   POST { "dryRun": true }            → partitions + renders every reader,
+//                                        returns per-reader counts + subject,
 //                                        SENDS NOTHING.
-//   POST { "dryRun": true, "to": "x@y" } → also returns the full rendered HTML
-//                                        for that one address.
+//   POST { "dryRun": true, "to": "x@y" } → also returns the rendered HTML for
+//                                        that one address.
 //   POST { "to": "x@y" }               → sends ONLY to that address (bypasses
-//                                        cadence gating). Safe single-recipient.
-//   POST { "day": "2026-06-12" }       → override the target day.
-//   POST { "force": true }             → bypass weekly Monday gate for all.
+//                                        the weekly gate). Safe single-recipient.
+//   POST { "day": "2026-09-11" }       → override the target day.
+//   POST { "force": true }             → bypass the weekly Monday gate for all.
+//
+// PREVIEWS: scripts/render-email-templates.mjs loads everything above the
+// serve call under Node and renders both tiers against live incidents.
 //
 // EMAIL BACKEND: Gmail SMTP (denomailer). Env: GMAIL_USER, GMAIL_APP_PASSWORD.
 // Triggered by pg_cron daily at 08:00 UTC + event-driven on new sweep upload.
@@ -66,20 +86,40 @@ const MUTED    = "#A8A8A8";
 const ORANGE   = "#FF8C5A";
 
 // Full taxonomy sizes — used to tell "watch everything" (all selected) apart
-// from a genuine focus (a subset).
+// from a genuine focus (a subset). Mirror src/lib/taxonomy.js.
 const INDUSTRY_COUNT = 43;
 const CATEGORY_COUNT = 13;
 const WEEKLY_SEND_DOW = 1; // Monday (UTC). Weekly readers receive only today.
 
+const DEFAULT_MIN_SEVERITY = 3;      // MEDIUM and above — the alerts page default
+const CROSS_SECTOR_MIN_SEVERITY = 4; // outside the reader's industry: HIGH+
+const LEAD_CARDS = { free: 4, subscriber: 6 };  // full cards before the list
+const LIST_MAX = 8;                              // numbered rows after the cards
+const CROSS_MAX = { free: 5, subscriber: 8 };   // cross-sector rows
+const EARLIER_MAX = 5;                           // quiet-day "earlier this week" rows
+
 const SEVERITY_LABEL: Record<number, string> = { 5: "CRITICAL", 4: "HIGH", 3: "MEDIUM", 2: "LOW", 1: "MINIMAL" };
 const SEVERITY_COLOR: Record<number, string> = { 5: "#FF3B30", 4: ORANGE, 3: GOLD, 2: "#34C759", 1: "#8E8E93" };
 const CATEGORY_NAME: Record<string, string> = {
-  CYB: "Cyber", DAT: "Data", TEC: "Technology", GEO: "Geopolitical", PHY: "Physical",
-  OPS: "Operations", TPR: "Third Party", REG: "Regulatory", FIN: "Financial",
-  STR: "Strategic", REP: "Reputation", PPL: "People", ENV: "Environment",
+  CYB: "Cyber Security", DAT: "Data & Privacy", TEC: "Technology", GEO: "Geopolitical",
+  PHY: "Physical Security", OPS: "Operational", TPR: "Third-Party Risk", REG: "Regulatory",
+  FIN: "Financial", STR: "Strategic", REP: "Reputational", PPL: "People & Human Capital",
+  ENV: "Environmental",
+};
+const EXPOSURE_LABEL: Record<string, string> = {
+  internal: "Internal", supply_chain: "Supply chain", customer_counterparty: "Customer / counterparty",
+  competitive_peer: "Peer", regulatory: "Regulator", financial_market: "Financial market",
 };
 
 const INTER = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+// App deep links. The Hub and the map open the SAME incident the card shows.
+const hubUrl = (id: unknown) => `${APP_URL}/?hub&open=${encodeURIComponent(String(id))}`;
+const mapUrl = (i: any) => `${APP_URL}/?map&incident=${encodeURIComponent(String(i.id))}${i.incident_day ? `&date=${i.incident_day}` : ""}`;
+const ALERTS_URL    = `${APP_URL}/?subscriptions`;
+const SUBSCRIBE_URL = `${APP_URL}/?subscribe`;
+const DASHBOARD_URL = `${APP_URL}/?dashboard`;
+const MAP_URL       = `${APP_URL}/?map`;
 
 function escape(s: unknown): string {
   return String(s ?? "").replace(/[&<>\"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c as string] || c));
@@ -98,57 +138,144 @@ function addDaysISO(iso: string, delta: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// "Fri, 11 Sep 2026" and the shorter "11 Sep 2026".
 function formatDate(iso: string) {
   const d = new Date(iso + "T00:00:00Z");
   return d.toUTCString().slice(0, 16);
 }
+const shortDate = (iso: string) => formatDate(iso).slice(5);
+
+// Cut at a word boundary and add an ellipsis.
+function trim(s: unknown, n: number): string {
+  const t = String(s ?? "").trim();
+  if (t.length <= n) return t;
+  const cut = t.slice(0, n);
+  const sp = cut.lastIndexOf(" ");
+  return (sp > n * 0.6 ? cut.slice(0, sp) : cut).replace(/[,;:\-–—]$/, "") + "…";
+}
+
+const sevOf = (i: any) => { const n = Number(i?.severity); return n >= 1 && n <= 5 ? Math.round(n) : 1; };
+const bySev = (arr: any[]) => [...arr].sort((a, b) => sevOf(b) - sevOf(a) || (Number(b.id) || 0) - (Number(a.id) || 0));
+const plural = (n: number, one: string, many = one + "s") => `${n} ${n === 1 ? one : many}`;
 
 // ── Preference helpers ──────────────────────────────────────────────────────
 // A focus set is null when the reader watches everything (empty array, or the
 // full taxonomy selected). Otherwise it's the subset they chose.
 function asFocusSet(arr: unknown, fullCount: number): Set<string> | null {
   if (!Array.isArray(arr)) return null;
-  const vals = arr.map((v) => String(v));
+  const vals = arr.map((v) => String(v).trim()).filter(Boolean);
   if (vals.length === 0 || vals.length >= fullCount) return null;
   return new Set(vals);
 }
 
-function focusLabel(indSet: Set<string> | null, catSet: Set<string> | null): string {
-  const parts: string[] = [];
-  if (indSet) {
-    const inds = [...indSet];
-    parts.push(inds.slice(0, 3).join(" · ") + (inds.length > 3 ? ` +${inds.length - 3}` : ""));
-  }
-  if (catSet) {
-    const cats = [...catSet].map((c) => CATEGORY_NAME[c] || c);
-    parts.push(cats.slice(0, 3).join(" · ") + (cats.length > 3 ? ` +${cats.length - 3}` : ""));
-  }
-  return parts.join("   ·   ");
+function clampSev(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 1 && n <= 5 ? Math.round(n) : DEFAULT_MIN_SEVERITY;
 }
 
-// ── Shared email shell (AlphaSignal-style: top nav · hero banner · body ·
-//    feedback + partner CTA + legal footer) ──────────────────────────────────
-function shell(title: string, bodyHtml: string, unsubUrl: string, periodLabel: string) {
+// "Oil & Gas (Integrated & E&P)" → "Oil & Gas" for subject lines and prose.
+const shortIndustry = (s: unknown) => String(s ?? "").replace(/\s*\([^)]*\)/g, "").trim();
+
+// Friendly first-name from an email local-part: "razor.q@acme.com" → "Razor".
+function nameFromEmail(email: string): string {
+  const local = String(email || "").split("@")[0] || "there";
+  const first = local.split(/[._\-+]/)[0].replace(/[0-9]+/g, "");
+  if (!first) return "there";
+  return first.charAt(0).toUpperCase() + first.slice(1);
+}
+function firstName(p: any): string {
+  const n = String(p?.full_name || "").trim().split(/\s+/)[0];
+  return n || nameFromEmail(p?.email);
+}
+
+function categoryLabel(catSet: Set<string> | null): string {
+  if (!catSet) return `All ${CATEGORY_COUNT} categories`;
+  const names = [...catSet].map((c) => CATEGORY_NAME[c] || c);
+  return names.slice(0, 3).join(" · ") + (names.length > 3 ? ` +${names.length - 3}` : "");
+}
+
+type Prefs = {
+  industries: string[]; primary: string; catSet: Set<string> | null;
+  minSev: number; weekly: boolean; isSubscriber: boolean; name: string;
+};
+function readerPrefs(p: any): Prefs {
+  const primary = String(p?.industry || "").trim();
+  const extra = asFocusSet(p?.watch_industries, INDUSTRY_COUNT);
+  const industries = [...new Set([primary, ...(extra ? [...extra] : [])].filter(Boolean))];
+  return {
+    industries,
+    primary: primary || industries[0] || "",
+    catSet: asFocusSet(p?.watch_categories, CATEGORY_COUNT),
+    minSev: clampSev(p?.min_severity),
+    weekly: p?.digest_frequency === "weekly",
+    // Subscriber = profiles.tier enterprise (Design Partner retired 2026-09-21).
+    isSubscriber: p?.tier === "enterprise" || p?.tier === "admin",
+    name: firstName(p),
+  };
+}
+
+// ── Subscriber layer (rows) + free counts ───────────────────────────────────
+type Layer = { blast: Map<number, any[]>; controls: Map<number, any[]>; peers: Map<number, any[]>; sources: Map<number, any[]> };
+const EMPTY_LAYER: Layer = { blast: new Map(), controls: new Map(), peers: new Map(), sources: new Map() };
+
+// Accepts either an array of rows carrying incident_id, or an object keyed by
+// incident id (the shape the preview fixture uses).
+function groupRows(x: unknown): Map<number, any[]> {
+  const m = new Map<number, any[]>();
+  if (Array.isArray(x)) {
+    for (const r of x) { const k = Number(r?.incident_id); if (!m.has(k)) m.set(k, []); m.get(k)?.push(r); }
+  } else if (x && typeof x === "object") {
+    for (const [k, v] of Object.entries(x as Record<string, unknown>)) if (Array.isArray(v)) m.set(Number(k), v);
+  }
+  return m;
+}
+function makeLayer(src: any): Layer {
+  return {
+    blast:    groupRows(src?.blast_radius ?? src?.blast),
+    controls: groupRows(src?.adaptive_controls ?? src?.controls),
+    peers:    groupRows(src?.peer_watchlist ?? src?.peers),
+    sources:  groupRows(src?.sources),
+  };
+}
+
+// Counts of the locked layer, embedded on the incident row as layer_counts(*)
+// (public.incident_layer_counts — readable by everyone, rows are not).
+function countsOf(i: any): { blast: number; controls: number; peers: number; sources: number } | null {
+  const l = Array.isArray(i?.layer_counts) ? i.layer_counts[0] : i?.layer_counts;
+  if (!l) return null;
+  return { blast: Number(l.blast) || 0, controls: Number(l.controls) || 0, peers: Number(l.peers) || 0, sources: Number(l.sources) || 0 };
+}
+
+// ── Shared email shell (top nav · hero banner · body · feedback · footer) ────
+function shell(title: string, bodyHtml: string, unsubUrl: string, eyebrowText: string, isSubscriber: boolean) {
   const navLink = (href: string, label: string) =>
     `<a href="${href}" style="color:${MUTED};text-decoration:none;font-family:${INTER};font-size:11px;">${escape(label)}</a>`;
   const fb = (mood: string, label: string) =>
     `<a href="${APP_URL}/?feedback=${mood}" style="display:inline-block;padding:9px 18px;margin:0 4px;border:1px solid #3a3a3a;border-radius:4px;color:#EDEDED;text-decoration:none;font-family:${INTER};font-size:12px;font-weight:600;">${escape(label)}</a>`;
-  const footCol = (title: string, links: [string, string][]) =>
+  const footCol = (heading: string, links: [string, string][]) =>
     `<td style="vertical-align:top;padding-right:18px;">` +
-      `<div style="font-family:${INTER};font-size:10px;font-weight:700;color:#585858;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:12px;">${escape(title)}</div>` +
+      `<div style="font-family:${INTER};font-size:10px;font-weight:700;color:#585858;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:12px;">${escape(heading)}</div>` +
       links.map(([href, label]) =>
         `<a href="${href}" style="display:block;font-family:${INTER};font-size:13px;font-weight:500;color:${MUTED};text-decoration:none;line-height:2.1;">${escape(label)}</a>`).join("") +
     `</td>`;
 
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>` +
+  const upgradeBlock = isSubscriber
+    ? `<div style="font-family:${INTER};font-size:17px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:6px;">Your dashboard</div>` +
+      `<div style="font-family:${INTER};font-size:13px;color:${MUTED};line-height:1.55;margin-bottom:14px;max-width:340px;">Every incident in your industry with the full blast radius, GUARD controls and peer watchlist.</div>` +
+      `<a href="${DASHBOARD_URL}" style="display:inline-block;padding:11px 24px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Open →</a>`
+    : `<div style="font-family:${INTER};font-size:17px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:6px;">Subscribe</div>` +
+      `<div style="font-family:${INTER};font-size:13px;color:${MUTED};line-height:1.55;margin-bottom:14px;max-width:340px;">Named blast radius, GUARD controls and peer watchlists on every incident — plus Impact Assessments, Watchlists and Pathways &amp; simulation for your organisation.</div>` +
+      `<a href="${SUBSCRIBE_URL}" style="display:inline-block;padding:11px 24px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">See plans →</a>`;
+
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)}</title></head>` +
     `<body style="margin:0;padding:28px 16px;background:${DEEP};font-family:${INTER};color:#FFF;">` +
     `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:620px;margin:0 auto;">` +
 
     // ── Top nav ────────────────────────────────────────────────
     `<tr><td style="padding:0 4px 14px;text-align:center;">` +
-      navLink(`${APP_URL}/?map`, "Open the map") + ` &nbsp;|&nbsp; ` +
-      navLink(`${APP_URL}/?subscriptions`, "Subscribe") + ` &nbsp;|&nbsp; ` +
-      navLink(`${APP_URL}/?subscriptions`, "Manage") + ` &nbsp;|&nbsp; ` +
+      navLink(DASHBOARD_URL, "Dashboard") + ` &nbsp;|&nbsp; ` +
+      navLink(MAP_URL, "Attack Map") + ` &nbsp;|&nbsp; ` +
+      navLink(ALERTS_URL, "Configure alerts") + ` &nbsp;|&nbsp; ` +
       navLink(unsubUrl, "Unsubscribe") +
     `</td></tr>` +
 
@@ -159,7 +286,7 @@ function shell(title: string, bodyHtml: string, unsubUrl: string, periodLabel: s
           `<img src="${APP_URL}/email-hero-digest.png" width="620" alt="" style="display:block;width:100%;border:0;">` +
           `<div style="padding:20px 28px 22px;text-align:center;">` +
             `<div style="font-family:${INTER};font-size:30px;font-weight:800;color:#FFF;letter-spacing:-0.015em;line-height:1;">Attacked<span style="color:${GOLD};">.ai</span><sup style="font-size:13px;color:#FFF;margin-left:1px;font-weight:600;">™</sup></div>` +
-            `<div style="font-family:${INTER};font-size:11px;color:${MUTED};letter-spacing:0.18em;text-transform:uppercase;margin-top:12px;font-weight:700;">Daily intelligence · ${escape(periodLabel)}</div>` +
+            `<div style="font-family:${INTER};font-size:11px;color:${MUTED};letter-spacing:0.18em;text-transform:uppercase;margin-top:12px;font-weight:700;">${escape(eyebrowText)}</div>` +
           `</div>` +
         `</td>` +
       `</tr></table>` +
@@ -169,7 +296,7 @@ function shell(title: string, bodyHtml: string, unsubUrl: string, periodLabel: s
     `<tr><td style="padding:18px 0 0;">${bodyHtml}</td></tr>` +
 
     // ── Feedback ───────────────────────────────────────────────
-    `<tr><td style="padding:18px 0 0;">` +
+    `<tr><td style="padding:2px 0 0;">` +
       `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${OBSIDIAN};border:1px solid #333;border-radius:8px;"><tr>` +
         `<td style="padding:24px 20px;text-align:center;">` +
           `<div style="font-family:${INTER};font-size:16px;font-weight:700;color:#FFF;margin-bottom:14px;">How was today's brief?</div>` +
@@ -178,22 +305,17 @@ function shell(title: string, bodyHtml: string, unsubUrl: string, periodLabel: s
       `</tr></table>` +
     `</td></tr>` +
 
-    // ── Site-style footer (logo · subscribe · columns · social) ─
+    // ── Site-style footer (logo · upgrade/dashboard · columns · social) ─
     `<tr><td style="padding:32px 24px 12px;margin-top:18px;border-top:1px solid #333;">` +
-
       `<div style="font-family:${INTER};font-size:20px;font-weight:700;color:#FFF;letter-spacing:-0.01em;line-height:1;margin-bottom:22px;">Attacked<span style="color:${GOLD};">.ai</span><sup style="font-size:10px;color:#FFF;margin-left:1px;font-weight:600;">™</sup></div>` +
+      upgradeBlock +
 
-      // Subscribe
-      `<div style="font-family:${INTER};font-size:17px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:6px;">Subscribe</div>` +
-      `<div style="font-family:${INTER};font-size:13px;color:${MUTED};line-height:1.55;margin-bottom:14px;max-width:320px;">The Daily Brief — every incident we catch, in your inbox.</div>` +
-      `<a href="${APP_URL}/?subscriptions" style="display:inline-block;padding:11px 24px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Submit →</a>` +
-
-      // Link columns
       `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:32px;"><tr style="vertical-align:top;">` +
         footCol("Explore", [
-          [`${APP_URL}/`, "Attack Map"],
+          [MAP_URL, "Attack Map"],
           [`${APP_URL}/?hub`, "Attacked Hub"],
-          [`${APP_URL}/?pricing`, "Pricing"],
+          [DASHBOARD_URL, "Dashboard"],
+          [SUBSCRIBE_URL, "Plans"],
         ]) +
         footCol("Resources", [
           [`${APP_URL}/?legal=faq`, "FAQ"],
@@ -208,7 +330,6 @@ function shell(title: string, bodyHtml: string, unsubUrl: string, periodLabel: s
         ]) +
       `</tr></table>` +
 
-      // Bottom bar: copyright + social
       `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:36px;border-top:1px solid #333;"><tr>` +
         `<td style="padding-top:20px;font-family:${INTER};font-size:11.5px;color:#585858;font-weight:600;letter-spacing:0.04em;vertical-align:middle;">© 2026 Attacked.ai · GUARD framework</td>` +
         `<td style="padding-top:20px;text-align:right;font-family:${INTER};font-size:11.5px;color:${MUTED};vertical-align:middle;">` +
@@ -220,202 +341,288 @@ function shell(title: string, bodyHtml: string, unsubUrl: string, periodLabel: s
         `</td>` +
       `</tr></table>` +
 
-      // Required: why you got this + manage/unsubscribe
       `<div style="margin-top:18px;font-family:${INTER};font-size:10.5px;color:#585858;line-height:1.7;">` +
-        `You receive this because you subscribed to Attacked.ai intelligence. ` +
-        `<a href="${APP_URL}/?subscriptions" style="color:#888;text-decoration:underline;">Manage subscription</a> · ` +
+        `You receive this because you signed up to Attacked.ai and chose to get the brief. ` +
+        `<a href="${ALERTS_URL}" style="color:#888;text-decoration:underline;">Manage alerts</a> · ` +
         `<a href="${unsubUrl}" style="color:#888;text-decoration:underline;">Unsubscribe</a>` +
       `</div>` +
-
     `</td></tr>` +
 
     `</table></body></html>`;
 }
 
-// ── AlphaSignal building blocks ───────────────────────────────────────────────
-// Bordered card wrapper — every section sits in its own boxed card.
+// ── Building blocks ───────────────────────────────────────────────────────────
 function card(innerHtml: string, pad = "22px"): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${OBSIDIAN};border:1px solid #333;border-radius:8px;margin-bottom:16px;"><tr><td style="padding:${pad};">${innerHtml}</td></tr></table>`;
 }
+const kicker = (text: string, color = GOLD, mb = 6) =>
+  `<div style="font-family:${INTER};font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:${color};margin:0 0 ${mb}px;">${text}</div>`;
+const goldBtn = (href: string, label: string) =>
+  `<a href="${href}" style="display:inline-block;padding:11px 22px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${label}</a>`;
+const quietLink = (href: string, label: string) =>
+  `<a href="${href}" style="font-family:${INTER};font-size:12px;color:${MUTED};text-decoration:underline;">${label}</a>`;
 
-// Friendly first-name from an email local-part: "razor.q@acme.com" → "Razor".
-function nameFromEmail(email: string): string {
-  const local = String(email || "").split("@")[0] || "there";
-  const first = local.split(/[._\-+]/)[0].replace(/[0-9]+/g, "");
-  if (!first) return "there";
-  return first.charAt(0).toUpperCase() + first.slice(1);
+// Section header, outside the cards: kicker + title + optional sub-line.
+function sectionHead(kick: string, title: string, sub = ""): string {
+  return `<div style="padding:8px 4px 12px;">${kicker(kick)}` +
+    `<div style="font-family:${INTER};font-size:20px;font-weight:800;color:#FFF;letter-spacing:-0.015em;line-height:1.2;">${escape(title)}</div>` +
+    (sub ? `<div style="font-family:${INTER};font-size:12.5px;color:${MUTED};margin-top:5px;line-height:1.5;">${sub}</div>` : "") +
+  `</div>`;
 }
 
 // Rough read-time from how many incidents we render in full.
-function readTime(shown: number): number {
-  return Math.max(2, Math.round(shown * 0.5) + 1);
+function readTime(cards: number, rows: number): number {
+  return Math.max(1, Math.round(cards * 0.6 + rows * 0.15));
 }
 
-// "Hey {name}," intro card with an editorial one-liner about the day.
-function introCard(name: string, pool: any[], criticalCount: number, countries: number): string {
-  const lead = criticalCount > 0
-    ? `${criticalCount} crossed into <b style="color:${GOLD};">HIGH or CRITICAL</b> — here's what actually moved, and what it means for you.`
-    : `A quieter day, but the map never sleeps. Here's everything worth your attention.`;
-  return card(
-    `<div style="font-family:${INTER};font-size:16px;font-weight:700;color:#FFF;margin-bottom:12px;">Hey ${escape(name)},</div>` +
-    `<p style="font-family:${INTER};font-size:14px;color:#D8D8D8;line-height:1.6;margin:0;">` +
-      `<b style="color:#FFF;">${pool.length} incidents</b> hit the wire across <b style="color:#FFF;">${countries} ${countries === 1 ? "country" : "countries"}</b>. ${lead}` +
-    `</p>`
-  );
+// ── Incident card (both tiers; depth differs) ────────────────────────────────
+function incidentCard(i: any, tier: "free" | "subscriber", layer: Layer): string {
+  const sev = sevOf(i);
+  const cat = CATEGORY_NAME[i.primary_category] || i.primary_category || "Operational";
+  const place = [i.country, i.industry || i.sector].filter(Boolean).map(escape).join(" · ");
+
+  const meta = `<div style="font-family:${INTER};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:${SEVERITY_COLOR[sev]};margin-bottom:7px;">` +
+    `${SEVERITY_LABEL[sev]} · ${escape(cat)}${place ? `<span style="color:${MUTED};font-weight:600;">&nbsp;&nbsp;${place}</span>` : ""}</div>`;
+  const headline = `<h2 style="font-family:${INTER};font-size:19px;font-weight:800;color:#FFF;line-height:1.25;letter-spacing:-0.015em;margin:0 0 10px;">${escape(i.headline || "")}</h2>`;
+  const entity = i.entity ? `<div style="font-family:${INTER};font-size:11px;color:${GOLD};letter-spacing:0.06em;margin-bottom:10px;font-weight:700;text-transform:uppercase;">${escape(i.entity)}</div>` : "";
+  const summary = i.summary
+    ? `<p style="font-family:${INTER};font-size:13px;color:#D2D2D2;line-height:1.6;margin:0 0 14px;">${escape(trim(i.summary, tier === "subscriber" ? 420 : 240))}</p>`
+    : "";
+
+  let depth = "";
+  if (tier === "subscriber") {
+    if (i.severity_rationale) {
+      depth += `<div style="padding:11px 13px;background:rgba(245,184,0,0.07);border-left:3px solid ${GOLD};border-radius:0 4px 4px 0;font-family:${INTER};font-size:12px;color:#FFF;line-height:1.55;margin-bottom:14px;"><b style="color:${GOLD};">Why it matters →</b> ${escape(trim(i.severity_rationale, 320))}</div>`;
+    }
+    const blast = (layer.blast.get(Number(i.id)) || []).slice(0, 3);
+    const controls = (layer.controls.get(Number(i.id)) || []).slice(0, 2);
+    const peers = (layer.peers.get(Number(i.id)) || []).map((p: any) => p.name).filter(Boolean).slice(0, 5);
+    const source = (layer.sources.get(Number(i.id)) || [])[0];
+    const block = (label: string, rows: string) =>
+      `<div style="margin:0 0 12px;padding:12px 14px;background:#141414;border:1px solid #2a2a2a;border-radius:6px;">${kicker(label, MUTED, 8)}${rows}</div>`;
+    if (blast.length) {
+      depth += block("Who else is exposed", blast.map((b: any) =>
+        `<div style="margin-bottom:8px;"><span style="font-family:${INTER};font-size:12.5px;font-weight:700;color:#FFF;">${escape(b.name)}</span>` +
+        (b.exposure_group ? `<span style="font-family:${INTER};font-size:10px;color:${GOLD};font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-left:8px;">${escape(EXPOSURE_LABEL[b.exposure_group] || b.exposure_group)}</span>` : "") +
+        (b.transmission_mechanism ? `<div style="font-family:${INTER};font-size:12px;color:${MUTED};line-height:1.5;margin-top:2px;">${escape(trim(b.transmission_mechanism, 150))}</div>` : "") +
+        `</div>`).join(""));
+    }
+    if (controls.length) {
+      depth += block("GUARD controls", controls.map((c: any) =>
+        `<div style="margin-bottom:8px;">` +
+        (c.control_id ? `<span style="font-family:${INTER};font-size:10.5px;font-weight:700;color:${GOLD};letter-spacing:0.06em;">${escape(c.control_id)}</span> ` : "") +
+        `<span style="font-family:${INTER};font-size:12px;color:#D2D2D2;line-height:1.5;">${escape(trim(c.statement, 220))}</span></div>`).join(""));
+    }
+    if (peers.length) {
+      depth += block("Peers to watch", `<div style="font-family:${INTER};font-size:12.5px;color:#EDEDED;line-height:1.6;">${peers.map(escape).join(" · ")}</div>`);
+    }
+    if (source) {
+      depth += `<div style="font-family:${INTER};font-size:11.5px;color:${MUTED};line-height:1.5;margin:0 0 14px;">Source: ` +
+        (source.url ? `<a href="${escape(source.url)}" style="color:${MUTED};text-decoration:underline;">` : "") +
+        `${escape(source.publisher || "")}${source.publisher && source.title ? " — " : ""}${escape(trim(source.title, 90))}` +
+        (source.url ? `</a>` : "") + `</div>`;
+    }
+  } else {
+    const c = countsOf(i);
+    const inner = c
+      ? `<b style="color:#FFF;">${plural(c.blast, "exposed organisation")}</b> · <b style="color:#FFF;">${plural(c.controls, "GUARD control")}</b> · <b style="color:#FFF;">${plural(c.peers, "peer")} to watch</b>`
+      : `Named blast radius, GUARD controls and the peer watchlist`;
+    depth += `<div style="padding:10px 12px;margin:0 0 14px;background:#141414;border:1px dashed #3a3a3a;border-radius:4px;font-family:${INTER};font-size:12px;color:${MUTED};line-height:1.55;">` +
+      `🔒 ${inner} — <a href="${SUBSCRIBE_URL}" style="color:${GOLD};text-decoration:none;font-weight:700;">subscriber only</a></div>`;
+  }
+
+  const actions = `<table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>` +
+    `<td>${goldBtn(hubUrl(i.id), "Open in Attack Hub →")}</td>` +
+    `<td style="text-align:right;vertical-align:middle;"><a href="${mapUrl(i)}" style="font-family:${INTER};font-size:12px;color:#EDEDED;text-decoration:none;font-weight:600;">View on map →</a></td>` +
+  `</tr></table>`;
+
+  return card(meta + headline + entity + summary + depth + actions);
 }
 
-// "Summary" card — read-time + a table-of-contents list of the lead incidents.
-function summaryCard(shown: any[], pool: any[]): string {
-  const rows = shown.map((i) => {
-    const sev = i.severity || 1;
-    return `<tr><td style="padding:11px 0;border-top:1px solid #2a2a2a;">` +
-      `<div style="font-family:${INTER};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:${SEVERITY_COLOR[sev]};margin-bottom:3px;">${SEVERITY_LABEL[sev]} · ${escape(i.primary_category || "OPS")}</div>` +
-      `<div style="font-family:${INTER};font-size:13px;color:#EDEDED;line-height:1.4;font-weight:500;">${escape(i.headline || "")}</div>` +
-    `</td></tr>`;
-  }).join("");
-  return card(
-    `<div style="font-family:${INTER};font-size:18px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:4px;">Summary</div>` +
-    `<div style="font-family:${INTER};font-size:12px;color:${MUTED};margin-bottom:6px;">Read time: ${readTime(shown.length)} min · ${pool.length} incidents tracked</div>` +
-    `<table role="presentation" cellpadding="0" cellspacing="0" width="100%">${rows}</table>`
-  );
-}
-
-// ── Row / block renderers (AlphaSignal "Top News" + "Signals" style) ─────────
-const bySev = (arr: any[]) => [...arr].sort((a, b) => (b.severity || 0) - (a.severity || 0));
-
-// Full "Top News" style card for one incident. Partner = full detail
-// (entity + summary + advisory). Free = headline + a locked teaser.
-function incidentCard(i: any, isPartner: boolean): string {
-  const sev = i.severity || 1;
-  const sevColor = SEVERITY_COLOR[sev];
-  const sevLabel = SEVERITY_LABEL[sev];
-  const cat = i.primary_category || "OPS";
-  const place = [escape(i.country || ""), escape(i.industry || i.sector || "")].filter(Boolean).join(" · ");
-
-  const detail = isPartner
-    ? (i.entity ? `<div style="font-family:${INTER};font-size:11px;color:${GOLD};letter-spacing:0.06em;margin-bottom:10px;font-weight:700;text-transform:uppercase;">${escape(i.entity)}</div>` : "") +
-      `<p style="font-family:${INTER};font-size:13px;color:#D2D2D2;line-height:1.6;margin:0 0 12px;">${escape((i.summary || "").slice(0, 360))}${(i.summary && i.summary.length > 360) ? "…" : ""}</p>` +
-      // Partner-only callout. Was the "if you operate X then Y" advisory until
-      // that column was dropped; `severity_rationale` is what survives, so the
-      // label says what the text actually is rather than promising an action.
-      (i.severity_rationale
-        ? `<div style="padding:11px 13px;background:rgba(245,184,0,0.07);border-left:3px solid ${GOLD};border-radius:0 4px 4px 0;font-family:${INTER};font-size:12px;color:#FFF;line-height:1.55;margin-bottom:14px;"><b style="color:${GOLD};">Why it matters →</b> ${escape(i.severity_rationale)}</div>`
-        : "")
-    : `<p style="font-family:${INTER};font-size:13px;color:${MUTED};line-height:1.6;margin:0 0 14px;">${place || "Live incident"}. Named blast radius, recommended actions and vendor Defence Ratings are <b style="color:#FFF;">subscriber-only</b>.</p>`;
-
-  const btnHref = isPartner ? `${APP_URL}/?map` : `${APP_URL}/?subscriptions`;
-  const btnLabel = isPartner ? "Open on map →" : "Unlock details →";
-
-  return card(
-    `<div style="font-family:${INTER};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:${sevColor};margin-bottom:7px;">${sevLabel} · ${escape(cat)}${place ? `<span style="color:${MUTED};font-weight:600;">&nbsp;&nbsp;${place}</span>` : ""}</div>` +
-    `<h2 style="font-family:${INTER};font-size:19px;font-weight:800;color:#FFF;line-height:1.25;letter-spacing:-0.015em;margin:0 0 12px;">${escape(i.headline || "")}</h2>` +
-    detail +
-    `<table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>` +
-      `<td><a href="${btnHref}" style="display:inline-block;padding:11px 22px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${btnLabel}</a></td>` +
-      `<td style="text-align:right;vertical-align:bottom;"><a href="${APP_URL}/?map" style="font-family:${INTER};font-size:11px;color:${MUTED};text-decoration:none;font-style:italic;">forward →</a></td>` +
-    `</tr></table>`
-  );
-}
-
-// "Signals" card — a numbered list of the remaining incidents.
-function signalsCard(items: any[]): string {
-  if (items.length === 0) return "";
-  const rows = items.map((i, idx) => {
-    const sev = i.severity || 1;
-    const place = [escape(i.country || ""), escape(i.industry || i.sector || "")].filter(Boolean).join(" · ");
+// Numbered list of incidents — headline links to the Hub, a small map link.
+function listRows(items: any[], showIndustry: boolean): string {
+  return items.map((i, idx) => {
+    const sev = sevOf(i);
+    const place = [showIndustry ? (i.industry || i.sector) : null, i.country].filter(Boolean).map(escape).join(" · ");
     return `<tr>` +
       `<td style="vertical-align:top;padding:13px 12px 13px 0;border-top:1px solid #2a2a2a;width:22px;font-family:${INTER};font-size:15px;font-weight:800;color:${GOLD};line-height:1.3;">${idx + 1}</td>` +
       `<td style="vertical-align:top;padding:13px 0;border-top:1px solid #2a2a2a;">` +
-        `<div style="font-family:${INTER};font-size:13.5px;color:#EDEDED;line-height:1.4;font-weight:600;margin-bottom:3px;">${escape(i.headline || "")}</div>` +
-        `<div style="font-family:${INTER};font-size:10px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:${SEVERITY_COLOR[sev]};">${SEVERITY_LABEL[sev]}${place ? `<span style="color:${MUTED};font-weight:600;"> · ${place}</span>` : ""}</div>` +
+        `<a href="${hubUrl(i.id)}" style="font-family:${INTER};font-size:13.5px;color:#EDEDED;line-height:1.4;font-weight:600;text-decoration:none;display:block;margin-bottom:3px;">${escape(i.headline || "")}</a>` +
+        `<div style="font-family:${INTER};font-size:10px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:${SEVERITY_COLOR[sev]};">${SEVERITY_LABEL[sev]}` +
+          (place ? `<span style="color:${MUTED};font-weight:600;"> · ${place}</span>` : "") +
+          `<a href="${mapUrl(i)}" style="color:${MUTED};font-weight:600;text-decoration:none;margin-left:10px;">map →</a></div>` +
       `</td>` +
     `</tr>`;
   }).join("");
+}
+function listCard(title: string, items: any[], showIndustry: boolean): string {
+  if (!items.length) return "";
   return card(
-    `<div style="font-family:${INTER};font-size:18px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:2px;">Signals</div>` +
-    `<table role="presentation" cellpadding="0" cellspacing="0" width="100%">${rows}</table>`
+    (title ? `<div style="font-family:${INTER};font-size:16px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:2px;">${escape(title)}</div>` : "") +
+    `<table role="presentation" cellpadding="0" cellspacing="0" width="100%">${listRows(items, showIndustry)}</table>`
   );
 }
 
-// Editorial ordering: watchlist matches first (if any), then the rest by severity.
-function orderedPool(pool: any[], matched: any[], rest: any[], focus: string): any[] {
-  return (focus && matched.length > 0)
-    ? [...bySev(matched), ...bySev(rest)]
-    : bySev(pool);
+// ── Partition: one reader's pools ─────────────────────────────────────────────
+type Partition = {
+  prefs: Prefs; pool: any[]; mine: any[]; mineHidden: number; weekMine: any[]; elsewhere: any[];
+  periodLabel: string; windowWord: string; targetDay: string;
+};
+function partitionForProfile(p: any, dayIncidents: any[], weekIncidents: any[], targetDay: string, weekStart: string): Partition {
+  const prefs = readerPrefs(p);
+  const pool = prefs.weekly ? weekIncidents : dayIncidents;
+  const indSet = new Set(prefs.industries);
+  const inInd = (i: any) => indSet.size > 0 && indSet.has(String(i.industry || "").trim());
+  const catOk = (i: any) => !prefs.catSet || (!!i.primary_category && prefs.catSet.has(i.primary_category));
+  const sevOk = (i: any) => sevOf(i) >= prefs.minSev;
+
+  const mine = indSet.size ? bySev(pool.filter((i) => inInd(i) && catOk(i) && sevOk(i))) : [];
+  const mineHidden = indSet.size ? pool.filter((i) => inInd(i) && !(catOk(i) && sevOk(i))).length : 0;
+  // Daily readers on a quiet day still see what their industry saw this week.
+  const weekMine = (!prefs.weekly && indSet.size)
+    ? bySev(weekIncidents.filter((i) => i.incident_day !== targetDay && inInd(i) && catOk(i) && sevOk(i)))
+    : [];
+  // Outside the industry only HIGH/CRITICAL travels (never below the reader's
+  // own floor). Readers with no industry get everything at their floor.
+  const crossFloor = indSet.size ? Math.max(CROSS_SECTOR_MIN_SEVERITY, prefs.minSev) : prefs.minSev;
+  const elsewhere = bySev(pool.filter((i) => !inInd(i) && catOk(i) && sevOf(i) >= crossFloor));
+
+  const periodLabel = prefs.weekly ? `${shortDate(weekStart)} – ${shortDate(targetDay)}` : shortDate(targetDay);
+  const windowWord = prefs.weekly ? "this week" : "since the last sweep";
+  return { prefs, pool, mine, mineHidden, weekMine, elsewhere, periodLabel, windowWord, targetDay };
 }
 
-function digestStats(pool: any[]) {
-  const sevCounts: Record<number, number> = { 5:0, 4:0, 3:0, 2:0, 1:0 };
-  const countries = new Set<string>();
-  for (const i of pool) {
-    if (i.severity in sevCounts) sevCounts[i.severity]++;
-    if (i.country) countries.add(i.country);
+// ── Sections ──────────────────────────────────────────────────────────────────
+function introCard(part: Partition, tier: "free" | "subscriber"): string {
+  const { prefs, pool, mine, weekMine, elsewhere, windowWord } = part;
+  const ind = escape(shortIndustry(prefs.primary) || prefs.primary);
+  const hi = elsewhere.length ? `<b style="color:#FFF;">${elsewhere.length}</b> high or critical elsewhere` : "";
+  let lead: string;
+  if (!prefs.industries.length) {
+    lead = `<b style="color:#FFF;">${plural(pool.length, "incident")}</b> hit the wire ${windowWord}; <b style="color:#FFF;">${elsewhere.length}</b> cleared your S${prefs.minSev}+ floor. ` +
+      `<a href="${ALERTS_URL}" style="color:${GOLD};text-decoration:none;font-weight:700;">Set your industry →</a> and the brief will lead with what matters to you.`;
+  } else if (mine.length) {
+    lead = `<b style="color:#FFF;">${plural(mine.length, "new incident")}</b> in <b style="color:#FFF;">${ind}</b> ${windowWord}${hi ? `, and ${hi}` : ""}. Here is what moved.`;
+  } else {
+    lead = `Nothing new in <b style="color:#FFF;">${ind}</b> cleared your filters ${windowWord}.` +
+      (weekMine.length ? ` <b style="color:#FFF;">${weekMine.length}</b> did earlier this week` : "") +
+      (hi ? `${weekMine.length ? ", and " : " "}${hi}.` : (weekMine.length ? "." : ""));
   }
-  return { criticalCount: (sevCounts[5] || 0) + (sevCounts[4] || 0), countries: countries.size };
-}
-
-// ── FREE digest ─────────────────────────────────────────────────────────────
-function freeDigestHtml(
-  name: string, periodLabel: string, pool: any[], matched: any[], rest: any[],
-  focus: string, unsubUrl: string,
-) {
-  const { criticalCount, countries } = digestStats(pool);
-  const ordered = orderedPool(pool, matched, rest, focus);
-  const lead = ordered.slice(0, 3);           // full cards
-  const signals = ordered.slice(3, 13);       // numbered list
-
-  let body = introCard(name, pool, criticalCount, countries);
-  if (focus && matched.length > 0) {
-    body += `<div style="font-family:${INTER};font-size:11px;color:${GOLD};letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin:2px 4px 12px;">★ Leading with your watchlist · ${escape(focus)}</div>`;
-  }
-  body += summaryCard(lead, pool);
-  body += lead.map((i) => incidentCard(i, false)).join("");
-
-  // Partner upsell card.
-  body += card(
-    `<div style="font-family:${INTER};font-size:10.5px;color:${GOLD};letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:8px;">Subscribe</div>` +
-    `<div style="font-family:${INTER};font-size:14px;color:#FFF;line-height:1.55;margin-bottom:16px;">Headlines tell you <i>what</i>. Subscribing unlocks <i>who</i> — named entities, blast radius, adaptive controls and vendor Defence Ratings for every incident.</div>` +
-    `<a href="${APP_URL}/?subscriptions" style="display:inline-block;padding:13px 26px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Subscribe →</a>`
+  const cards = Math.min(mine.length, LEAD_CARDS[tier]) + (prefs.industries.length ? 0 : Math.min(elsewhere.length, 3));
+  const rows = Math.max(0, mine.length - cards) + Math.min(elsewhere.length, CROSS_MAX[tier]) + (mine.length ? 0 : Math.min(weekMine.length, EARLIER_MAX));
+  const filters = `<div style="margin-top:14px;padding-top:12px;border-top:1px solid #2a2a2a;font-family:${INTER};font-size:11.5px;color:${MUTED};line-height:1.8;">` +
+    `Your brief · <span style="color:#FFF;">${prefs.industries.length ? prefs.industries.map(escape).join(" · ") : "No industry set"}</span> · ${escape(categoryLabel(prefs.catSet))} · <span style="color:#FFF;">S${prefs.minSev}+</span> · ${prefs.weekly ? "Weekly" : "Daily"} · ${readTime(cards, rows)} min read` +
+    `&nbsp;&nbsp;<a href="${ALERTS_URL}" style="color:${GOLD};text-decoration:none;font-weight:700;">Configure alerts →</a></div>`;
+  return card(
+    `<div style="font-family:${INTER};font-size:16px;font-weight:700;color:#FFF;margin-bottom:12px;">Hey ${escape(prefs.name)},</div>` +
+    `<p style="font-family:${INTER};font-size:14px;color:#D8D8D8;line-height:1.6;margin:0;">${lead}</p>` + filters
   );
-
-  body += signalsCard(signals);
-  if (ordered.length > 13) {
-    body += `<div style="text-align:center;margin:2px 0 4px;"><a href="${APP_URL}/?map" style="font-family:${INTER};font-size:12.5px;color:${MUTED};text-decoration:underline;">+ ${ordered.length - 13} more incidents on the live map →</a></div>`;
-  }
-
-  return shell(`Daily intelligence — ${periodLabel}`, body, unsubUrl, periodLabel);
 }
 
-// ── PARTNER digest ──────────────────────────────────────────────────────────
-function partnerDigestHtml(
-  name: string, periodLabel: string, pool: any[], matched: any[], rest: any[],
-  focus: string, unsubUrl: string,
-) {
-  const { criticalCount, countries } = digestStats(pool);
-  const ordered = orderedPool(pool, matched, rest, focus);
-  const lead = ordered.slice(0, 6);           // full detail cards
-  const signals = ordered.slice(6, 18);       // numbered list
+function industrySection(part: Partition, tier: "free" | "subscriber", layer: Layer): string {
+  const { prefs, mine, mineHidden, weekMine, windowWord } = part;
+  if (!prefs.industries.length) return "";
+  const ind = escape(shortIndustry(prefs.primary) || prefs.primary);
+  const title = prefs.industries.length === 1 ? prefs.primary : `${prefs.primary} +${prefs.industries.length - 1}`;
+  let html = sectionHead("In your industry", title,
+    mine.length ? `${plural(mine.length, "incident")} at S${prefs.minSev}+ ${windowWord}` : `Nothing new ${windowWord}`);
 
-  let body = introCard(name, pool, criticalCount, countries);
-  if (focus && matched.length > 0) {
-    body += `<div style="font-family:${INTER};font-size:11px;color:${GOLD};letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin:2px 4px 12px;">★ Leading with your watchlist · ${escape(focus)}</div>`;
-  } else if (focus && matched.length === 0) {
-    body += `<div style="font-family:${INTER};font-size:12.5px;color:${MUTED};line-height:1.5;margin:2px 4px 12px;">Nothing in your watchlist (<span style="color:#FFF;">${escape(focus)}</span>) ${periodLabel.includes("–") ? "this week" : "yesterday"} — here's the full brief.</div>`;
+  if (mine.length) {
+    const lead = mine.slice(0, LEAD_CARDS[tier]);
+    const rest = mine.slice(LEAD_CARDS[tier], LEAD_CARDS[tier] + LIST_MAX);
+    html += lead.map((i) => incidentCard(i, tier, layer)).join("");
+    html += listCard(`Also in ${shortIndustry(prefs.primary) || prefs.primary}`, rest, false);
+    if (mine.length > LEAD_CARDS[tier] + LIST_MAX) {
+      html += `<div style="text-align:center;margin:-6px 0 16px;">${quietLink(DASHBOARD_URL, `+ ${mine.length - LEAD_CARDS[tier] - LIST_MAX} more on your dashboard →`)}</div>`;
+    }
+  } else {
+    html += card(
+      `<p style="font-family:${INTER};font-size:14px;color:#D8D8D8;line-height:1.6;margin:0;">Nothing new in <b style="color:#FFF;">${ind}</b> cleared your filters ${windowWord}. We only fill this section when something does.</p>` +
+      (weekMine.length
+        ? `<div style="margin-top:16px;">${kicker("Earlier this week", MUTED, 2)}<table role="presentation" cellpadding="0" cellspacing="0" width="100%">${listRows(weekMine.slice(0, EARLIER_MAX), false)}</table></div>`
+        : `<p style="font-family:${INTER};font-size:12.5px;color:${MUTED};line-height:1.6;margin:12px 0 0;">A quiet week in ${ind} so far. ${quietLink(DASHBOARD_URL, "Your dashboard")} keeps the full history.</p>`)
+    );
   }
-  body += summaryCard(lead, pool);
-  body += lead.map((i) => incidentCard(i, true)).join("");
-  body += signalsCard(signals);
+  if (mineHidden > 0) {
+    html += `<div style="font-family:${INTER};font-size:12px;color:${MUTED};line-height:1.6;margin:-6px 4px 16px;">${plural(mineHidden, `more ${ind} incident`)} ${windowWord} ${mineHidden === 1 ? "was" : "were"} below S${prefs.minSev} or outside your categories — ${quietLink(DASHBOARD_URL, "see them on your dashboard →")}</div>`;
+  }
+  return html;
+}
 
-  // Full-map CTA.
-  body += card(
-    `<div style="font-family:${INTER};font-size:14px;color:#FFF;line-height:1.55;margin-bottom:16px;">Open the live map for named blast radius, adaptive GUARD controls and vendor Defence Ratings on every incident above.</div>` +
-    `<a href="${APP_URL}/?map" style="display:inline-block;padding:13px 26px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Open the full unlocked map →</a>`
+function crossSection(part: Partition, tier: "free" | "subscriber", layer: Layer): string {
+  const { prefs, elsewhere, windowWord } = part;
+  if (!elsewhere.length) return "";
+  if (!prefs.industries.length) {
+    // No industry on file: the classic brief — top three in full, then the list.
+    const lead = elsewhere.slice(0, 3);
+    const rest = elsewhere.slice(3, 3 + CROSS_MAX[tier] + 5);
+    return sectionHead("Across all sectors", "What moved", `${plural(elsewhere.length, "incident")} at S${prefs.minSev}+ ${windowWord}`) +
+      lead.map((i) => incidentCard(i, tier, layer)).join("") + listCard("More from the sweep", rest, true) +
+      (elsewhere.length > lead.length + rest.length ? `<div style="text-align:center;margin:-6px 0 16px;">${quietLink(MAP_URL, `+ ${elsewhere.length - lead.length - rest.length} more on the live map →`)}</div>` : "");
+  }
+  const ind = shortIndustry(prefs.primary) || prefs.primary;
+  const rows = elsewhere.slice(0, CROSS_MAX[tier]);
+  return sectionHead("Across all sectors", "High and critical elsewhere", `${plural(elsewhere.length, "incident")} outside ${escape(ind)} ${windowWord} · S${Math.max(CROSS_SECTOR_MIN_SEVERITY, prefs.minSev)}+`) +
+    listCard("", rows, true) +
+    (elsewhere.length > rows.length ? `<div style="text-align:center;margin:-6px 0 16px;">${quietLink(MAP_URL, `+ ${elsewhere.length - rows.length} more on the live map →`)}</div>` : "");
+}
+
+function closingCard(part: Partition, tier: "free" | "subscriber"): string {
+  const ind = escape(shortIndustry(part.prefs.primary) || "your industry");
+  if (tier === "subscriber") {
+    return card(
+      `<div style="font-family:${INTER};font-size:15px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:8px;">Every ${ind} incident, with the full layer.</div>` +
+      `<div style="font-family:${INTER};font-size:13.5px;color:#D8D8D8;line-height:1.55;margin-bottom:16px;">Your dashboard holds the complete blast radius, GUARD controls and peer watchlist for each incident in this brief, and the full report where one exists.</div>` +
+      goldBtn(DASHBOARD_URL, "Open your dashboard →")
+    );
+  }
+  return card(
+    kicker("Organisation intelligence") +
+    `<div style="font-family:${INTER};font-size:17px;font-weight:800;color:#FFF;letter-spacing:-0.01em;margin-bottom:8px;">What could this mean for us?</div>` +
+    `<div style="font-family:${INTER};font-size:13.5px;color:#D8D8D8;line-height:1.55;margin-bottom:16px;">Subscribers see the named blast radius, GUARD controls and the peer watchlist on every incident above — plus Impact Assessments, Watchlists and Pathways &amp; simulation for your own organisation.</div>` +
+    goldBtn(SUBSCRIBE_URL, "See plans →")
   );
-  if (ordered.length > 18) {
-    body += `<div style="text-align:center;margin:2px 0 4px;"><a href="${APP_URL}/?map" style="font-family:${INTER};font-size:12.5px;color:${MUTED};text-decoration:underline;">+ ${ordered.length - 18} more incidents on the live map →</a></div>`;
-  }
+}
 
-  return shell(`Daily intelligence — ${periodLabel} · Subscriber`, body, unsubUrl, periodLabel);
+function briefHtml(part: Partition, tier: "free" | "subscriber", layer: Layer, unsubUrl: string): string {
+  const { prefs, periodLabel } = part;
+  const body = introCard(part, tier) + industrySection(part, tier, layer) + crossSection(part, tier, layer) + closingCard(part, tier);
+  const eyebrow = `${prefs.industries.length ? shortIndustry(prefs.primary) + " · " : ""}${prefs.weekly ? "Weekly" : "Daily"} brief · ${periodLabel}`;
+  return shell(`${prefs.weekly ? "Weekly" : "Daily"} brief — ${periodLabel}`, body, unsubUrl, eyebrow, tier === "subscriber");
+}
+
+function subjectFor(part: Partition): string {
+  const { prefs, mine, elsewhere, periodLabel } = part;
+  const ind = shortIndustry(prefs.primary) || prefs.primary;
+  const hi = elsewhere.length ? ` · ${elsewhere.length} high or critical elsewhere` : "";
+  if (!prefs.industries.length) return `${plural(elsewhere.length, "incident")} at S${prefs.minSev}+ — ${periodLabel}`;
+  if (prefs.weekly) return `Your week in ${ind}: ${plural(mine.length, "incident")}${hi} — ${periodLabel}`;
+  if (mine.length) return `${mine.length} new in ${ind}${hi} — ${periodLabel}`;
+  return `Quiet in ${ind}${hi} — ${periodLabel}`;
+}
+
+// Backward-compatible names (the preview renderer and older callers).
+function freeDigestHtml(part: Partition, layer: Layer, unsubUrl: string) { return briefHtml(part, "free", layer, unsubUrl); }
+function partnerDigestHtml(part: Partition, layer: Layer, unsubUrl: string) { return briefHtml(part, "subscriber", layer, unsubUrl); }
+
+// Build the per-reader brief. `layer` carries the subscriber-only rows for the
+// lead incidents (EMPTY_LAYER renders the free depth for everyone). Returns
+// everything the caller needs to send or report (dry run).
+function buildForProfile(p: any, dayIncidents: any[], weekIncidents: any[], targetDay: string, weekStart: string, layer: Layer = EMPTY_LAYER) {
+  const part = partitionForProfile(p, dayIncidents, weekIncidents, targetDay, weekStart);
+  const tier: "free" | "subscriber" = part.prefs.isSubscriber ? "subscriber" : "free";
+  const unsubUrl = `${APP_URL}/?unsubscribe=${p.unsubscribe_token}`;
+  const html = tier === "subscriber" ? partnerDigestHtml(part, layer, unsubUrl) : freeDigestHtml(part, layer, unsubUrl);
+  const empty = part.mine.length === 0 && part.weekMine.length === 0 && part.elsewhere.length === 0;
+  return {
+    isPartner: part.prefs.isSubscriber, weekly: part.prefs.weekly,
+    industry: part.prefs.primary || null, minSev: part.prefs.minSev,
+    categories: part.prefs.catSet ? [...part.prefs.catSet] : "all",
+    matched: part.mine.length, hidden: part.mineHidden, weekMatched: part.weekMine.length,
+    elsewhere: part.elsewhere.length, pool: part.pool.length, empty,
+    leadIds: part.mine.slice(0, LEAD_CARDS[tier]).map((i) => Number(i.id)),
+    subject: subjectFor(part), html,
+  };
 }
 
 // ── Plumbing ────────────────────────────────────────────────────────────────
@@ -431,6 +638,36 @@ async function pgFetch(path: string, options: RequestInit = {}) {
   });
   if (!r.ok) throw new Error(`PostgREST ${r.status}: ${await r.text()}`);
   return r.json();
+}
+
+// The incident columns the brief renders, plus the public counts embed.
+const INCIDENT_COLS = "id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day,layer_counts(*)";
+
+const PROFILE_COLS = "id,email,tier,full_name,industry,unsubscribe_token,watch_industries,watch_categories,digest_frequency";
+// min_severity arrives with migration 20260922_brief_prefs.sql. PostgREST
+// rejects the WHOLE select on one unknown column, so until the owner applies
+// it the fallback select keeps the function alive (everyone at the default).
+async function fetchProfiles(): Promise<any[]> {
+  const filter = `&email_subscribed=eq.true&tier=in.(free,enterprise,admin)&limit=10000`;
+  try { return await pgFetch(`profiles?select=${PROFILE_COLS},min_severity${filter}`); }
+  catch (err) {
+    console.warn("[daily-digest] profiles without min_severity:", (err as Error)?.message);
+    return await pgFetch(`profiles?select=${PROFILE_COLS}${filter}`);
+  }
+}
+
+// Subscriber-only rows for the lead incidents, read with the service role.
+async function loadLayer(ids: number[]): Promise<Layer> {
+  const uniq = [...new Set(ids.filter((n) => Number.isFinite(n)))];
+  if (!uniq.length) return EMPTY_LAYER;
+  const list = `in.(${uniq.join(",")})`;
+  const [blast_radius, adaptive_controls, peer_watchlist, sources] = await Promise.all([
+    pgFetch(`blast_radius?select=incident_id,name,exposure_group,transmission_mechanism,impact_score&incident_id=${list}&order=incident_id.asc,impact_score.desc.nullslast,id.asc&limit=2000`),
+    pgFetch(`adaptive_controls?select=incident_id,control_id,statement&incident_id=${list}&order=incident_id.asc,id.asc&limit=2000`),
+    pgFetch(`peer_watchlist?select=incident_id,name&incident_id=${list}&order=incident_id.asc,id.asc&limit=2000`),
+    pgFetch(`sources?select=incident_id,title,url,publisher&incident_id=${list}&order=incident_id.asc,id.asc&limit=2000`),
+  ]);
+  return makeLayer({ blast_radius, adaptive_controls, peer_watchlist, sources });
 }
 
 async function createSmtpClient() {
@@ -462,47 +699,6 @@ async function sendOne(client: SMTPClient, to: string, subject: string, html: st
   }
 }
 
-// Build the per-reader brief: partition the right pool by their watchlist and
-// render the tier-appropriate HTML. Returns everything the caller needs to
-// either send or report (dry run).
-function buildForProfile(p: any, dayIncidents: any[], weekIncidents: any[], targetDay: string, weekStart: string) {
-  const indSet = asFocusSet(p.watch_industries, INDUSTRY_COUNT);
-  const catSet = asFocusSet(p.watch_categories, CATEGORY_COUNT);
-  const focus = focusLabel(indSet, catSet);
-  const weekly = p.digest_frequency === "weekly";
-  const pool = weekly ? weekIncidents : dayIncidents;
-
-  const matches = (i: any) => {
-    const okInd = !indSet || (i.industry && indSet.has(i.industry));
-    const okCat = !catSet || (i.primary_category && catSet.has(i.primary_category));
-    return okInd && okCat;
-  };
-  const hasFocus = !!(indSet || catSet);
-  const matched = hasFocus ? pool.filter(matches) : [];
-  const rest = hasFocus ? pool.filter((i) => !matches(i)) : pool;
-
-  // Subscriber = profiles.tier enterprise (Design Partner retired 2026-09-21).
-  const isPartner = p.tier === "enterprise" || p.tier === "admin";
-  // Label reflects the data window, not "now": daily = the target day; weekly =
-  // the 7-day window that ends on the target day.
-  const periodLabel = weekly
-    ? `${formatDate(weekStart)} – ${formatDate(targetDay)}`
-    : formatDate(targetDay);
-
-  const unsubUrl = `${APP_URL}/?unsubscribe=${p.unsubscribe_token}`;
-  const name = nameFromEmail(p.email);
-  const html = isPartner
-    ? partnerDigestHtml(name, periodLabel, pool, matched, rest, hasFocus ? focus : "", unsubUrl)
-    : freeDigestHtml(name, periodLabel, pool, matched, rest, hasFocus ? focus : "", unsubUrl);
-
-  const lead = isPartner ? "🤝" : "🔔";
-  const subject = (hasFocus && matched.length > 0)
-    ? `${lead} ${matched.length} in your watchlist · ${pool.length} tracked — ${periodLabel}`
-    : `${lead} ${pool.length} incidents — ${periodLabel} · ${isPartner ? "Subscriber" : "Daily"} brief`;
-
-  return { isPartner, weekly, focus: hasFocus ? focus : "all", matched: matched.length, rest: rest.length, pool: pool.length, subject, html };
-}
-
 Deno.serve(async (req) => {
   let body: any = {};
   try {
@@ -524,48 +720,52 @@ Deno.serve(async (req) => {
   const dryRun: boolean = body?.dryRun === true;
   const force: boolean = body?.force === true;
 
-  // One fetch covering the widest window any reader needs (weekly = 7 days).
-  // Daily readers use the targetDay slice. industry/primary_category drive the
-  // personalised partition; incident_day drives the daily/weekly split.
+  // One fetch covering the widest window any reader needs (weekly = 7 days;
+  // daily readers also get the week for the quiet-day fallback).
   const weekIncidents: any[] = await pgFetch(
-    // `if_you_operate_x_then_y` was dropped from incidents in the 2026-07-28
-    // restructure. PostgREST rejects the WHOLE select on one unknown column, so
-    // asking for it 400'd this query and crashed every run of this function with
-    // a 500 — silently, because the only caller is a trigger. `severity_rationale`
-    // is the surviving analytical field and now feeds the partner callout.
-    `incidents?select=id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day` +
+    `incidents?select=${INCIDENT_COLS}` +
     `&incident_day=gte.${weekStart}&incident_day=lte.${targetDay}` +
     `&latitude=not.is.null&longitude=not.is.null&order=incident_day.asc,severity.desc.nullslast,id.desc&limit=800`,
   );
   const dayIncidents = weekIncidents.filter((i) => i.incident_day === targetDay);
 
-  if (dayIncidents.length === 0 && weekIncidents.length === 0) {
+  if (weekIncidents.length === 0) {
     return new Response(JSON.stringify({ ok: true, skipped: true, reason: "no incidents", day: targetDay }),
       { headers: { "Content-Type": "application/json" } });
   }
 
-  let profiles: any[] = await pgFetch(
-    `profiles?select=id,email,tier,unsubscribe_token,watch_industries,watch_categories,digest_frequency` +
-    `&email_subscribed=eq.true&tier=in.(free,enterprise,admin)&limit=10000`,
-  );
+  let profiles: any[] = await fetchProfiles();
   if (onlyTo) profiles = profiles.filter((p) => p.email === onlyTo);
 
   const sendDow = new Date().getUTCDay(); // 0=Sun … 1=Mon
 
+  // Subscriber-only rows, once, for every subscriber's lead incidents.
+  const leadIds: number[] = [];
+  for (const p of profiles) {
+    const part = partitionForProfile(p, dayIncidents, weekIncidents, targetDay, weekStart);
+    if (!part.prefs.isSubscriber) continue;
+    const lead = part.prefs.industries.length ? part.mine.slice(0, LEAD_CARDS.subscriber) : part.elsewhere.slice(0, 3);
+    for (const i of lead) leadIds.push(Number(i.id));
+  }
+  let layer = EMPTY_LAYER;
+  try { layer = await loadLayer(leadIds); }
+  catch (err) { console.warn("[daily-digest] layer load failed, subscriber cards render without rows:", (err as Error)?.message); }
+
   // ── Dry run: partition + render, send nothing ──────────────────────────────
   if (dryRun) {
     const report = profiles.map((p) => {
-      const b = buildForProfile(p, dayIncidents, weekIncidents, targetDay, weekStart);
+      const b = buildForProfile(p, dayIncidents, weekIncidents, targetDay, weekStart, layer);
       const weeklyGated = b.weekly && sendDow !== WEEKLY_SEND_DOW && !force;
       return {
         email: p.email, tier: p.tier, frequency: p.digest_frequency || "daily",
-        focus: b.focus, matched: b.matched, rest: b.rest, pool: b.pool,
-        would_send: !weeklyGated, subject: b.subject,
+        industry: b.industry, min_severity: b.minSev, categories: b.categories,
+        matched: b.matched, hidden: b.hidden, earlier_this_week: b.weekMatched, elsewhere: b.elsewhere, pool: b.pool,
+        would_send: !weeklyGated && !b.empty, subject: b.subject,
         ...(onlyTo ? { html: b.html } : {}),
       };
     });
-    return new Response(JSON.stringify({ ok: true, dryRun: true, day: targetDay, week_start: weekStart,
-      day_incidents: dayIncidents.length, week_incidents: weekIncidents.length, recipients: report.length, report }, null, 2),
+    return new Response(JSON.stringify({ ok: true, dryRun: true, version: 17, day: targetDay, week_start: weekStart,
+      day_incidents: dayIncidents.length, week_incidents: weekIncidents.length, layer_incidents: leadIds.length, recipients: report.length, report }, null, 2),
       { headers: { "Content-Type": "application/json" } });
   }
 
@@ -578,18 +778,18 @@ Deno.serve(async (req) => {
       { status: 500, headers: { "Content-Type": "application/json" } });
   }
 
-  const results = { free: 0, partner: 0, skipped_weekly: 0, failed: 0, errors: [] as any[] };
+  const results = { free: 0, subscriber: 0, skipped_weekly: 0, skipped_empty: 0, failed: 0, errors: [] as any[] };
   for (const p of profiles) {
-    const b = buildForProfile(p, dayIncidents, weekIncidents, targetDay, weekStart);
+    const b = buildForProfile(p, dayIncidents, weekIncidents, targetDay, weekStart, layer);
 
     // Cadence gate: weekly readers receive only on the weekly send-day, unless
     // explicitly forced or single-recipient tested.
     if (b.weekly && sendDow !== WEEKLY_SEND_DOW && !force && !onlyTo) { results.skipped_weekly++; continue; }
-    if (b.pool === 0) { continue; } // nothing to say to this reader this period
+    if (b.empty) { results.skipped_empty++; continue; } // nothing to say to this reader this period
 
     const res = await sendOne(client, p.email, b.subject, b.html);
     if (res.ok) {
-      if (b.isPartner) results.partner++;
+      if (b.isPartner) results.subscriber++;
       else results.free++;
     } else {
       results.failed++;
@@ -600,7 +800,7 @@ Deno.serve(async (req) => {
   try { await client.close(); } catch { /* noop */ }
 
   return new Response(
-    JSON.stringify({ ok: true, provider: "gmail-smtp", day: targetDay,
+    JSON.stringify({ ok: true, provider: "gmail-smtp", version: 17, day: targetDay,
       day_incidents: dayIncidents.length, week_incidents: weekIncidents.length, ...results }),
     { headers: { "Content-Type": "application/json" } },
   );
