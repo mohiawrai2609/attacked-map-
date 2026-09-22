@@ -244,7 +244,6 @@ export function AuthModal({ open, onClose, intent = null }) {
             <p style={{ marginTop: 6, marginBottom: 14, fontSize: 12.5, color: C.ink3, fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>
               Already have an account?{" "}
               <button type="button" onClick={() => { setView("signin"); setError(null); }} style={linkBtn}>Sign in</button>
-              <span style={{ margin: "0 8px", color: C.line2 }}>·</span>No password — we email you a 6-digit code.
             </p>
 
             <form onSubmit={submitSignup}>
