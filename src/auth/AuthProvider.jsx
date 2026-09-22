@@ -98,10 +98,20 @@ export function AuthProvider({ children }) {
   // the ONLY email path now: sign-up and sign-in both go email → code. A new
   // address is created on the spot; `meta` (name, role, company, industry)
   // rides along as user metadata and is copied to profiles after the code.
+  // emailRedirectTo: the app never wants a link — the reader types the code —
+  // but if the Magic Link template in Supabase still prints a link (it must
+  // contain {{ .Token }} to print the code), clicking it must at least land on
+  // THIS site's dashboard, not the Supabase Site URL (which points at the old
+  // production build with no dashboard). The origin must be allow-listed under
+  // Authentication → URL configuration → Redirect URLs.
   const signIn = useCallback(async (email, meta = null) => {
     const { error } = await supabase.auth.signInWithOtp({
       email: String(email || "").trim().toLowerCase(),
-      options: { shouldCreateUser: true, ...(meta ? { data: meta } : {}) },
+      options: {
+        shouldCreateUser: true,
+        ...(meta ? { data: meta } : {}),
+        ...(typeof window !== "undefined" ? { emailRedirectTo: `${window.location.origin}/?dashboard` } : {}),
+      },
     });
     if (error) throw error;
   }, []);
