@@ -87,6 +87,7 @@ export function AuthModal({ open, onClose, intent = null }) {
   const [consent, setConsent] = useState(false);
   const [robot, setRobot] = useState(false);
   const [code, setCode] = useState("");
+  const [sentAt, setSentAt] = useState(null);   // when the current code was sent — the newest email is the only valid one
 
   if (!open) return null;
 
@@ -105,9 +106,14 @@ export function AuthModal({ open, onClose, intent = null }) {
     };
   }
 
+  // After a successful sign-in the reader goes to their dashboard — always.
+  // The landing page (?home) stays on the landing page for signed-in
+  // visitors by design, so closing the modal in place would leave them
+  // exactly where they were, signed in but looking at the marketing page.
+  // A Subscribe intent lands on the subscription page instead.
   function close(signedIn = false) {
     setView("signup"); setError(null); setResent(false); setCode("");
-    if (signedIn && intent === "subscribe") { window.location.href = "/?subscribe&activate=subscriber"; return; }
+    if (signedIn) { window.location.href = intent === "subscribe" ? "/?subscribe&activate=subscriber" : "/?dashboard"; return; }
     onClose();
   }
 
@@ -126,7 +132,7 @@ export function AuthModal({ open, onClose, intent = null }) {
         first_name: firstName.trim(), last_name: lastName.trim(), full_name,
         job_title: jobTitle, company: company.trim(), industry, marketing_opt_in: consent,
       });
-      setFrom("signup"); setCode(""); setResent(false); setView("code");
+      setFrom("signup"); setCode(""); setResent(false); setSentAt(new Date()); setView("code");
     } catch (err) {
       setError(err?.message || "Could not send the code.");
     } finally { setBusy(false); }
@@ -138,7 +144,7 @@ export function AuthModal({ open, onClose, intent = null }) {
     setError(null); setBusy(true);
     try {
       if (usePw) { await signInWithPassword(cleanEmail, password); close(true); return; }
-      await signIn(cleanEmail); setFrom("signin"); setCode(""); setResent(false); setView("code");
+      await signIn(cleanEmail); setFrom("signin"); setCode(""); setResent(false); setSentAt(new Date()); setView("code");
     }
     catch (err) { setError(err?.message || (usePw ? "Wrong email or password." : "Could not email a code.")); }
     finally { setBusy(false); }
@@ -146,7 +152,7 @@ export function AuthModal({ open, onClose, intent = null }) {
 
   async function resend() {
     setError(null); setResent(false); setBusy(true);
-    try { await signIn(cleanEmail); setResent(true); }
+    try { await signIn(cleanEmail); setResent(true); setCode(""); setSentAt(new Date()); }
     catch (err) { setError(err?.message || "Could not resend the code."); }
     finally { setBusy(false); }
   }
@@ -160,7 +166,10 @@ export function AuthModal({ open, onClose, intent = null }) {
       if (from === "signup") await saveProfileBasics(profileFields());
       close(true); // session set; app re-renders signed in and lands on the dashboard
     } catch (err) {
-      setError(err?.message || "That code didn't work — check it and try again.");
+      const m = err?.message || "";
+      setError(/expired|invalid/i.test(m)
+        ? "That code didn't match. Use the code from the newest email for this address (older codes stop working the moment a new one is sent), or press Resend code for a fresh one."
+        : (m || "That code didn't work — check it and try again."));
     } finally { setBusy(false); }
   }
 
@@ -352,7 +361,7 @@ export function AuthModal({ open, onClose, intent = null }) {
           <>
             <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Enter your code.</h2>
             <p style={{ marginTop: 12, marginBottom: 20, fontSize: 13.5, color: C.ink3, lineHeight: 1.55 }}>
-              We emailed your code to <b style={{ color: C.ink }}>{cleanEmail}</b>. Enter it below — it expires in an hour.
+              We emailed your code to <b style={{ color: C.ink }}>{cleanEmail}</b>{sentAt ? <> at <b style={{ color: C.ink }}>{sentAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</b></> : null}. Use the newest email — each new code cancels the one before — and enter it within an hour.
               {/* Until the Magic Link template in Supabase carries {{ .Token }}, a
                   reader whose address already has an account receives a link
                   instead of a code. Say so, and make the link useful. */}

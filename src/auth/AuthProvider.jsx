@@ -167,14 +167,20 @@ export function AuthProvider({ children }) {
   // Verify the 6-digit code. type="signup" right after creating an account,
   // type="email" for the passwordless code fallback. On success the session is
   // created and onAuthStateChange picks it up automatically.
+  // Supabase issues the code as type "signup" for a brand-new address (the
+  // Confirm-signup email) and as type "email" for an existing one (the Magic
+  // Link email), and verifyOtp checks the type. The app cannot know which
+  // the address was when the code was sent, so try the requested type first
+  // and the other on a type mismatch. Only a genuine expiry/mismatch on both
+  // is reported.
   const verifyCode = useCallback(async (email, token, type = "email") => {
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: String(email || "").trim().toLowerCase(),
-      token: String(token || "").replace(/\D/g, ""),
-      type,
-    });
-    if (error) throw error;
-    return data;
+    const clean = { email: String(email || "").trim().toLowerCase(), token: String(token || "").replace(/\D/g, "") };
+    const other = type === "signup" ? "email" : "signup";
+    const first = await supabase.auth.verifyOtp({ ...clean, type });
+    if (!first.error) return first.data;
+    const second = await supabase.auth.verifyOtp({ ...clean, type: other });
+    if (!second.error) return second.data;
+    throw first.error;
   }, []);
 
   // Persist the signup form basics onto the profile row. identity.profiles has
