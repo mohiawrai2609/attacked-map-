@@ -163,7 +163,11 @@ export function AuthModal({ open, onClose, intent = null }) {
     setError(null); setBusy(true);
     try {
       await verifyCode(cleanEmail, code, "email");
-      if (from === "signup") await saveProfileBasics(profileFields());
+      // The sign-up form is the whole of onboarding now (the industry picker
+      // left on 2026-09-22), so stamp onboarded_at here: the DB trigger
+      // trg_welcome_on_onboarded sends the personalised welcome email when it
+      // goes NULL → set. Without this stamp no welcome mail is ever sent.
+      if (from === "signup") await saveProfileBasics({ ...profileFields(), onboarded_at: new Date().toISOString() });
       close(true); // session set; app re-renders signed in and lands on the dashboard
     } catch (err) {
       const m = err?.message || "";

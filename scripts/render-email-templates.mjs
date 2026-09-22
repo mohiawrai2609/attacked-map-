@@ -81,8 +81,8 @@ async function embedImages(html) {
 
 // ── 1. transactional previews ───────────────────────────────────────────────
 const PREVIEWS = [
-  ["1-welcome-email.html",            "welcome_email_preview.html",         "After sign-up: welcome + first daily brief (free tier)"],
-  ["3-partner-approved.html",         "welcome_approved_preview.html",      "After design-partner approval"],
+  // 1-welcome-email.html is rendered from the function code further down.
+  ["3-partner-approved.html",       "welcome_approved_preview.html",      "After design-partner approval"],
   ["4-application-received.html",     "application_received_preview.html",  "Applicant: we received your partner application"],
   ["5-application-rejected.html",     "application_rejected_preview.html",  "Applicant: application not approved"],
   ["6-admin-new-application.html",    "admin_alert_preview.html",           "Admin: a new partner application arrived"],
@@ -167,6 +167,8 @@ const profiles = [
     "Free daily brief on a QUIET day — nothing new in the industry, earlier this week, cross-sector"],
   ["2d-daily-brief-SUBSCRIBER-weekly.html", { ...base, email: "subscriber@example.com", full_name: "Daniel Okafor", tier: "enterprise", industry, digest_frequency: "weekly", min_severity: 4 },
     "Subscriber WEEKLY brief — the 7-day window, minimum severity S4"],
+  ["2e-daily-brief-FREE-categories.html", { ...base, email: "reader@example.com", full_name: "Priya Nair", tier: "free", industry, watch_categories: ["CYB", "GEO", "PHY"] },
+    "Free daily brief with GUARD categories chosen on Configure alerts — Cyber, Geopolitical, Physical only"],
 ];
 for (const [outName, profile, label] of profiles) {
   if (!profile.industry) { console.log(`- ${outName.padEnd(32)} skipped (no industry available for this variant)`); continue; }
@@ -177,4 +179,28 @@ for (const [outName, profile, label] of profiles) {
   console.log(`✓ ${outName.padEnd(32)} ${(stamped.length / 1024).toFixed(0).padStart(5)} KB  ${label}`);
   console.log(`    subject: ${b.subject}   [in industry ${b.matched} · hidden ${b.hidden} · earlier this week ${b.weekMatched} · elsewhere ${b.elsewhere}]`);
 }
+// ── 3. welcome email, from the REAL function code, for the same reader ──────
+const wSrc = readFileSync(resolve(ROOT, "supabase/functions/welcome-email/index.ts"), "utf8");
+const wCut = wSrc.indexOf("Deno.serve(");
+if (wCut < 0) throw new Error("Deno.serve( not found — welcome-email layout changed");
+let wCore = wSrc.slice(0, wCut)
+  .replace(/^import \{ SMTPClient \}[^\n]*\n/m, "const SMTPClient = class {};\n")
+  .replace(/Deno\.env\.get\(/g, "((k) => process.env[k])(");
+wCore += "\nexport { welcomeHtml, welcomeSubject };\n";
+const wCorePath = resolve(OUT, "_welcome-core.ts");
+writeFileSync(wCorePath, wCore);
+const { welcomeHtml, welcomeSubject } = await import(pathToFileURL(wCorePath).href);
+{
+  const cols = "id,headline,summary,entity,country,industry,severity,primary_category,incident_day,layer_counts(*)";
+  let first = await rest(`incidents?select=${cols}&industry=eq.${encodeURIComponent(industry)}&incident_day=gte.${weekStart}&incident_day=lte.${targetDay}&latitude=not.is.null&order=severity.desc.nullslast,incident_day.desc,id.desc&limit=3`);
+  if (!first.length) first = await rest(`incidents?select=${cols}&incident_day=eq.${targetDay}&latitude=not.is.null&order=severity.desc.nullslast,id.desc&limit=3`);
+  const profile = { email: "reader@example.com", full_name: "Priya Nair", tier: "free", industry, watch_categories: null, digest_frequency: "daily", min_severity: 3, unsubscribe_token: "PREVIEW" };
+  const html = await embedImages(welcomeHtml(profile, first, "https://attackedmap.vercel.app/?unsubscribe=PREVIEW"));
+  const subject = welcomeSubject(profile);
+  const stamped = html.replace("<body", `<!-- subject: ${subject} | rendered ${new Date().toISOString()} from welcome-email/index.ts (v2) against live incidents for ${industry} -->\n<body`);
+  writeFileSync(resolve(OUT, "1-welcome-email.html"), stamped);
+  console.log(`✓ ${"1-welcome-email.html".padEnd(32)} ${(stamped.length / 1024).toFixed(0).padStart(5)} KB  After sign-up: welcome personalised to the sign-up industry + first ${industry} brief`);
+  console.log(`    subject: ${subject}   [${first.length} incidents shown]`);
+}
+
 console.log(`\nAll files in ${OUT}`);

@@ -43,7 +43,7 @@ const CATEGORY_IMG = {
   FIN: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&q=70&auto=format&fit=crop",
   GEO: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1000&q=70&auto=format&fit=crop",
   REG: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1000&q=70&auto=format&fit=crop",
-  PHY: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1000&q=70&auto=format&fit=crop",
+  PHY: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1000&q=70&auto=format&fit=crop",
   PPL: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1000&q=70&auto=format&fit=crop",
   TEC: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1000&q=70&auto=format&fit=crop",
   STR: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=1000&q=70&auto=format&fit=crop",
