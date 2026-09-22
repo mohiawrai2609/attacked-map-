@@ -355,7 +355,7 @@ function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
     fr.addEventListener("load", onLoad);
     if (fr.contentDocument?.readyState === "complete" && fr.contentDocument.body?.children.length) onLoad();
     return () => { fr.removeEventListener("load", onLoad); };
-  }, [reportRef, subscriber, onSubscribe, readerName]);
+  }, [reportRef, subscriber, onSubscribe, readerName, doc]); // doc: the frame mounts only once the API answered
   if (doc === undefined) return <div className="panel empty mono" style={{ margin: 22 }}>Loading the report…</div>;
   return doc
     ? <iframe ref={ref} className="report-frame" srcDoc={doc} title={i.headline} style={{ height: h }} />

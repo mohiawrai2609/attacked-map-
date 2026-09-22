@@ -447,7 +447,7 @@ function ReportFrame({ article, onBack, onMap, user, subscriber }) {
     fr.addEventListener("load", onLoad);
     if (fr.contentDocument?.readyState === "complete" && fr.contentDocument.body?.children.length) onLoad();
     return () => fr.removeEventListener("load", onLoad);
-  }, [article?.reportRef, subscriber, user?.email]);
+  }, [article?.reportRef, subscriber, user?.email, doc]); // doc: the frame mounts only once the API answered
   return (
     <main style={{ background: "#FFFFFF", fontFamily: "Inter, sans-serif", position: "relative" }}>
       <button onClick={onBack} style={{
