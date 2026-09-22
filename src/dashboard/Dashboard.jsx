@@ -1,8 +1,10 @@
 // Dashboard — the signed-in home. Personalised to profiles.industry.
 //
-// Ported from dashboard-industry/template.html (the approved prototype). Four
-// views inside one shell: Your Industry, Attack Hub (the reading room),
-// Configure Alerts (writes the real profile fields), and an article view.
+// Ported from dashboard-industry/template.html (the approved prototype). Three
+// views inside one shell: Your Industry, Configure Alerts (writes the real
+// profile fields), and an article view. The Attack Hub and the Attack Map
+// elements were removed from the dashboard on 2026-09-22 (owner's call: the
+// dashboard is the industry page only for now; both stay in git history).
 //
 // Tiering: free readers see every incident in their industry, classified, plus
 // the COUNT of blast-radius entities / GUARD controls / peers per incident.
@@ -18,19 +20,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { CATEGORIES, CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
-import { loadCorpus, loadCounts, loadHub, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
+import { loadCounts, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
 import { incidentImage, incidentPhoto } from "../lib/images";
 import { prepareReportFrame } from "../lib/reportLock";
+import { reportHtml } from "../lib/api";
 import "./dashboard.css";
 
 const DEFAULT_INDUSTRY = "Automotive & EV";
 const SEV_ORDER = [5, 4, 3, 2, 1];
 const fmtDay = (iso) => iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "";
 const shortDay = (iso) => iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "";
-// Deep link to the same incident on the live map. The map renders ONE day at a
-// time, so the day travels with the id (see the deep-link effect in
-// GlobalAttackMap.jsx, which also searches every live day as a fallback).
-const mapHref = (i) => `/?map&incident=${i.id}${i.day ? `&date=${i.day}` : ""}`;
 const previewParam = () => { try { return new URLSearchParams(window.location.search).get("preview"); } catch { return null; } };
 
 // ── icons ──────────────────────────────────────────────────────────────────
@@ -58,13 +57,12 @@ const Icon = ({ name, style }) => <span className="icon" style={style}><svg view
 
 // ── small pieces ───────────────────────────────────────────────────────────
 const Sev = ({ i, small }) => <span className={`sev s${i.severity}`} style={small ? { padding: "2px 6px" } : undefined}><i />S{i.severity} {i.sevLabel || SEVERITY[i.severity]}</span>;
-// The card follows the approved free-dashboard design: severity and date on
-// top, headline, a readable three-line summary, topic chips, the sector-level
-// signals, the source line, two labelled actions and, for free readers, the
-// Premium strip that opens the subscription page. The incident's real picture
-// (the same one the live map shows) sits on top. "Open in Attack Hub"
-// opens the full baked report where one exists, the structured brief
-// otherwise (the tag next to the date says which).
+// The card follows the approved free-dashboard design: the incident's real
+// picture on top, severity and date, headline, a readable three-line summary,
+// topic chips, the sector-level signals, the source line, one action that
+// opens the incident (the full baked report where one exists, the structured
+// brief otherwise — the tag next to the date says which) and, for free
+// readers, the Premium strip that opens the subscription page.
 function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
   const report = !!reportRefFor(i.id);
   const topics = [...new Set([i.entity, i.subcat || i.catName, ...i.secondary.map((s) => s.name)].filter(Boolean))].slice(0, 3);
@@ -86,10 +84,7 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
         {i.country ? <span className="gold">{i.country}</span> : null}
       </div>
       <div className="inc-src"><Icon name="link" />Attacked.ai intelligence{i.n && i.n.sources ? ` · ${i.n.sources} sources` : ""}</div>
-      <div className="inc-actions">
-        <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>Open in Attack Hub →</button>
-        <a className="btn" href={mapHref(i)} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> View on Map</a>
-      </div>
+      <div className="inc-actions one"><button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>{report ? "Read the report" : i.body ? "Read the briefing" : "Open the incident"} →</button></div>
       {!subscriber && (
         <button className="inc-premium" onClick={(e) => { e.stopPropagation(); onSubscribe(); }}><span className="lk"><Icon name="lock" /></span><span>What could this mean for us?</span><span className="end">Premium →</span></button>
       )}
@@ -125,7 +120,7 @@ function ArtCanvas({ points, className }) {
 }
 
 // ── views ──────────────────────────────────────────────────────────────────
-function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe, go }) {
+function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
   const [filter, setFilter] = useState("all");
   useEffect(() => { setFilter("all"); }, [P.industry]);
   const h = new Date().getHours();
@@ -144,8 +139,7 @@ function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe,
           <h1>{greeting}, {name}<strong>{P.industry}</strong></h1>
           <p><b>{P.total} incidents</b> in {P.industry} sit in the Attacked.ai corpus, <b>{P.week} of them this week</b> and <b>{P.critical} rated High or Critical</b>. {top ? <>The category landing hardest on your industry right now is <b>{top.name}</b> ({top.n}).</> : null} Every one is classified through the GUARD framework, geolocated, and traced to the companies in its blast radius.</p>
           <div className="mast-actions">
-            <a className="btn btn-dark" href="/?map" target="_blank" rel="noopener">Open on the Attack Map →</a>
-            <button className="btn" onClick={() => go("alerts")}><Icon name="bell" /> Configure alerts</button>
+            <button className="btn btn-dark" onClick={() => go("alerts")}><Icon name="bell" /> Configure alerts</button>
             <div className="mast-meta"><b>{subscriber ? "SUBSCRIBER" : "FREE"}</b><span>·</span><span>{subscriber ? "full operational view" : "industry-level view"}</span></div>
           </div>
         </div>
@@ -159,7 +153,7 @@ function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe,
       <div className="strip">
         <div className="stat"><div className="stat-icon"><Icon name="file" /></div><div><b>{P.today}</b><small>in latest sweep</small></div></div>
         <div className="stat"><div className="stat-icon"><Icon name="bars" /></div><div><b>{P.week}</b><small>last 7 sweep days</small></div></div>
-        <button className="stat" onClick={() => go("hub")}><div className="stat-icon"><Icon name="database" /></div><div><b>{P.total}</b><small>in your archive →</small></div></button>
+        <div className="stat"><div className="stat-icon"><Icon name="database" /></div><div><b>{P.total}</b><small>in your archive</small></div></div>
         <div className="stat"><div className="stat-icon"><Icon name="industry" /></div><div><b className="txt" title={P.industry}>{P.industry}</b><small>selected industry</small></div></div>
         <div className="stat"><div className="stat-icon"><Icon name="user" /></div><div><b className="txt">{subscriber ? "Subscriber" : "Free"}</b><small>access level</small></div></div>
         {subscriber
@@ -171,7 +165,7 @@ function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe,
         <section className="panel">
           <div className="panel-head">
             <div><h2>Latest in {P.industry}</h2><p>Every incident in your industry, classified through the 13 GUARD categories. Newest first.</p></div>
-            <div className="section-actions"><span className="archive-link"><b>{P.total}</b> in archive</span><button className="link-btn" onClick={() => go("hub")}>Read the briefings →</button></div>
+            <div className="section-actions"><span className="archive-link"><b>{P.total}</b> in archive</span></div>
           </div>
           <div className="filter-row">
             <button className={`chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>All <span className="n">{P.total}</span></button>
@@ -188,20 +182,10 @@ function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe,
             <h2>Latest across all sectors</h2>
             <p>The most recent high-severity incidents beyond your industry.</p>
             <div>{latest.map((i) => <div key={i.id} className="feed-item" onClick={() => onOpen(i)}><Sev i={i} /><div className="feed-title">{i.headline}<small>{i.industry || i.sector || ""} · {i.country || ""}</small></div></div>)}</div>
-            <button className="wide-btn" onClick={() => go("hub")}>Open the Attack Hub →</button>
-          </section>
-
-          <section className="panel map-card">
-            <div className="map-visual">
-              <ArtCanvas points={P.latest.concat(P.incidents)} />
-              <div className="map-title"><h3>Attack Map</h3><p>Every incident, geolocated.</p></div>
-              <div className="map-stats"><div><b>{corpus ? corpus.incidents.toLocaleString("en-GB") : "…"}</b><span>incidents classified</span></div><div><b>{corpus?.countries ?? "…"}</b><span>countries</span></div><div><b>{corpus?.days ?? "…"}</b><span>days of sweeps</span></div></div>
-            </div>
-            <a className="map-cta" href="/?map" target="_blank" rel="noopener">Open the live map →</a>
           </section>
 
           {!subscriber && (
-            <section className="panel tiers">
+          <section className="panel tiers">
               <h3>What free shows. What subscribing adds.</h3>
               <p>Free keeps you current at industry level. Subscribing opens the operational layer behind every incident.</p>
               <div className="split">
@@ -216,7 +200,6 @@ function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe,
       <section className="panel sector">
         <div className="panel-head">
           <div><h2>Your industry through the GUARD lens</h2><p>{P.total} incidents across {P.cats.length} of the 13 GUARD categories.</p></div>
-          <button className="link-btn" onClick={() => go("hub")}>All briefings →</button>
         </div>
         <div className="sector-wrap">
           <div className="cat-bars"><h3>Where the risk is landing</h3><p>Incidents in your industry by primary GUARD category. Click a bar to filter the cards above.</p>
@@ -230,78 +213,6 @@ function YourIndustry({ P, corpus, name, subscriber, query, onOpen, onSubscribe,
         </div>
         <div className="sector-note">Everything on this page is live data from the Attacked.ai corpus, filtered to the industry you gave us at sign-up. Change it any time under Configure alerts.</div>
       </section>
-    </div>
-  );
-}
-
-function AttackHub({ P, hub, query, onOpen, go }) {
-  const [scope, setScope] = useState("mine");
-  const [sev, setSev] = useState(new Set([5, 4, 3]));
-  const [cats, setCats] = useState(new Set(CATEGORIES.map(([c]) => c)));
-  const toggle = (set, setter, v) => { const n = new Set(set); n.has(v) ? n.delete(v) : n.add(v); setter(n); };
-  const q = query.trim().toLowerCase();
-  const ok = (i) => sev.has(i.severity) && cats.has(i.cat) && (!q || `${i.headline} ${i.summary} ${i.entity}`.toLowerCase().includes(q));
-  const byDate = (a, b) => (b.day > a.day ? 1 : b.day < a.day ? -1 : 0) || b.severity - a.severity;
-  const hasFull = (i) => !!(reportRefFor(i.id) || i.body);
-  // Full reports and briefings lead within the same day; otherwise newest first.
-  const rank = (a, b) => (hasFull(b) ? 1 : 0) - (hasFull(a) ? 1 : 0) || byDate(a, b);
-  // "My industry" is the whole industry (loadHub), not the 24-card home window.
-  // "All industries" is one merged list, newest first, industry named per row.
-  const mineAll = hub ? hub.mine : P.incidents;
-  const mine = mineAll.filter(ok).sort(rank);
-  const world = (hub ? hub.world : []).filter(ok);
-  const merged = scope === "all" ? [...mine, ...world].sort(byDate) : mine;
-  const lead = merged[0];
-  const rest = merged.filter((i) => i !== lead);
-  const fullCount = mineAll.filter(hasFull).length;
-  const activeFilters = `${sev.size} of 5 severities, ${cats.size} of 13 categories${q ? `, matching “${q}”` : ""}`;
-  const Row = ({ i }) => (
-    <article className="panel hub-item" onClick={() => onOpen(i)}>
-      <div><Sev i={i} /><div className="hub-date">{shortDay(i.day)}</div>{hasFull(i) ? <div className="hub-full">{reportRefFor(i.id) ? "Full report" : "Briefing"}</div> : null}</div>
-      <div><h3>{i.headline}</h3><p>{i.summary}</p><div className="h-meta"><span>{i.cat} · {i.subcat || i.catName}</span>{i.entity ? <span title={i.entity}>{i.entity}</span> : null}{i.industry && i.industry !== P.industry ? <span className="ind">{i.industry}</span> : null}</div></div>
-      <button className="btn btn-dark">{hasFull(i) ? "Read" : "Open"} →</button>
-    </article>
-  );
-  return (
-    <div className="content subpage">
-      <div className="subpage-header">
-        <div><h1>Attack Hub</h1><p>The reading room. Every incident in your industry as a reading list, full reports and briefings first, then the rest of the world.</p></div>
-        <button className="primary" onClick={() => go("alerts")}>Tune my alerts</button>
-      </div>
-      <div className="hub-layout">
-        <aside className="panel filter-panel">
-          <h3>Filter briefings</h3>
-          <div className="filter-section"><span className="fs-title">Scope</span>
-            <label><input type="radio" name="hubScope" checked={scope === "mine"} onChange={() => setScope("mine")} /> {P.industry} <span className="n">{mineAll.length}</span></label>
-            <label><input type="radio" name="hubScope" checked={scope === "all"} onChange={() => setScope("all")} /> All industries <span className="n">{hub ? `+${hub.world.length}` : "…"}</span></label>
-          </div>
-          <div className="filter-section"><span className="fs-title">Severity</span>
-            {SEV_ORDER.map((s) => <label key={s}><input type="checkbox" checked={sev.has(s)} onChange={() => toggle(sev, setSev, s)} /> <span className={`sev s${s}`} style={{ padding: "2px 6px" }}><i />S{s} {SEVERITY[s]}</span></label>)}
-          </div>
-          <div className="filter-section"><span className="fs-title">GUARD category <button className="fs-all" onClick={() => setCats(cats.size === CATEGORIES.length ? new Set() : new Set(CATEGORIES.map(([c]) => c)))}>{cats.size === CATEGORIES.length ? "none" : "all"}</button></span>
-            {CATEGORIES.map(([code, name]) => <label key={code}><input type="checkbox" checked={cats.has(code)} onChange={() => toggle(cats, setCats, code)} /> {name} <span className="n">{code}</span></label>)}
-          </div>
-        </aside>
-        <section>
-          <div className="edition-head"><h2>{scope === "all" ? "Across all industries" : "Today's edition"}</h2><span className="mono">{fmtDay(P.latestDay)}</span></div>
-          {!hub && <div className="panel empty">Loading the full reading list…</div>}
-          {hub && (lead ? (
-            <article className="panel lead" onClick={() => onOpen(lead)}>
-              <div className="lead-copy"><div className="kicker"><Sev i={lead} /><span>{lead.catName}</span><span>·</span><span>{lead.industry || ""}</span></div><h3>{lead.headline}</h3><p>{lead.body || lead.summary}</p><button className="btn btn-dark">{reportRefFor(lead.id) ? "Read the full report" : lead.body ? "Read the full briefing" : "Open the incident"} →</button></div>
-              <div className="lead-side"><div className="fact"><span>Entity</span><b>{lead.entity || "—"}</b></div><div className="fact"><span>Where</span><b>{lead.place || lead.country || "—"}</b></div>{lead.n ? <><div className="fact"><span>Blast radius</span><b className="gold">{lead.n.blast} named entities</b></div><div className="fact"><span>GUARD controls</span><b className="gold">{lead.n.controls} mapped</b></div><div className="fact"><span>Sources</span><b>{lead.n.sources}</b></div></> : <div className="fact"><span>Category</span><b>{lead.cat} · {lead.subcat || lead.catName}</b></div>}</div>
-            </article>
-          ) : <div className="panel empty">Nothing matches the current filters ({activeFilters}). Tick more severities or categories on the left.</div>)}
-          {hub && (
-            <div className="hub-section">
-              <h4>{scope === "all" ? "Newest first, every industry" : `For ${P.industry}`} <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: 0, textTransform: "none" }}>{scope === "all" ? `${merged.length} incidents` : `${mine.length} of ${mineAll.length} · ${fullCount} with a full report or briefing`}</span></h4>
-              <div className="hub-list">{rest.length ? rest.map((i) => <Row key={i.id} i={i} />) : <div className="empty">{merged.length ? "That is the only incident matching these filters." : `No incidents match the current filters (${activeFilters}).`}</div>}</div>
-            </div>
-          )}
-          {hub && scope === "mine" && world.length > 0 && (
-            <div className="hub-section"><h4>Across all sectors <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: 0, textTransform: "none" }}>latest S3+ elsewhere</span></h4><div className="hub-list">{world.slice(0, 6).map((i) => <Row key={i.id} i={i} />)}</div><button className="btn" style={{ marginTop: 10 }} onClick={() => setScope("all")}>See every industry →</button></div>
-          )}
-        </section>
-      </div>
     </div>
   );
 }
@@ -424,6 +335,15 @@ function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
   // so the frame fills the viewport below the bar and the report scrolls
   // within it — the same framing the ?hub page uses.
   const [h, setH] = useState(800);
+  // With the API on, the report arrives with the lock already applied by the
+  // server and is shown through srcdoc (same-origin, so the frame can still be
+  // reached). Off, or unreachable: the static file plus the client-side lock.
+  const [doc, setDoc] = useState(undefined);
+  useEffect(() => {
+    let dead = false; setDoc(undefined);
+    reportHtml(reportRef).then((html) => { if (!dead) setDoc(html || null); }).catch(() => { if (!dead) setDoc(null); });
+    return () => { dead = true; };
+  }, [reportRef]);
   useEffect(() => {
     const fit = () => { const fr = ref.current; if (!fr) return; setH(Math.max(480, window.innerHeight - fr.getBoundingClientRect().top - 6)); };
     fit(); window.addEventListener("resize", fit);
@@ -436,7 +356,10 @@ function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
     if (fr.contentDocument?.readyState === "complete" && fr.contentDocument.body?.children.length) onLoad();
     return () => { fr.removeEventListener("load", onLoad); };
   }, [reportRef, subscriber, onSubscribe, readerName]);
-  return <iframe ref={ref} className="report-frame" src={`/reports/${encodeURIComponent(reportRef)}.html`} title={i.headline} style={{ height: h }} />;
+  if (doc === undefined) return <div className="panel empty mono" style={{ margin: 22 }}>Loading the report…</div>;
+  return doc
+    ? <iframe ref={ref} className="report-frame" srcDoc={doc} title={i.headline} style={{ height: h }} />
+    : <iframe ref={ref} className="report-frame" src={`/reports/${encodeURIComponent(reportRef)}.html`} title={i.headline} style={{ height: h }} />;
 }
 
 function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, readerName }) {
@@ -462,7 +385,6 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
         <div className="report-bar">
           <button className="back" onClick={back}>← {backLabel}</button>
           <div className="report-bar-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><span className="mono" style={{ fontSize: 10, color: "var(--gold-deep)" }}>Full report · {reportRef}</span></div>
-          <a className="btn" href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> On map</a>
         </div>
         <ReportFrame i={i} reportRef={reportRef} subscriber={subscriber} onSubscribe={onSubscribe} readerName={readerName} />
       </div>
@@ -472,7 +394,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
     <div className="content subpage article-wrap">
       <button className="back" onClick={back}>← {backLabel}</button>
       <article className="panel article">
-        <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><a className="btn" style={{ marginLeft: "auto", height: 28, fontSize: 10, padding: "0 10px" }} href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 12, height: 12, flexBasis: 12 }} /> On map</a></div>
+        <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span></div>
         <h1>{i.headline}</h1>
         <p className="dek">{i.summary}</p>
         <div className="article-info">{facts.map(([k, v]) => <span key={k}>{k} <b>{v}</b></span>)}</div>
@@ -532,8 +454,6 @@ export function Dashboard({ initialPage = "dashboard" }) {
   const [query, setQuery] = useState("");
   const [P, setP] = useState(null);
   const [err, setErr] = useState(null);
-  const [corpus, setCorpus] = useState(null);
-  const [hub, setHub] = useState(null);
   const [reportsReady, setReportsReady] = useState(false);
   useEffect(() => { loadReportIndex().then(() => setReportsReady(true)); }, []);
   const [menu, setMenu] = useState(false);
@@ -549,17 +469,6 @@ export function Dashboard({ initialPage = "dashboard" }) {
       .catch((e) => { if (!dead) setErr(e.message || String(e)); });
     return () => { dead = true; };
   }, [industry]);
-  useEffect(() => { loadCorpus().then(setCorpus).catch(() => {}); }, []);
-  // The Hub's full reading list loads the first time the reader opens the Hub
-  // (or the article view arrived at from it), and again when the industry changes.
-  useEffect(() => { setHub(null); }, [industry]);
-  useEffect(() => {
-    if (!industry || hub || page !== "hub") return;
-    let dead = false;
-    loadHub(industry).then((h) => { if (!dead) setHub(h); }).catch(() => {});
-    return () => { dead = true; };
-  }, [industry, page, hub]);
-
   const go = useCallback((p) => { setPage(p); setSideOpen(false); setMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
   const openArticle = useCallback((i) => { setLastPage(page); setArticle(i); go("article"); }, [page, go]);
   const name = useMemo(() => {
@@ -602,14 +511,12 @@ export function Dashboard({ initialPage = "dashboard" }) {
           <div className="side-label">Intelligence</div>
           <nav className="nav">
             <button className={`nav-btn ${page === "dashboard" || (page === "article" && lastPage === "dashboard") ? "active" : ""}`} onClick={() => go("dashboard")}><Icon name="home" />Your Industry</button>
-            <button className={`nav-btn ${page === "hub" || (page === "article" && lastPage === "hub") ? "active" : ""}`} onClick={() => go("hub")}><Icon name="pulse" />Attack Hub</button>
-            <a className="nav-btn" href="/?map" target="_blank" rel="noopener"><Icon name="globe" />Attack Map<Icon name="ext" style={{ marginLeft: "auto", width: 14, flexBasis: 14 }} /></a>
             <button className={`nav-btn ${page === "alerts" ? "active" : ""}`} onClick={() => go("alerts")}><Icon name="bell" />Configure Alerts</button>
           </nav>
           <div className="side-label">Subscriber</div>
           <nav className="nav">
             {[["radar", "Blast Radius"], ["shield", "GUARD Controls"], ["users", "Peer Watchlist"]].map(([ic, lbl]) => (
-              <button key={lbl} className="nav-btn" onClick={() => subscriber ? go("hub") : openSubscribe()}><Icon name={ic} />{lbl}<span className="tag" style={subscriber ? { background: "rgba(52,199,89,.18)", color: "#34C759" } : undefined}>{subscriber ? "ON" : "LOCKED"}</span></button>
+              <button key={lbl} className="nav-btn" onClick={() => subscriber ? go("dashboard") : openSubscribe()}><Icon name={ic} />{lbl}<span className="tag" style={subscriber ? { background: "rgba(52,199,89,.18)", color: "#34C759" } : undefined}>{subscriber ? "ON" : "LOCKED"}</span></button>
             ))}
             <a className="nav-btn" href="/?subscribe"><Icon name="file" />Subscription</a>
           </nav>
@@ -640,10 +547,9 @@ export function Dashboard({ initialPage = "dashboard" }) {
 
           {err && <div className="content"><div className="panel empty" style={{ color: "#B21F31" }}>Could not load your industry: {err}</div></div>}
           {!P && !err && <div className="content"><div className="panel empty mono">Loading {industry}…</div></div>}
-          {P && page === "dashboard" && <YourIndustry P={P} corpus={corpus} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => openSubscribe()} go={go} />}
-          {P && page === "hub" && <AttackHub P={P} hub={hub} query={query} onOpen={openArticle} go={go} />}
+          {P && page === "dashboard" && <YourIndustry P={P} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => openSubscribe()} go={go} />}
           {P && page === "alerts" && <ConfigureAlerts tier={tier} onSubscribe={() => openSubscribe()} P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
-          {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel={lastPage === "hub" ? "Back to the Attack Hub" : "Back to your industry"} onSubscribe={() => openSubscribe()} />}
+          {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel="Back to your industry" onSubscribe={() => openSubscribe()} />}
         </main>
       </div>
 

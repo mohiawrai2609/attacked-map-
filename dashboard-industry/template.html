@@ -169,6 +169,7 @@
   .inc-src .icon{width:12px;height:12px;flex-basis:12px}
   .inc-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto;flex:none}
   .inc-actions .btn{height:40px;font-size:11px;padding:0 10px;white-space:nowrap}
+  .inc-actions.one{grid-template-columns:1fr}
   .inc-premium{margin-top:8px;border:1px solid rgba(245,184,0,.4);background:var(--gold-tint);min-height:38px;border-radius:8px;display:flex;align-items:center;gap:9px;padding:6px 10px;font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;width:100%;text-align:left;flex:none;font-family:var(--ui)}
   .inc-premium:hover{background:var(--gold-tint-2)}
   .inc-premium .lk{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--gold);color:var(--obsidian);flex:0 0 20px}
@@ -428,8 +429,6 @@
     <div class="side-label">Intelligence</div>
     <nav class="nav">
       <button class="nav-btn active" data-page="dashboard"><span class="icon" data-icon="home"></span>Your Industry</button>
-      <button class="nav-btn" data-page="hub"><span class="icon" data-icon="pulse"></span>Attack Hub</button>
-      <a class="nav-btn" href="https://attackedmap.vercel.app/?map" target="_blank" rel="noopener"><span class="icon" data-icon="globe"></span>Attack Map<span class="icon" style="margin-left:auto;width:14px;flex-basis:14px" data-icon="ext"></span></a>
       <button class="nav-btn" data-page="alerts"><span class="icon" data-icon="bell"></span>Configure Alerts</button>
     </nav>
     <div class="side-label">Subscriber</div>
@@ -474,7 +473,6 @@
             <h1><span id="greeting">Good morning</span>, <span id="mastName"></span><strong id="mastIndustry"></strong></h1>
             <p id="mastCopy"></p>
             <div class="mast-actions">
-              <a class="btn btn-dark" id="mastMapLink" href="https://attackedmap.vercel.app/?map" target="_blank" rel="noopener">Open on the Attack Map →</a>
               <button class="btn" data-page-link="alerts"><span class="icon" data-icon="bell"></span> Configure alerts</button>
               <div class="mast-meta" id="mastMeta"><b>FREE</b><span>·</span><span>industry-level view</span></div>
             </div>
@@ -492,7 +490,7 @@
           <section class="panel">
             <div class="panel-head">
               <div><h2 id="latestTitle"></h2><p>Every incident in your industry, classified through the 13 GUARD categories. Newest first.</p></div>
-              <div class="section-actions"><a class="archive-link" href="#" data-page-link="hub"><b id="archiveN"></b> in archive</a><button class="link-btn" data-page-link="hub">Read the briefings →</button></div>
+              <div class="section-actions"><span class="archive-link"><b id="archiveN"></b> in archive</span></div>
             </div>
             <div class="filter-row" id="chips"></div>
             <div class="incident-grid" id="incidentGrid"></div>
@@ -503,16 +501,6 @@
               <h2>Today across all sectors</h2>
               <p>The most recent high-severity incidents beyond your industry.</p>
               <div id="todayFeed"></div>
-              <button class="wide-btn" data-page-link="hub">Open the Attack Hub →</button>
-            </section>
-
-            <section class="panel map-card">
-              <div class="map-visual">
-                <canvas id="mapCanvas"></canvas>
-                <div class="map-title"><h3>Attack Map</h3><p>Every incident, geolocated.</p></div>
-                <div class="map-stats"><div><b id="mapIncidents"></b><span>incidents classified</span></div><div><b id="mapCountries"></b><span>countries</span></div><div><b id="mapDays"></b><span>days of sweeps</span></div></div>
-              </div>
-              <a class="map-cta" href="https://attackedmap.vercel.app/?map" target="_blank" rel="noopener">Open the live map →</a>
             </section>
 
             <section class="panel tiers">
@@ -529,7 +517,6 @@
         <section class="panel sector">
           <div class="panel-head">
             <div><h2>Your industry through the GUARD lens</h2><p id="sectorSub"></p></div>
-            <button class="link-btn" data-page-link="hub">All briefings →</button>
           </div>
           <div class="sector-wrap">
             <div class="cat-bars"><h3>Where the risk is landing</h3><p>Incidents in your industry by primary GUARD category. Click a bar to filter the cards above.</p><div id="catBars"></div></div>
@@ -540,30 +527,6 @@
           </div>
           <div class="sector-note">Everything on this page is live data from the Attacked.ai corpus, filtered to the industry you gave us at sign-in. Change it any time under Configure alerts.</div>
         </section>
-      </div>
-    </section>
-
-    <!-- ═══════════════ ATTACK HUB ═══════════════ -->
-    <section id="hub" class="page">
-      <div class="content subpage">
-        <div class="subpage-header">
-          <div><h1>Attack Hub</h1><p>The reading room. Every incident in your industry as a reading list, full reports and briefings first, then the rest of the world.</p></div>
-          <button class="primary" data-page-link="alerts">Tune my alerts</button>
-        </div>
-        <div class="hub-layout">
-          <aside class="panel filter-panel">
-            <h3>Filter briefings</h3>
-            <div class="filter-section"><span class="fs-title">Scope</span><label><input type="radio" name="hubScope" value="mine" checked/> <span id="hubScopeMine"></span></label><label><input type="radio" name="hubScope" value="all"/> <span id="hubScopeAll">All industries</span></label></div>
-            <div class="filter-section"><span class="fs-title">Severity</span><div id="hubSev"></div></div>
-            <div class="filter-section"><span class="fs-title">GUARD category <button class="fs-all" id="hubCatsAll" type="button">none</button></span><div id="hubCats"></div></div>
-          </aside>
-          <section>
-            <div class="edition-head"><h2 id="hubEdition">Today's edition</h2><span class="mono" id="hubDate"></span></div>
-            <div id="hubLead"></div>
-            <div class="hub-section"><h4 id="hubMineTitle"></h4><div class="hub-list" id="hubMine"></div></div>
-            <div class="hub-section" id="hubAllSection"><h4>Across all sectors <span class="mono" style="font-size:9px;color:var(--ink-4);letter-spacing:0;text-transform:none">latest S3+ elsewhere</span></h4><div class="hub-list" id="hubAll"></div><button class="btn" style="margin-top:10px" id="hubSeeAll" type="button">See every industry →</button></div>
-          </section>
-        </div>
       </div>
     </section>
 
@@ -735,7 +698,7 @@ const card = (i) => {
     <div class="inc-sig-label">Sector-level signals</div>
     <div class="inc-chips"><span class="gold">Criticality: ${esc(i.sevLabel)}</span><span class="gold">${esc(i.cat)} · ${esc(i.catName)}</span>${i.country ? `<span class="gold">${esc(i.country)}</span>` : ''}</div>
     <div class="inc-src">${ic('link')}Attacked.ai intelligence${i.n && i.n.sources ? ` · ${i.n.sources} sources` : ''}</div>
-    <div class="inc-actions"><button class="btn btn-dark" data-open="${i.id}">Open in Attack Hub →</button><a class="btn" href="${mapHref(i)}" target="_blank" rel="noopener">${ic('pin', 13)} View on Map</a></div>
+    <div class="inc-actions one"><button class="btn btn-dark" data-open="${i.id}">${REPORT.has(i.id) ? 'Read the report' : i.body ? 'Read the briefing' : 'Open the incident'} →</button></div>
     ${SUB ? '' : `<button class="inc-premium" data-subscribe><span class="lk">${icons.lock}</span><span>What could this mean for us?</span><span class="end">Premium →</span></button>`}
   </div>
 </article>`;
@@ -758,14 +721,13 @@ function renderPersona() {
   document.getElementById('greeting').textContent = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
   const top = P.cats[0];
   document.getElementById('mastCopy').innerHTML = `<b>${P.total} incidents</b> in ${esc(name)} sit in the Attacked.ai corpus, <b>${P.week} of them this week</b> and <b>${P.critical} rated High or Critical</b>. ${top ? `The category landing hardest on your industry right now is <b>${esc(top.name)}</b> (${top.n}). ` : ''}Every one is classified through the GUARD framework, geolocated, and traced to the companies in its blast radius.`;
-  document.getElementById('mastMapLink').href = `${MAP}/?map`;
   document.getElementById('latestTitle').textContent = `Latest in ${name}`;
   document.getElementById('archiveN').textContent = P.total;
   document.getElementById('sectorSub').textContent = `${P.total} incidents across ${P.cats.length} of the 13 GUARD categories.`;
   document.getElementById('previewTitle').textContent = `Your ${name} brief`;
   document.getElementById('chips').innerHTML = `<button class="chip active" data-filter="all">All <span class="n">${P.total}</span></button>` + P.cats.map(c => `<button class="chip" data-filter="${c.code}" title="${esc(c.name)}">${esc(c.name)} <span class="n">${c.n}</span></button>`).join('');
   filter = 'all';
-  renderTier(); renderIncidents(); renderToday(); renderSector(); renderHub(); renderAlerts(); renderSubscribe(); drawArt();
+  renderTier(); renderIncidents(); renderToday(); renderSector(); renderAlerts(); renderSubscribe(); drawArt();
   bind();
 }
 // Everything that changes between Free and Subscriber.
@@ -779,7 +741,7 @@ function renderTier() {
   document.getElementById('strip').innerHTML = `
     <div class="stat"><div class="stat-icon">${icons.file}</div><div><b>${P.today}</b><small>in latest sweep</small></div></div>
     <div class="stat"><div class="stat-icon">${icons.bars}</div><div><b>${P.week}</b><small>last 7 sweep days</small></div></div>
-    <button class="stat" data-page-link="hub"><div class="stat-icon">${icons.database}</div><div><b>${P.total}</b><small>in your archive →</small></div></button>
+    <div class="stat"><div class="stat-icon">${icons.database}</div><div><b>${P.total}</b><small>in your archive</small></div></div>
     <div class="stat"><div class="stat-icon">${icons.industry}</div><div><b class="txt" title="${esc(name)}">${esc(name)}</b><small>selected industry</small></div></div>
     <div class="stat"><div class="stat-icon">${icons.user}</div><div><b class="txt">${SUB ? 'Subscriber' : 'Free'}</b><small>access level</small></div></div>
     ${SUB ? `<div class="stat"><div class="stat-icon">${icons.shield}</div><div><b class="txt">Open</b><small>blast radius · controls · peers</small></div></div>`
@@ -795,9 +757,6 @@ function renderIncidents() {
 function renderToday() {
   const rows = D.today.filter(i => i.industry !== P.name).slice(0, 6);
   document.getElementById('todayFeed').innerHTML = rows.map(i => `<div class="feed-item" data-open="${i.id}">${sevBadge(i)}<div class="feed-title">${esc(i.headline)}<small>${esc(i.industry || i.sector || '')} · ${esc(i.country || '')}</small></div></div>`).join('');
-  document.getElementById('mapIncidents').textContent = D.totals.incidents.toLocaleString('en-GB');
-  document.getElementById('mapCountries').textContent = D.totals.countries;
-  document.getElementById('mapDays').textContent = D.days;
 }
 function renderSector() {
   const max = Math.max(...P.cats.map(c => c.n), 1);
@@ -805,52 +764,6 @@ function renderSector() {
   const briefs = (P.briefs || []).slice(0, 5);
   document.getElementById('briefsCount').textContent = `${P.briefings} available`;
   document.getElementById('briefsList').innerHTML = briefs.length ? briefs.map(i => `<button class="brief-row" data-open="${i.id}"><span class="icon" style="color:#6A6A6A">${icons.book}</span><span><b>${esc(i.headline)}</b><span>${esc(i.entity || '')} · ${esc(i.country || '')}</span></span><span class="date">${shortDay(i.day)}</span></button>`).join('') : `<div class="empty">No long-form briefings in ${esc(P.name)} yet. The daily brief still covers every incident.</div>`;
-}
-
-/* ── Attack Hub: the whole industry as a reading list, then the world ── */
-function hubFilters() {
-  const sev = [...document.querySelectorAll('#hubSev input:checked')].map(x => Number(x.value));
-  const cats = [...document.querySelectorAll('#hubCats input:checked')].map(x => x.value);
-  const scope = document.querySelector('input[name=hubScope]:checked')?.value || 'mine';
-  return { sev, cats, scope };
-}
-function renderHub() {
-  if (!document.getElementById('hubSev').innerHTML) {
-    document.getElementById('hubSev').innerHTML = SEV_ORDER.map(s => `<label><input type="checkbox" value="${s}" ${s >= 3 ? 'checked' : ''}/> <span class="sev s${s}" style="padding:2px 6px"><i></i>S${s} ${SEV_NAME[s]}</span></label>`).join('');
-    document.getElementById('hubCats').innerHTML = D.categories.map(c => `<label><input type="checkbox" value="${c.code}" checked/> ${esc(c.name)} <span class="n">${c.code}</span></label>`).join('');
-  }
-  const { sev, cats, scope } = hubFilters();
-  document.getElementById('hubCatsAll').textContent = cats.length === D.categories.length ? 'none' : 'all';
-  const q = query.trim().toLowerCase();
-  const ok = (i) => sev.includes(i.severity) && cats.includes(i.cat) && (!q || `${i.headline} ${i.summary} ${i.entity}`.toLowerCase().includes(q));
-  const byDate = (a, b) => (b.day > a.day ? 1 : b.day < a.day ? -1 : 0) || b.severity - a.severity;
-  const rank = (a, b) => (isFull(b) ? 1 : 0) - (isFull(a) ? 1 : 0) || byDate(a, b);
-  const seen = new Set();
-  const mineAll = [...(P.briefs || []), ...P.incidents].filter(i => !seen.has(i.id) && seen.add(i.id));
-  const worldAll = ALL().filter(i => i.industry !== P.name && i.severity >= 3).sort(byDate);
-  const mine = mineAll.filter(ok).sort(rank);
-  const world = worldAll.filter(ok);
-  const merged = scope === 'all' ? [...mine, ...world].sort(byDate) : mine;
-  const lead = merged[0]; const rest = merged.filter(i => i !== lead);
-  const fullCount = mineAll.filter(isFull).length;
-  const activeFilters = `${sev.length} of 5 severities, ${cats.length} of 13 categories${q ? `, matching “${esc(q)}”` : ''}`;
-  document.getElementById('hubScopeMine').innerHTML = `${esc(P.name)} <span class="n">${mineAll.length}</span>`;
-  document.getElementById('hubScopeAll').innerHTML = `All industries <span class="n">+${worldAll.length}</span>`;
-  document.getElementById('hubEdition').textContent = scope === 'all' ? 'Across all industries' : "Today's edition";
-  document.getElementById('hubDate').textContent = fmtDay(D.latestDay);
-  document.getElementById('hubLead').innerHTML = lead ? `<article class="panel lead" data-open="${lead.id}">
-    <div class="lead-copy"><div class="kicker">${sevBadge(lead)}<span>${esc(lead.catName)}</span><span>·</span><span>${esc(lead.industry || '')}</span></div><h3>${esc(lead.headline)}</h3><p>${esc(lead.body || lead.summary)}</p><button class="btn btn-dark">${REPORT.has(lead.id) ? 'Read the full report' : lead.body ? 'Read the full briefing' : 'Open the incident'} →</button></div>
-    <div class="lead-side"><div class="fact"><span>Entity</span><b>${esc(lead.entity || '—')}</b></div><div class="fact"><span>Where</span><b>${esc(lead.place || lead.country || '—')}</b></div>${lead.n ? `<div class="fact"><span>Blast radius</span><b class="gold">${lead.n.blast} named entities</b></div><div class="fact"><span>GUARD controls</span><b class="gold">${lead.n.controls} mapped</b></div><div class="fact"><span>Sources</span><b>${lead.n.sources}</b></div>` : `<div class="fact"><span>Category</span><b>${esc(lead.cat)} · ${esc(lead.subcat || lead.catName)}</b></div>`}</div>
-  </article>` : `<div class="panel empty">Nothing matches the current filters (${activeFilters}). Tick more severities or categories on the left.</div>`;
-  const row = (i) => `<article class="panel hub-item" data-open="${i.id}"><div>${sevBadge(i)}<div class="hub-date">${shortDay(i.day)}</div>${isFull(i) ? `<div class="hub-full">${fullLabel(i)}</div>` : ''}</div><div><h3>${esc(i.headline)}</h3><p>${esc(i.summary)}</p><div class="h-meta"><span>${esc(i.cat)} · ${esc(i.subcat || i.catName)}</span>${i.entity ? `<span title="${esc(i.entity)}">${esc(i.entity)}</span>` : ''}${i.industry && i.industry !== P.name ? `<span class="ind">${esc(i.industry)}</span>` : ''}</div></div><button class="btn btn-dark">${isFull(i) ? 'Read' : 'Open'} →</button></article>`;
-  document.getElementById('hubMineTitle').innerHTML = scope === 'all'
-    ? `Newest first, every industry <span class="mono" style="font-size:9px;color:var(--ink-4);letter-spacing:0;text-transform:none">${merged.length} incidents</span>`
-    : `For ${esc(P.name)} <span class="mono" style="font-size:9px;color:var(--ink-4);letter-spacing:0;text-transform:none">${mine.length} of ${mineAll.length} · ${fullCount} with a full report or briefing</span>`;
-  document.getElementById('hubMine').innerHTML = rest.length ? rest.map(row).join('') : `<div class="empty">${merged.length ? 'That is the only incident matching these filters.' : `No incidents match the current filters (${activeFilters}).`}</div>`;
-  const allSec = document.getElementById('hubAllSection');
-  allSec.style.display = scope === 'mine' && world.length ? '' : 'none';
-  document.getElementById('hubAll').innerHTML = world.slice(0, 6).map(row).join('');
-  bind();
 }
 
 /* ── Configure alerts (with the plan panel on top) ── */
@@ -900,7 +813,7 @@ function renderSubscribe() {
 }
 function setSubscriber(on) {
   SUB = on;
-  renderTier(); renderIncidents(); renderHub(); renderAlerts(); renderSubscribe();
+  renderTier(); renderIncidents(); renderAlerts(); renderSubscribe();
   if (document.getElementById('article').classList.contains('active') && currentArticle) openArticle(currentArticle, true);
   toast(on ? 'You are now a subscriber. Everything is unlocked.' : 'Subscription switched off. You are on Free.');
 }
@@ -911,8 +824,8 @@ function openArticle(id, keepPage = false) {
   const i = byId(id); if (!i) return;
   currentArticle = id;
   if (!keepPage) lastPage = document.querySelector('.page.active')?.id || 'dashboard';
-  document.getElementById('articleBack').textContent = lastPage === 'hub' ? '← Back to the Attack Hub' : lastPage === 'alerts' ? '← Back to alerts' : '← Back to your industry';
-  document.getElementById('articleMeta').innerHTML = `${sevBadge(i)}<span class="cat" style="font-size:10px">${esc(i.cat)} · ${esc(i.subcat || i.catName)}</span><span class="mono" style="font-size:10px;color:var(--ink-3)">${fmtDay(i.day)}</span>${REPORT.has(i.id) ? `<span class="mono" style="font-size:10px;color:var(--gold-deep)">Full report in the app</span>` : ''}<a class="btn" style="margin-left:auto;height:28px;font-size:10px;padding:0 10px" href="${mapHref(i)}" target="_blank" rel="noopener">${ic('pin', 12)} On map</a>`;
+  document.getElementById('articleBack').textContent = lastPage === 'alerts' ? '← Back to alerts' : '← Back to your industry';
+  document.getElementById('articleMeta').innerHTML = `${sevBadge(i)}<span class="cat" style="font-size:10px">${esc(i.cat)} · ${esc(i.subcat || i.catName)}</span><span class="mono" style="font-size:10px;color:var(--ink-3)">${fmtDay(i.day)}</span>${REPORT.has(i.id) ? `<span class="mono" style="font-size:10px;color:var(--gold-deep)">Full report in the app</span>` : ''}`;
   document.getElementById('articleTitle').textContent = i.headline;
   document.getElementById('articleDek').textContent = i.summary;
   document.getElementById('articleInfo').innerHTML = [['Entity', i.entity], ['Where', i.place || i.country], ['Industry', i.industry], ['Sector', i.sector], ['Confidence', i.confidence], ['Sources', i.n.sources]].filter(([, v]) => v).map(([k, v]) => `<span>${k} <b>${esc(v)}</b></span>`).join('');
@@ -944,7 +857,7 @@ function toast(msg) { const t = document.getElementById('toast'); document.getEl
 
 /* ── canvas art: incidents as points on a faint graticule (masthead + map card) ── */
 function drawArt() {
-  for (const [id, pts] of [['mastCanvas', P.incidents], ['mapCanvas', D.today.concat(P.incidents)]]) {
+  for (const [id, pts] of [['mastCanvas', P.incidents]]) {
     const c = document.getElementById(id); if (!c) continue;
     const r = c.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
     if (r.width < 16 || r.height < 16) continue;
@@ -974,13 +887,10 @@ function bind() {
   document.querySelectorAll('[data-page-link]').forEach(b => b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); showPage(b.dataset.pageLink); });
   document.querySelectorAll('#chips .chip').forEach(c => c.onclick = () => { filter = c.dataset.filter; renderIncidents(); });
   document.querySelectorAll('[data-filter-cat]').forEach(b => b.onclick = () => { filter = b.dataset.filterCat; renderIncidents(); document.getElementById('incidentGrid').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  document.querySelectorAll('#hubSev input, #hubCats input, input[name=hubScope]').forEach(x => x.onchange = renderHub);
 }
-document.getElementById('hubCatsAll').onclick = () => { const all = [...document.querySelectorAll('#hubCats input')]; const on = all.every(x => x.checked); all.forEach(x => x.checked = !on); renderHub(); };
-document.getElementById('hubSeeAll').onclick = () => { document.querySelector('input[name=hubScope][value=all]').checked = true; renderHub(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 document.querySelectorAll('.nav-btn[data-page]').forEach(b => b.onclick = () => showPage(b.dataset.page));
 document.getElementById('articleBack').onclick = () => showPage(lastPage);
-document.getElementById('globalSearch').addEventListener('input', (e) => { query = e.target.value; renderIncidents(); renderHub(); });
+document.getElementById('globalSearch').addEventListener('input', (e) => { query = e.target.value; renderIncidents(); });
 document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('globalSearch').focus(); } });
 document.getElementById('industrySelect').onchange = (e) => { if (D.personas[e.target.value]) { P = D.personas[e.target.value]; renderPersona(); toast(`Dashboard now leads with ${P.name}`); } else toast(`${e.target.value}: data for this industry is not baked into this file`); };
 document.addEventListener('click', (e) => { const c = e.target.closest('.choice'); if (!c) return; const inp = c.querySelector('input'); if (inp.type === 'radio') { c.parentElement.querySelectorAll('.choice').forEach(x => x.classList.remove('selected')); c.classList.add('selected'); } else { c.classList.toggle('selected', inp.checked); } });
