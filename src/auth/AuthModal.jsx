@@ -353,6 +353,10 @@ export function AuthModal({ open, onClose, intent = null }) {
             <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Enter your code.</h2>
             <p style={{ marginTop: 12, marginBottom: 20, fontSize: 13.5, color: C.ink3, lineHeight: 1.55 }}>
               We emailed your code to <b style={{ color: C.ink }}>{cleanEmail}</b>. Enter it below — it expires in an hour.
+              {/* Until the Magic Link template in Supabase carries {{ .Token }}, a
+                  reader whose address already has an account receives a link
+                  instead of a code. Say so, and make the link useful. */}
+              <span style={{ display: "block", marginTop: 8, fontSize: 12, color: C.ink4 }}>Got a sign-in link instead of a code? That means this address already has an account — the link signs you in too and opens your dashboard.</span>
             </p>
             <form onSubmit={submitCode}>
               <label style={label}>Verification code</label>
