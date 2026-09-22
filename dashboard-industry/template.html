@@ -698,7 +698,7 @@ const card = (i) => {
     <div class="inc-sig-label">Sector-level signals</div>
     <div class="inc-chips"><span class="gold">Criticality: ${esc(i.sevLabel)}</span><span class="gold">${esc(i.cat)} · ${esc(i.catName)}</span>${i.country ? `<span class="gold">${esc(i.country)}</span>` : ''}</div>
     <div class="inc-src">${ic('link')}Attacked.ai intelligence${i.n && i.n.sources ? ` · ${i.n.sources} sources` : ''}</div>
-    <div class="inc-actions"><button class="btn btn-dark" data-open="${i.id}">Open in Attack Hub →</button><a class="btn" href="${mapHref(i)}" target="_blank" rel="noopener">${ic('pin', 13)} View on Map</a></div>
+    <div class="inc-actions"><a class="btn btn-dark" href="${MAP}/?hub&open=${i.id}">Open in Attack Hub →</a><a class="btn" href="${mapHref(i)}" target="_blank" rel="noopener">${ic('pin', 13)} View on Map</a></div>
     ${SUB ? '' : `<button class="inc-premium" data-subscribe><span class="lk">${icons.lock}</span><span>What could this mean for us?</span><span class="end">Premium →</span></button>`}
   </div>
 </article>`;

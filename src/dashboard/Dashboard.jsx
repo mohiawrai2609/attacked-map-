@@ -34,6 +34,8 @@ const shortDay = (iso) => iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString(
 // time, so the day travels with the id (the map's deep-link effect also
 // searches every live day as a fallback).
 const mapHref = (i) => `/?map&incident=${i.id}${i.day ? `&date=${i.day}` : ""}`;
+// The same incident on the Attacked Hub page, opened there.
+const hubHref = (i) => "/?hub&open=" + i.id;
 const previewParam = () => { try { return new URLSearchParams(window.location.search).get("preview"); } catch { return null; } };
 
 // ── icons ──────────────────────────────────────────────────────────────────
@@ -64,17 +66,16 @@ const Sev = ({ i, small }) => <span className={`sev s${i.severity}`} style={smal
 // The card follows the approved free-dashboard design: the incident's real
 // picture on top, severity and date, headline, a readable three-line summary,
 // topic chips, the sector-level signals, the source line, two actions —
-// "Open in Attack Hub" opens the incident's reading view (the full baked
-// report where one exists, the structured brief otherwise; the tag next to
-// the date says which) and "View on Map" opens the same incident on the live
-// map — and, for free readers, the Premium strip that opens the subscription
-// page. The Hub and the Map left the SIDEBAR on 2026-09-22; the card keeps
+// "Open in Attack Hub" opens the incident on the Attacked Hub page (/?hub&open=,
+// where the full baked report shows when one exists) and "View on Map" opens
+// the same incident on the live map — and, for free readers, the Premium
+// strip that opens the subscription page. The Hub and the Map left the SIDEBAR on 2026-09-22; the card keeps
 // its links to both (owner's call).
 function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
   const report = !!reportRefFor(i.id);
   const topics = [...new Set([i.entity, i.subcat || i.catName, ...i.secondary.map((s) => s.name)].filter(Boolean))].slice(0, 3);
   return (
-    <article className="incident" onClick={() => onOpen(i)}>
+    <article className="incident" onClick={() => { window.location.href = hubHref(i); }}>
       <div className="inc-img" style={{ backgroundImage: `url(${incidentImage(i)})` }}>
         <img className="incident-photo" src={incidentPhoto(i)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
         {(report || i.body) && <span className="inc-tag on-img">{report ? "Full report" : "Briefing"}</span>}
@@ -92,7 +93,7 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
       </div>
       <div className="inc-src"><Icon name="link" />Attacked.ai intelligence{i.n && i.n.sources ? ` · ${i.n.sources} sources` : ""}</div>
       <div className="inc-actions">
-        <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>Open in Attack Hub →</button>
+        <a className="btn btn-dark" href={hubHref(i)} onClick={(e) => e.stopPropagation()}>Open in Attack Hub →</a>
         <a className="btn" href={mapHref(i)} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> View on Map</a>
       </div>
       {!subscriber && (
@@ -457,8 +458,16 @@ export function Dashboard({ initialPage = "dashboard" }) {
   const { user, tier, profile, loading: authLoading, signOut, setSubscribed, saveProfileBasics } = useAuth();
   const preview = previewParam();
   const subscriber = isSubscriber(tier);
-  const [industry, setIndustry] = useState(() => profile?.industry || (preview ? DEFAULT_INDUSTRY : null));
-  useEffect(() => { if (profile?.industry && profile.industry !== industry) setIndustry(profile.industry); }, [profile?.industry]); // eslint-disable-line
+  // The industry comes from the profile row, or — before that row has been
+  // read, or if the write after sign-up failed — from the sign-up details kept
+  // on the session (user_metadata). So a reader who chose an industry at
+  // sign-up is never asked again; the picker below is only for accounts that
+  // genuinely have none (older accounts, social sign-ins).
+  const metaIndustry = user?.user_metadata?.industry || null;
+  const [industry, setIndustry] = useState(() => profile?.industry || metaIndustry || (preview ? DEFAULT_INDUSTRY : null));
+  useEffect(() => { const want = profile?.industry || metaIndustry; if (want && want !== industry) setIndustry(want); }, [profile?.industry, metaIndustry]); // eslint-disable-line
+  // Profile row without an industry but sign-up details with one: repair the row once.
+  useEffect(() => { if (user && profile && !profile.industry && metaIndustry) saveProfileBasics({ industry: metaIndustry }); }, [user, profile?.industry, metaIndustry]); // eslint-disable-line
   const [page, setPage] = useState(initialPage);
   const [lastPage, setLastPage] = useState("dashboard");
   const [article, setArticle] = useState(null);
