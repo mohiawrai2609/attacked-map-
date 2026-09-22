@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     reports_dir: str = str(REPO_DIR / "public" / "reports")
     ingest_token: str | None = None
     subscriber_tiers: str = "enterprise,admin"
+    # the sign-in code email (routers/auth_code.py) — the project's Gmail sender
+    gmail_user: str | None = None
+    gmail_app_password: str | None = None
+    email_from: str | None = None
     ingest_tables: str = "incidents,sources,blast_radius,peer_watchlist,adaptive_controls,historical_analogues,control_objectives,incident_updates"
 
     model_config = SettingsConfigDict(env_file=str(API_DIR / ".env"), extra="ignore")

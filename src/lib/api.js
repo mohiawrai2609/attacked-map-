@@ -59,3 +59,11 @@ export async function setSubscription(on) {
 export async function reportHtml(ref) {
   return call(`/reports/${encodeURIComponent(ref)}`, { text: true, auth: true });
 }
+
+// Ask the API to email a sign-in code. Unlike Supabase's own email, this is
+// ALWAYS a code — for a new address (the sign-up form rides along as meta)
+// and for a returning one. Returns null when the API is off so the caller
+// falls back to Supabase's signInWithOtp. No session needed.
+export async function sendCode(email, meta = null, create = true) {
+  return call("/auth/send-code", { method: "POST", body: { email, meta, create }, auth: false });
+}

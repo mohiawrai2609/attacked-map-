@@ -18,7 +18,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { SUBSCRIBER_TIER, isSubscriber } from "../lib/taxonomy";
-import { setSubscription } from "../lib/api";
+import { sendCode, setSubscription } from "../lib/api";
 
 const AuthContext = createContext({
   user: null,
@@ -105,6 +105,12 @@ export function AuthProvider({ children }) {
   // production build with no dashboard). The origin must be allow-listed under
   // Authentication → URL configuration → Redirect URLs.
   const signIn = useCallback(async (email, meta = null) => {
+    // The API sends the code itself (always a code, never a link, any
+    // address) when VITE_API_URL is set and the API is reachable. A real
+    // refusal from the API (bad address, mail failure) is surfaced; only an
+    // unreachable API falls through to Supabase's own email.
+    try { const r = await sendCode(String(email || "").trim().toLowerCase(), meta, true); if (r && r.sent) return; }
+    catch (e) { if (e && e.status) throw new Error(e.message); }
     const { error } = await supabase.auth.signInWithOtp({
       email: String(email || "").trim().toLowerCase(),
       options: {

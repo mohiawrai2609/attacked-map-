@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import incidents, ingest, me, reports, subscription
+from .routers import auth_code, incidents, ingest, me, reports, subscription
 
 app = FastAPI(title="Attacked.ai API", version="0.1.0", docs_url="/docs", redoc_url=None)
 
@@ -26,6 +26,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "x-ingest-token"],
 )
 
+app.include_router(auth_code.router)
 app.include_router(me.router)
 app.include_router(incidents.router)
 app.include_router(subscription.router)
@@ -40,4 +41,5 @@ async def health():
         "supabase": settings.supabase_url,
         "server_key": bool(settings.server_key),
         "ingest": bool(settings.ingest_token),
+        "code_email": bool(settings.gmail_user and settings.gmail_app_password),
     }
