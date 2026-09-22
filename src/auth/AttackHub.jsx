@@ -468,6 +468,38 @@ function ReportFrame({ article, onBack, onMap, user, subscriber }) {
   );
 }
 
+// One incident row → the article shape the Hub renders (list rows and the
+// ?open= single fetch share it, so a deep-opened article looks like a listed one).
+const HUB_COLS = "id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,event_date,incident_day";
+
+function shapeRow(r, reportByIncident = {}) {
+    const day = r.incident_day || r.event_date || null;
+    return {
+      id: r.id,
+      _key: `m-${r.id}`,
+      reportRef: r.hub_ref || reportByIncident[String(r.id)] || null,
+      headline: r.headline,
+      summary: r.summary || "",
+      article_body: r.summary || "",   // full body loads on open
+      severity: r.severity,
+      primary_category: r.primary_category,
+      primary_subcategory_name: r.primary_subcategory_name || null,
+      image_url: r.image_url || null,
+      industry: r.industry || null,
+      sector: r.sector || r.industry || null,
+      entity: r.entity || null,
+      country: r.country || null,
+      location_name: r.location_name || null,
+      reporter: r.reporter,
+      confidence: r.confidence,
+      status: null,
+      incident_day: day,
+      event_date: day,
+      sortDay: day,
+      data: null,
+    };
+}
+
 export function AttackHub() {
   const { user, tier } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
@@ -534,7 +566,7 @@ export function AttackHub() {
           // falls back when they are absent (image_url -> CATEGORY_IMG,
           // hub_ref -> null), so leaving them out degrades gracefully.
           // `confidence` was restored to the public.incidents view and is safe.
-          .select("id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,event_date,incident_day")
+          .select(HUB_COLS)
           .order("incident_day", { ascending: false, nullsFirst: false })
           .order("severity", { ascending: false })
           .limit(1000);
@@ -543,7 +575,7 @@ export function AttackHub() {
         // ~300 rows — and every report stays reachable from the Hub however
         // far the feed moves on.
         const repRes = await supabase.from("incidents")
-          .select("id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,event_date,incident_day")
+          .select(HUB_COLS)
           .not("article_body", "is", null)
           .order("incident_day", { ascending: false, nullsFirst: false })
           .limit(400);
@@ -555,33 +587,7 @@ export function AttackHub() {
         const totalRes = await supabase.from("incidents")
           .select("id", { count: "exact", head: true });
 
-        const mapped = incRows.map(r => {
-          const day = r.incident_day || r.event_date || null;
-          return {
-            id: r.id,
-            _key: `m-${r.id}`,
-            reportRef: r.hub_ref || reportByIncident[String(r.id)] || null,
-            headline: r.headline,
-            summary: r.summary || "",
-            article_body: r.summary || "",   // full body loads on open
-            severity: r.severity,
-            primary_category: r.primary_category,
-            primary_subcategory_name: r.primary_subcategory_name || null,
-            image_url: r.image_url || null,
-            industry: r.industry || null,
-            sector: r.sector || r.industry || null,
-            entity: r.entity || null,
-            country: r.country || null,
-            location_name: r.location_name || null,
-            reporter: r.reporter,
-            confidence: r.confidence,
-            status: null,
-            incident_day: day,
-            event_date: day,
-            sortDay: day,
-            data: null,
-          };
-        });
+        const mapped = incRows.map(r => shapeRow(r, reportByIncident));
         const sorted = mapped
           .filter(a => a.headline)
           .sort((a, b) => (a.sortDay || "") < (b.sortDay || "") ? 1 : (a.sortDay || "") > (b.sortDay || "") ? -1 : (b.severity || 0) - (a.severity || 0));
@@ -602,9 +608,18 @@ export function AttackHub() {
     let openId = null;
     try { openId = new URLSearchParams(window.location.search).get("open"); } catch { /* noop */ }
     if (!openId) { didDeepOpen.current = true; return; }
+    const open = (a) => { didDeepOpen.current = true; setSelected(a); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { window.scrollTo(0, 0); } };
     const a = articles.find(x => String(x.id) === String(openId) || x.reportRef === openId);
-    if (a) { didDeepOpen.current = true; setSelected(a); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { window.scrollTo(0, 0); } }
-  }, [articles]);
+    if (a) { open(a); return; }
+    // Not in the loaded window (newest 1000 + the report rows) — an older
+    // incident linked from the dashboard. Fetch that one row by id; the body
+    // loads on open as for any article. A miss (bad id) stays on the feed.
+    if (!/^\d+$/.test(String(openId))) { didDeepOpen.current = true; return; }
+    didDeepOpen.current = true;
+    supabase.from("incidents").select(HUB_COLS).eq("id", Number(openId)).limit(1)
+      .then(({ data }) => { const r = data && data[0]; if (r && r.headline) { const one = shapeRow(r, reportByIncident); setArticles(prev => prev.some(x => x.id === one.id) ? prev : [one, ...prev]); open(one); } })
+      .catch(() => { /* stay on the feed */ });
+  }, [articles, reportByIncident]);
 
   const cats = ["ALL", ...Array.from(new Set(articles.map(a => a.primary_category).filter(Boolean)))];
   const inds = ["ALL", ...Array.from(new Set(articles.map(a => a.industry).filter(Boolean))).sort()];
