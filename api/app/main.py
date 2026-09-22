@@ -38,6 +38,6 @@ async def health():
     return {
         "ok": True,
         "supabase": settings.supabase_url,
-        "service_role": bool(settings.supabase_service_role_key),
+        "server_key": bool(settings.server_key),
         "ingest": bool(settings.ingest_token),
     }

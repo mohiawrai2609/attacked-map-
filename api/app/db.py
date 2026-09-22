@@ -31,8 +31,8 @@ def client() -> httpx.AsyncClient:
 
 
 def _headers(user_token: str | None, prefer: str | None = None) -> dict[str, str]:
-    bearer = settings.supabase_service_role_key or user_token or settings.supabase_anon_key
-    h = {"apikey": settings.supabase_anon_key, "Authorization": f"Bearer {bearer}", "Accept": "application/json"}
+    bearer = settings.server_key or user_token or settings.public_key
+    h = {"apikey": settings.public_key, "Authorization": f"Bearer {bearer}", "Accept": "application/json"}
     if prefer:
         h["Prefer"] = prefer
     return h
@@ -47,7 +47,7 @@ async def get(table: str, params: dict[str, str], user_token: str | None = None)
 
 async def rpc(name: str, body: dict[str, Any], user_token: str | None) -> Any:
     """Call a SQL function AS THE READER (auth.uid() must be theirs), never as the server."""
-    h = {"apikey": settings.supabase_anon_key, "Authorization": f"Bearer {user_token}", "Content-Type": "application/json"}
+    h = {"apikey": settings.public_key, "Authorization": f"Bearer {user_token}", "Content-Type": "application/json"}
     r = await client().post(f"{REST}/rpc/{name}", json=body, headers=h)
     if r.status_code >= 400:
         raise HTTPException(502, f"{name} failed ({r.status_code}): {r.text[:200]}")
@@ -56,9 +56,9 @@ async def rpc(name: str, body: dict[str, Any], user_token: str | None) -> Any:
 
 async def insert(table: str, rows: list[dict[str, Any]]) -> int:
     """Server-side write; requires the service role."""
-    if not settings.supabase_service_role_key:
-        raise HTTPException(503, "writes need SUPABASE_SERVICE_ROLE_KEY on the API")
-    h = {"apikey": settings.supabase_anon_key, "Authorization": f"Bearer {settings.supabase_service_role_key}",
+    if not settings.server_key:
+        raise HTTPException(503, "writes need SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) on the API")
+    h = {"apikey": settings.public_key, "Authorization": f"Bearer {settings.server_key}",
          "Content-Type": "application/json", "Prefer": "return=minimal,resolution=merge-duplicates"}
     r = await client().post(f"{REST}/{table}", json=rows, headers=h)
     if r.status_code >= 400:
