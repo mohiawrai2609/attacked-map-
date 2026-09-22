@@ -87,7 +87,9 @@ async def insert(table: str, rows: list[dict[str, Any]]) -> int:
 
 
 # ── what the routes need ──────────────────────────────────────────────────
-PROFILE_COLS = "id,tier,industry,full_name,company,role,email_subscribed,digest_frequency,watch_industries,watch_categories"
+# "*" on the own-row profiles view: never a named list, which PostgREST rejects
+# outright when one column is missing (see fetchProfile in src/auth/AuthProvider.jsx).
+PROFILE_COLS = "*"
 
 
 async def get_profile(user_id: str, user_token: str | None) -> dict[str, Any] | None:

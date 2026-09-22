@@ -43,9 +43,15 @@ function getPreviewTier() {
 
 async function fetchProfile(userId) {
   if (!userId) return null;
+  // select("*"), deliberately: public.profiles is a security_invoker view with
+  // an own-row policy, so this returns exactly the reader's row and nothing
+  // else — and it cannot break when a column is added (min_severity for the
+  // daily brief, 2026-09-22) or renamed. A named list that mentions one column
+  // the view lacks makes PostgREST reject the WHOLE select, this returns null,
+  // and every reader silently drops to the free tier. Never go back to a list.
   const { data, error } = await supabase
     .from("profiles")
-    .select("tier, company, role, approved_at, email_subscribed, unsubscribe_token, full_name, industry, country, company_size, watch_industries, watch_categories, digest_frequency, onboarded_at, avatar_url")
+    .select("*")
     .eq("id", userId)
     .maybeSingle();
   if (error) {
