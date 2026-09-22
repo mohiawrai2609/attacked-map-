@@ -30,6 +30,10 @@ const DEFAULT_INDUSTRY = "Automotive & EV";
 const SEV_ORDER = [5, 4, 3, 2, 1];
 const fmtDay = (iso) => iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "";
 const shortDay = (iso) => iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+// Deep link to the same incident on the live map. The map renders ONE day at a
+// time, so the day travels with the id (the map's deep-link effect also
+// searches every live day as a fallback).
+const mapHref = (i) => `/?map&incident=${i.id}${i.day ? `&date=${i.day}` : ""}`;
 const previewParam = () => { try { return new URLSearchParams(window.location.search).get("preview"); } catch { return null; } };
 
 // ── icons ──────────────────────────────────────────────────────────────────
@@ -59,10 +63,13 @@ const Icon = ({ name, style }) => <span className="icon" style={style}><svg view
 const Sev = ({ i, small }) => <span className={`sev s${i.severity}`} style={small ? { padding: "2px 6px" } : undefined}><i />S{i.severity} {i.sevLabel || SEVERITY[i.severity]}</span>;
 // The card follows the approved free-dashboard design: the incident's real
 // picture on top, severity and date, headline, a readable three-line summary,
-// topic chips, the sector-level signals, the source line, one action that
-// opens the incident (the full baked report where one exists, the structured
-// brief otherwise — the tag next to the date says which) and, for free
-// readers, the Premium strip that opens the subscription page.
+// topic chips, the sector-level signals, the source line, two actions —
+// "Open in Attack Hub" opens the incident's reading view (the full baked
+// report where one exists, the structured brief otherwise; the tag next to
+// the date says which) and "View on Map" opens the same incident on the live
+// map — and, for free readers, the Premium strip that opens the subscription
+// page. The Hub and the Map left the SIDEBAR on 2026-09-22; the card keeps
+// its links to both (owner's call).
 function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
   const report = !!reportRefFor(i.id);
   const topics = [...new Set([i.entity, i.subcat || i.catName, ...i.secondary.map((s) => s.name)].filter(Boolean))].slice(0, 3);
@@ -84,7 +91,10 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
         {i.country ? <span className="gold">{i.country}</span> : null}
       </div>
       <div className="inc-src"><Icon name="link" />Attacked.ai intelligence{i.n && i.n.sources ? ` · ${i.n.sources} sources` : ""}</div>
-      <div className="inc-actions one"><button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>{report ? "Read the report" : i.body ? "Read the briefing" : "Open the incident"} →</button></div>
+      <div className="inc-actions">
+        <button className="btn btn-dark" onClick={(e) => { e.stopPropagation(); onOpen(i); }}>Open in Attack Hub →</button>
+        <a className="btn" href={mapHref(i)} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> View on Map</a>
+      </div>
       {!subscriber && (
         <button className="inc-premium" onClick={(e) => { e.stopPropagation(); onSubscribe(); }}><span className="lk"><Icon name="lock" /></span><span>What could this mean for us?</span><span className="end">Premium →</span></button>
       )}
@@ -385,6 +395,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
         <div className="report-bar">
           <button className="back" onClick={back}>← {backLabel}</button>
           <div className="report-bar-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><span className="mono" style={{ fontSize: 10, color: "var(--gold-deep)" }}>Full report · {reportRef}</span></div>
+          <a className="btn" href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> On map</a>
         </div>
         <ReportFrame i={i} reportRef={reportRef} subscriber={subscriber} onSubscribe={onSubscribe} readerName={readerName} />
       </div>
@@ -394,7 +405,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
     <div className="content subpage article-wrap">
       <button className="back" onClick={back}>← {backLabel}</button>
       <article className="panel article">
-        <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span></div>
+        <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><a className="btn" style={{ marginLeft: "auto", height: 28, fontSize: 10, padding: "0 10px" }} href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 12, height: 12, flexBasis: 12 }} /> On map</a></div>
         <h1>{i.headline}</h1>
         <p className="dek">{i.summary}</p>
         <div className="article-info">{facts.map(([k, v]) => <span key={k}>{k} <b>{v}</b></span>)}</div>

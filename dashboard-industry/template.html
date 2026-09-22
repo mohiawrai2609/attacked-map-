@@ -698,7 +698,7 @@ const card = (i) => {
     <div class="inc-sig-label">Sector-level signals</div>
     <div class="inc-chips"><span class="gold">Criticality: ${esc(i.sevLabel)}</span><span class="gold">${esc(i.cat)} · ${esc(i.catName)}</span>${i.country ? `<span class="gold">${esc(i.country)}</span>` : ''}</div>
     <div class="inc-src">${ic('link')}Attacked.ai intelligence${i.n && i.n.sources ? ` · ${i.n.sources} sources` : ''}</div>
-    <div class="inc-actions one"><button class="btn btn-dark" data-open="${i.id}">${REPORT.has(i.id) ? 'Read the report' : i.body ? 'Read the briefing' : 'Open the incident'} →</button></div>
+    <div class="inc-actions"><button class="btn btn-dark" data-open="${i.id}">Open in Attack Hub →</button><a class="btn" href="${mapHref(i)}" target="_blank" rel="noopener">${ic('pin', 13)} View on Map</a></div>
     ${SUB ? '' : `<button class="inc-premium" data-subscribe><span class="lk">${icons.lock}</span><span>What could this mean for us?</span><span class="end">Premium →</span></button>`}
   </div>
 </article>`;
@@ -825,7 +825,7 @@ function openArticle(id, keepPage = false) {
   currentArticle = id;
   if (!keepPage) lastPage = document.querySelector('.page.active')?.id || 'dashboard';
   document.getElementById('articleBack').textContent = lastPage === 'alerts' ? '← Back to alerts' : '← Back to your industry';
-  document.getElementById('articleMeta').innerHTML = `${sevBadge(i)}<span class="cat" style="font-size:10px">${esc(i.cat)} · ${esc(i.subcat || i.catName)}</span><span class="mono" style="font-size:10px;color:var(--ink-3)">${fmtDay(i.day)}</span>${REPORT.has(i.id) ? `<span class="mono" style="font-size:10px;color:var(--gold-deep)">Full report in the app</span>` : ''}`;
+  document.getElementById('articleMeta').innerHTML = `${sevBadge(i)}<span class="cat" style="font-size:10px">${esc(i.cat)} · ${esc(i.subcat || i.catName)}</span><span class="mono" style="font-size:10px;color:var(--ink-3)">${fmtDay(i.day)}</span>${REPORT.has(i.id) ? `<span class="mono" style="font-size:10px;color:var(--gold-deep)">Full report in the app</span>` : ''}<a class="btn" style="margin-left:auto;height:28px;font-size:10px;padding:0 10px" href="${mapHref(i)}" target="_blank" rel="noopener">${ic('pin', 12)} On map</a>`;
   document.getElementById('articleTitle').textContent = i.headline;
   document.getElementById('articleDek').textContent = i.summary;
   document.getElementById('articleInfo').innerHTML = [['Entity', i.entity], ['Where', i.place || i.country], ['Industry', i.industry], ['Sector', i.sector], ['Confidence', i.confidence], ['Sources', i.n.sources]].filter(([, v]) => v).map(([k, v]) => `<span>${k} <b>${esc(v)}</b></span>`).join('');
