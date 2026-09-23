@@ -9283,6 +9283,9 @@ export default function GlobalAttackMap() {
   // search every live day kept in liveDaysRef and switch to the one that
   // holds the incident. Keeps trying until it is found or the boot finishes.
   const deepLinkDone = useRef(false);
+  const deepLinkWantRef = useRef(null);   // the DB id asked for in the URL
+  const deepLinkSelRef = useRef(null);    // the _id we selected for it
+  const deepLinkSeenRef = useRef(false);  // our selection has been committed at least once
   useEffect(() => {
     if (deepLinkDone.current || !incidents.length) return;
     let want = null;
@@ -9290,22 +9293,44 @@ export default function GlobalAttackMap() {
     if (!want) { deepLinkDone.current = true; return; }
     const w = String(want);
     const hit = incidents.find(i => String(i._id) === w) || incidents.find(i => i.id != null && String(i.id) === w);
-    if (hit) { console.info("[deep-link] selected", hit._id, "on", currentDate); setSelectedId(hit._id); deepLinkDone.current = true; return; }
+    if (hit) { deepLinkWantRef.current = hit.id != null ? String(hit.id) : null; deepLinkSelRef.current = hit._id; setSelectedId(hit._id); deepLinkDone.current = true; return; }
     const days = liveDaysRef.current;
-    console.info("[deep-link] not on rendered day", currentDate, "· live days:", days ? days.size : "none", "· booting:", booting);
     if (days && !deepLinkSwitchedRef.current) {
       for (const [day, sw] of days) {
         const rows = Object.values(sw?.results || {}).flatMap(r => (r && r.incidents) || []);
         if (rows.some(i => i && i.id != null && String(i.id) === w)) {
           deepLinkSwitchedRef.current = true;
-          console.info("[deep-link] switching to", day);
           setSweep(sw); setSweepName(`daily_${day}.json`); setCurrentDate(day);
           return; // re-runs when `incidents` recomputes for the new day
         }
       }
     }
-    if (!booting) { console.info("[deep-link] gave up"); deepLinkDone.current = true; }
+    if (!booting) deepLinkDone.current = true;
   }, [incidents, booting]);
+
+  // Hold the linked incident as the sweep is replaced underneath us.
+  //
+  // `_id` is POSITIONAL within a day ("STR-2" = the 3rd Strategic incident of
+  // that sweep), so when the enriched sweep replaces the fast-painted one the
+  // same `_id` can point at a DIFFERENT incident — the linked card silently
+  // became another story ~10s after opening. Re-find by DATABASE id on every
+  // list change and move the selection if it drifted. Only while the selection
+  // is still the one we made: if the reader closed the card or clicked another
+  // incident, we stop and leave them alone.
+  useEffect(() => {
+    const want = deepLinkWantRef.current;
+    if (!want || !incidents.length) return;
+    if (selectedId === deepLinkSelRef.current) {
+      deepLinkSeenRef.current = true;          // React has committed our selection
+    } else if (deepLinkSeenRef.current) {
+      deepLinkWantRef.current = null;          // the reader closed it or picked another — leave them alone
+      return;
+    } else {
+      return;                                  // set but not yet committed: wait, do NOT give up
+    }
+    const hit = incidents.find(i => i.id != null && String(i.id) === want);
+    if (hit && hit._id !== selectedId) { deepLinkSelRef.current = hit._id; setSelectedId(hit._id); }
+  }, [incidents, selectedId]);
 
   const reporters = meta.newsroom || DEFAULT_REPORTERS;
 
@@ -9468,7 +9493,13 @@ export default function GlobalAttackMap() {
   }, [selectedId, visibleIncidents]);
 
   const selectedIncident = useMemo(() => {
-    const found = incidents.find(i => i._id === selectedId) || null;
+    // The deep-linked card must not blink out while the enriched sweep replaces
+    // the fast-painted one: `_id` is positional, so for that one incident fall
+    // back to its DATABASE id, which is stable. The effect below then moves
+    // `selectedId` to the new `_id` on the next tick.
+    const found = incidents.find(i => i._id === selectedId)
+      || (deepLinkWantRef.current ? incidents.find(i => i.id != null && String(i.id) === deepLinkWantRef.current) : null)
+      || null;
     if (!found) return null;
     // blast_radius is lazy-loaded into `selBlast` after selection (it is not
     // fetched inline with the incident list). When the found incident has no
