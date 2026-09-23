@@ -141,12 +141,16 @@ function resolveCountryName(v) {
 //     frame left and right" that made the earlier Cesium flat attempt unusable.
 //     (The old value here, MapMode2D.CLAMP, does not exist in Cesium, so it
 //     silently fell back to infinite scroll.)
-//   • WebMercatorProjection — the ArcGIS tiles ARE Web Mercator, so the flat
-//     map renders them unwarped and looks like the map people know.
+//   • GeographicProjection (equirectangular) — the world is twice as wide as it
+//     is tall, the shape every website world map has, so it FILLS a landscape
+//     screen edge to edge. Web Mercator was tried first: it makes the world a
+//     square, which on a wide screen sat in the middle like a card with black
+//     bars either side. Cesium reprojects the (Mercator) ArcGIS tiles on the
+//     GPU, exactly as it already does on the globe.
 //   • clamp2D() every frame — the camera can never pan or zoom the world out
 //     of the viewport: it re-centres when the view is wider than the world and
 //     stops at the edges otherwise.
-const FLAT_LAT_LIMIT = 85;   // Web Mercator's usable pole
+const FLAT_LAT_LIMIT = 90;   // equirectangular runs pole to pole
 const FLAT_MIN_HALF_WIDTH = 350;   // metres — street level, same as the globe's 250 m floor
 
 // Half-extent of the projected world, in the 2D scene's metres.
@@ -156,12 +160,13 @@ function worldHalfExtent2D(viewer) {
   return { x: Math.abs(p.x), y: Math.abs(p.y) };
 }
 
-// Widest the flat view may zoom out: the whole world fits the viewport.
+// Widest the flat view may zoom out: the world's full WIDTH fills the
+// viewport. On a landscape screen wider than 2:1 that crops only the polar
+// caps (a 16:9 screen still shows ±80°); on a tall screen the map is shorter
+// than the viewport and sits centred. Either way the map is never a small
+// square in the middle of a black frame.
 function flatMaxHalfWidth(viewer) {
-  const { x, y } = worldHalfExtent2D(viewer);
-  const cv = viewer.scene.canvas;
-  const aspect = (cv.clientWidth || 1) / (cv.clientHeight || 1);
-  return Math.max(x, y * aspect);
+  return worldHalfExtent2D(viewer).x;
 }
 
 // Keep the 2D camera inside the world. Runs on scene.preRender.
@@ -183,10 +188,20 @@ function clamp2D(viewer) {
   if (moved) { cam.position.x = x; cam.position.y = y; }
 }
 
-// Frame the whole world, centred, in the flat view.
+// Frame the whole world, centred and filling the viewport's width, in the
+// flat view. setView() with a rectangle CONTAINS it (bars on one axis), so the
+// frustum is then widened or narrowed to the exact world width.
 function frameFlatWorld(viewer) {
   const Cesium = window.Cesium;
-  viewer.camera.setView({ destination: Cesium.Rectangle.fromDegrees(-180, -FLAT_LAT_LIMIT, 180, FLAT_LAT_LIMIT) });
+  const cam = viewer.camera;
+  cam.setView({ destination: Cesium.Rectangle.fromDegrees(-180, -FLAT_LAT_LIMIT, 180, FLAT_LAT_LIMIT) });
+  const f = cam.frustum;
+  if (Cesium.defined(f.left)) {
+    const halfW = (f.right - f.left) / 2;
+    const target = flatMaxHalfWidth(viewer);
+    if (halfW > target) cam.zoomIn((halfW - target) * 2);
+    else if (halfW < target) cam.zoomOut((target - halfW) * 2);
+  }
   clamp2D(viewer);
   viewer.scene.requestRender();
 }
@@ -808,10 +823,10 @@ function resolveCoords(inc) {
         creditContainer: document.createElement("div"), // hide the credit bar
         contextOptions: { webgl: { alpha: false } },
         // FLAT view settings (see the note above worldHalfExtent2D): one copy
-        // of the world, never the infinite east-west repeat, in the projection
-        // the imagery tiles are already in.
+        // of the world, never the infinite east-west repeat, drawn 2:1 so it
+        // fills a landscape screen.
         mapMode2D: Cesium.MapMode2D.ROTATE,
-        mapProjection: new Cesium.WebMercatorProjection(),
+        mapProjection: new Cesium.GeographicProjection(),
       });
       // Cesium's own 2D zoom-out cap is maximumZoomFactor × the world's half
       // width. Raised so it never undercuts flatMaxHalfWidth() (the whole
