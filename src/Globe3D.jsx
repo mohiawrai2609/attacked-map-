@@ -131,7 +131,116 @@ function resolveCountryName(v) {
   return String(v);
 }
 
-export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, hoveredId, activeCountries = new Set(), onSelect, onHover, showBlastRadius = false, blastRadius = null, showLabels = false, world = null }) {
+// ── FLAT view = the SAME Cesium viewer in SCENE2D ─────────────────────────
+// One viewer, two scene modes: the globe morphs into a flat Web-Mercator map
+// and back, so both views share the satellite imagery, the incident markers,
+// the highlights, the blast radius and the click/hover handling. Three things
+// make the flat map behave like a map instead of a camera looking at a plane:
+//   • MapMode2D.ROTATE at construction — the default (INFINITE_SCROLL) repeats
+//     the world east-west forever, which is the "scrollable map out of the
+//     frame left and right" that made the earlier Cesium flat attempt unusable.
+//     (The old value here, MapMode2D.CLAMP, does not exist in Cesium, so it
+//     silently fell back to infinite scroll.)
+//   • WebMercatorProjection — the ArcGIS tiles ARE Web Mercator, so the flat
+//     map renders them unwarped and looks like the map people know.
+//   • clamp2D() every frame — the camera can never pan or zoom the world out
+//     of the viewport: it re-centres when the view is wider than the world and
+//     stops at the edges otherwise.
+const FLAT_LAT_LIMIT = 85;   // Web Mercator's usable pole
+const FLAT_MIN_HALF_WIDTH = 350;   // metres — street level, same as the globe's 250 m floor
+
+// Half-extent of the projected world, in the 2D scene's metres.
+function worldHalfExtent2D(viewer) {
+  const Cesium = window.Cesium;
+  const p = viewer.scene.mapProjection.project(new Cesium.Cartographic(Math.PI, Cesium.Math.toRadians(FLAT_LAT_LIMIT)));
+  return { x: Math.abs(p.x), y: Math.abs(p.y) };
+}
+
+// Widest the flat view may zoom out: the whole world fits the viewport.
+function flatMaxHalfWidth(viewer) {
+  const { x, y } = worldHalfExtent2D(viewer);
+  const cv = viewer.scene.canvas;
+  const aspect = (cv.clientWidth || 1) / (cv.clientHeight || 1);
+  return Math.max(x, y * aspect);
+}
+
+// Keep the 2D camera inside the world. Runs on scene.preRender.
+function clamp2D(viewer) {
+  const Cesium = window.Cesium;
+  const scene = viewer.scene;
+  if (scene.mode !== Cesium.SceneMode.SCENE2D) return;
+  const cam = viewer.camera;
+  const f = cam.frustum;
+  if (!Cesium.defined(f.left) || !Cesium.defined(f.top)) return;   // not the 2D orthographic frustum yet
+  const halfW = (f.right - f.left) / 2;
+  const halfH = (f.top - f.bottom) / 2;
+  const { x: maxX, y: maxY } = worldHalfExtent2D(viewer);
+  let x = cam.position.x, y = cam.position.y, moved = false;
+  if (halfW >= maxX) { if (x !== 0) { x = 0; moved = true; } }
+  else { const lim = maxX - halfW; if (x > lim) { x = lim; moved = true; } else if (x < -lim) { x = -lim; moved = true; } }
+  if (halfH >= maxY) { if (y !== 0) { y = 0; moved = true; } }
+  else { const lim = maxY - halfH; if (y > lim) { y = lim; moved = true; } else if (y < -lim) { y = -lim; moved = true; } }
+  if (moved) { cam.position.x = x; cam.position.y = y; }
+}
+
+// Frame the whole world, centred, in the flat view.
+function frameFlatWorld(viewer) {
+  const Cesium = window.Cesium;
+  viewer.camera.setView({ destination: Cesium.Rectangle.fromDegrees(-180, -FLAT_LAT_LIMIT, 180, FLAT_LAT_LIMIT) });
+  clamp2D(viewer);
+  viewer.scene.requestRender();
+}
+
+// The globe's home framing (over the reader's part of the world).
+function flyHome3D(viewer, duration = 1.1) {
+  const Cesium = window.Cesium;
+  viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 24000000), duration });
+}
+
+// Per-mode look and controls. Flat: evenly lit like a map (no terminator, no
+// fog, no ground haze), pan + zoom only (no twist, so north stays up). Globe:
+// the photoreal treatment and free rotation.
+function applySceneStyle(viewer) {
+  const Cesium = window.Cesium;
+  const scene = viewer.scene;
+  const flat = scene.mode === Cesium.SceneMode.SCENE2D;
+  scene.globe.enableLighting = !flat;
+  scene.fog.enabled = !flat;
+  scene.globe.showGroundAtmosphere = !flat;
+  const cc = scene.screenSpaceCameraController;
+  cc.enableInputs = true;
+  cc.enableTranslate = true;
+  cc.enableZoom = true;
+  cc.enableRotate = !flat;
+  cc.enableTilt = !flat;
+  cc.enableLook = !flat;
+  scene.requestRender();
+}
+
+// Zoom by a factor (<1 in, >1 out) in whichever mode the scene is in. In 2D
+// the zoom is the orthographic frustum width, bounded at street level and at
+// the whole world; in 3D it is the camera height.
+function zoomByFactor(viewer, factor) {
+  const Cesium = window.Cesium;
+  const cam = viewer.camera;
+  if (viewer.scene.mode === Cesium.SceneMode.SCENE2D) {
+    const f = cam.frustum;
+    if (!Cesium.defined(f.left)) return;
+    const halfW = (f.right - f.left) / 2;
+    const target = Math.min(flatMaxHalfWidth(viewer), Math.max(FLAT_MIN_HALF_WIDTH, halfW * factor));
+    if (target < halfW) cam.zoomIn((halfW - target) * 2);
+    else if (target > halfW) cam.zoomOut((target - halfW) * 2);
+    clamp2D(viewer);
+  } else {
+    const h = cam.positionCartographic.height;
+    const target = Math.min(30000000, Math.max(250, h * factor));
+    if (target < h) cam.zoomIn(h - target);
+    else if (target > h) cam.zoomOut(target - h);
+  }
+  viewer.scene.requestRender();
+}
+
+export default function Globe3D({ mapMode = "globe", visibleIncidents = [], selectedId, hoveredId, activeCountries = new Set(), onSelect, onHover, showBlastRadius = false, blastRadius = null, showLabels = false, world = null, fallback = null }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const labelsLayerRef = useRef(null);
@@ -140,6 +249,10 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
   const [ready, setReady] = useState(typeof window !== "undefined" && !!window.Cesium);
   const [failed, setFailed] = useState(false);
   const [tooltip, setTooltip] = useState(null); // { x, y, name, channel, color, incidentName }
+  // Flips true once the Cesium viewer exists; effects that need the viewer
+  // (the morph, the boundary loader) key on it. Declared here, above the
+  // first effect that reads it.
+  const [viewerReady, setViewerReady] = useState(false);
 
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
 
@@ -155,60 +268,45 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     return () => clearInterval(iv);
   }, []);
 
-  // ── Morph between 2D and 3D based on mapMode ──────────────────────────
+  // ── Morph between the flat map (SCENE2D) and the globe (SCENE3D) ────────
+  // Runs when the mode changes and once the viewer exists (viewerReady), so a
+  // reader whose map opens in FLAT gets the morph too. Cesium restores the
+  // camera inputs on morphComplete, so the per-mode style is applied AFTER it;
+  // a timer forces the morph to finish if the completion event is missed
+  // (the scene otherwise sits in MORPHING and draws nothing).
   useEffect(() => {
-    if (!viewerRef.current) return;
     const viewer = viewerRef.current;
-    const scene = viewer.scene;
+    if (!viewer || !window.Cesium) return;
     const Cesium = window.Cesium;
-    // FLAT = a static, single-frame world map (no pan / zoom / scroll);
-    // GLOBE = fully interactive. Toggle every camera input accordingly.
-    scene.screenSpaceCameraController.enableInputs = mapMode !== "flat";
-    if (mapMode === "flat") {
-      scene.morphTo2D(1.2);
-      const done = scene.morphComplete.addEventListener(() => {
-        done();
-        if (!viewer.isDestroyed()) {
-          // Frame the WHOLE world, vertically centred and filling the viewport —
-          // not the old north-shifted, over-zoomed strip.
-          viewer.camera.setView({ destination: Cesium.Rectangle.fromDegrees(-180, -82, 180, 84) });
-          // Lock AFTER the morph completes — Cesium restores enableInputs on
-          // morphComplete, so setting it earlier gets overwritten.
-          scene.screenSpaceCameraController.enableInputs = false;
-        }
-      });
-    } else {
-      scene.morphTo3D(1.2);
-      const done = scene.morphComplete.addEventListener(() => {
-        done();
-        if (!viewer.isDestroyed()) {
-          viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 2.4e7),
-            duration: 0.8,
-          });
-          // Re-enable interaction AFTER the morph completes (globe is live).
-          scene.screenSpaceCameraController.enableInputs = true;
-        }
-      });
-    }
-  }, [mapMode]);
+    const scene = viewer.scene;
+    const flat = mapMode === "flat";
+    const target = flat ? Cesium.SceneMode.SCENE2D : Cesium.SceneMode.SCENE3D;
+    if (scene.mode === target) { applySceneStyle(viewer); return; }
 
-  // ── Belt-and-braces: force camera inputs to match the mode AFTER the morph
-  //    window, immune to morphComplete-event timing/races. FLAT → locked,
-  //    GLOBE → interactive. ─────────────────────────────────────────────────
-  useEffect(() => {
-    const viewer = viewerRef.current;
-    if (!viewer) return;
-    const apply = () => {
-      if (!viewer.isDestroyed()) {
-        viewer.scene.screenSpaceCameraController.enableInputs = mapMode !== "flat";
-      }
+    // Cesium re-touches the camera controls right after it raises
+    // morphComplete (the globe came back with inputs disabled), so the
+    // per-mode style is applied again shortly after the event.
+    const reassert = [];
+    const settle = () => {
+      if (viewer.isDestroyed()) return;
+      applySceneStyle(viewer);
+      if (flat) frameFlatWorld(viewer);
+      else flyHome3D(viewer, 0.8);
+      for (const ms of [50, 700]) reassert.push(setTimeout(() => { if (!viewer.isDestroyed()) applySceneStyle(viewer); }, ms));
     };
-    apply();
-    const t1 = setTimeout(apply, 1400);
-    const t2 = setTimeout(apply, 2200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [mapMode]);
+    const done = scene.morphComplete.addEventListener(() => { done(); clearTimeout(fallbackTimer); settle(); });
+    // The morph is a tween that only advances while the page gets animation
+    // frames; a hidden tab (or a missed morphComplete) leaves it half-way.
+    // scene.mode reads SCENE2D during a 2D→3D morph, so test for "not yet in
+    // the target mode", not for MORPHING. completeMorph() is a no-op when
+    // nothing is pending.
+    const fallbackTimer = setTimeout(() => {
+      if (!viewer.isDestroyed() && scene.mode !== target) scene.completeMorph();
+    }, 1400);
+    if (flat) scene.morphTo2D(0.9);
+    else scene.morphTo3D(0.9);
+    return () => { done(); clearTimeout(fallbackTimer); reassert.forEach(clearTimeout); };
+  }, [mapMode, viewerReady]);
 
   // ── Toggle country/city label overlay based on showLabels ──────────────
   useEffect(() => {
@@ -235,7 +333,6 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
   const [highlightedCountry, setHighlightedCountry] = useState(null);
   const highlightSevRef = useRef(3);
   const [geoLoaded, setGeoLoaded] = useState(false);
-  const [viewerReady, setViewerReady] = useState(false);
 
   // Admin-1 (state/province) highlight layer — lets us fill "Delhi", not all of
   // India, when the incident's location resolves to a state. Point tier fills
@@ -710,8 +807,18 @@ function resolveCoords(inc) {
         animation: false,
         creditContainer: document.createElement("div"), // hide the credit bar
         contextOptions: { webgl: { alpha: false } },
-        mapMode2D: Cesium.MapMode2D.CLAMP,
+        // FLAT view settings (see the note above worldHalfExtent2D): one copy
+        // of the world, never the infinite east-west repeat, in the projection
+        // the imagery tiles are already in.
+        mapMode2D: Cesium.MapMode2D.ROTATE,
+        mapProjection: new Cesium.WebMercatorProjection(),
       });
+      // Cesium's own 2D zoom-out cap is maximumZoomFactor × the world's half
+      // width. Raised so it never undercuts flatMaxHalfWidth() (the whole
+      // world fitting the viewport, which on a wide screen needs > 2×);
+      // zoomByFactor() applies the real cap and clamp2D() re-centres the map
+      // whenever the view is wider than it.
+      viewer.camera.maximumZoomFactor = 3;
       viewerRef.current = viewer;
       setViewerReady(true);   // signals the boundary-GeoJSON loader that the viewer now exists
 
@@ -748,9 +855,10 @@ function resolveCoords(inc) {
       const applyDayNight = () => {
         // Normal sun-lit day/night globe. City-lights swap removed — enableLighting
         // gives the real day/night terminator; the globe opens fixed on the day
-        // side by day and the night side after dark (per local time).
+        // side by day and the night side after dark (per local time). The FLAT
+        // map is a map: evenly lit, never half dark (applySceneStyle owns it).
         nightLayer.show = false;
-        viewer.scene.globe.enableLighting = true;
+        viewer.scene.globe.enableLighting = viewer.scene.mode !== Cesium.SceneMode.SCENE2D;
         viewer.scene.skyAtmosphere.brightnessShift = 0.15;
         viewer.scene.requestRender();
       };
@@ -770,14 +878,18 @@ function resolveCoords(inc) {
       ];
 
       // Framing: whole globe from space, camera on the lit hemisphere so the
-      // terminator falls toward the left edge (like the reference).
-      if (mapMode === "flat") {
-        // Will be overridden by morphTo2D(0) + flyHome below
-      } else {
-        viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 24000000),
-        });
-      }
+      // terminator falls toward the left edge (like the reference). When the
+      // map opens in FLAT the morph effect (keyed on viewerReady) takes it to
+      // 2D and frames the world from here.
+      viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 24000000),
+      });
+
+      // The flat map can never leave the frame: re-check the 2D camera before
+      // every render (no-op in 3D).
+      viewer._clamp2DHandler = viewer.scene.preRender.addEventListener(() => {
+        if (!viewer.isDestroyed()) clamp2D(viewer);
+      });
 
       // ── Auto-rotation: rotate globe slowly when user is idle ─────────────
       let isUserInteracting = false;
@@ -796,38 +908,20 @@ function resolveCoords(inc) {
         interactTimer = setTimeout(() => { isUserInteracting = false; }, 1500);
       }
       
-      // Custom trackpad precision zoom & pinch handler
+      // Custom trackpad precision zoom & pinch handler — globe AND flat map
+      // (zoomByFactor picks the right zoom model for the scene mode).
       function onWheel(e) {
         e.preventDefault(); // prevent browser from scrolling the webpage!
-        // No wheel-zoom in FLAT (2D) — the flat map is static & non-interactive.
-        if (viewer.scene.mode !== Cesium.SceneMode.SCENE3D) return;
+        if (viewer.scene.mode === Cesium.SceneMode.MORPHING) return;
         onInteractStart();
-        
-        const camera = viewer.camera;
-        const h = camera.positionCartographic.height;
-        
         let delta = e.deltaY;
         if (e.ctrlKey) {
           // Boost pinch-to-zoom speed
           delta = e.deltaY * 5;
         }
-        
         const zoomSens = 0.0015;
         const factor = Math.exp(delta * zoomSens);
-        const clampedFactor = Math.max(0.7, Math.min(1.4, factor));
-        const targetHeight = h * clampedFactor;
-        
-        if (clampedFactor > 1) {
-          // Zooming out
-          const amount = Math.min(30000000 - h, targetHeight - h);
-          if (amount > 0) camera.zoomOut(amount);
-        } else {
-          // Zooming in
-          const amount = Math.min(h - 250, h - targetHeight);
-          if (amount > 0) camera.zoomIn(amount);
-        }
-        
-        viewer.scene.requestRender();
+        zoomByFactor(viewer, Math.max(0.7, Math.min(1.4, factor)));
       }
 
       canvas2.addEventListener("mousedown", onInteractStart);
@@ -883,15 +977,6 @@ function resolveCoords(inc) {
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
       viewer._clickHandler = handler;
 
-      // Handle initial mapMode
-      if (mapMode === "flat") {
-        viewer.scene.morphTo2D(0);
-        // Whole world, vertically centred, filling the viewport.
-        viewer.camera.setView({ destination: Cesium.Rectangle.fromDegrees(-180, -82, 180, 84) });
-        // Static one-frame map — lock out all camera interaction.
-        viewer.scene.screenSpaceCameraController.enableInputs = false;
-      }
-
       buildEntities(viewer, incidentsRef.current);
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -904,6 +989,7 @@ function resolveCoords(inc) {
       try {
         if (viewer._dayNightTimer) clearInterval(viewer._dayNightTimer);
         if (viewer._stopAutoRotate) viewer._stopAutoRotate();
+        if (viewer._clamp2DHandler) viewer._clamp2DHandler();
         viewer._clickHandler && viewer._clickHandler.destroy();
       } catch (_) {}
       try { viewer.destroy(); } catch (_) {}
@@ -928,14 +1014,15 @@ function resolveCoords(inc) {
     // Stop rotation when an incident is selected, resume when deselected
     viewer._forceStopRotate = !!selectedId;
     if (!selectedId) return;
-    // In FLAT the map is static — never move the camera on selection.
-    if (mapMode === "flat") return;
     const ent = viewer.entities.getById(String(selectedId));
     if (ent && ent.position) {
       const Cesium = window.Cesium;
       const carto = Cesium.Cartographic.fromCartesian(ent.position.getValue(Cesium.JulianDate.now()));
+      // Same move in both views. In 2D the height sets the frustum width, so
+      // a lower value frames the region as tightly as the globe's 3,500 km.
+      const flat = viewer.scene.mode === Cesium.SceneMode.SCENE2D;
       viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, 3500000),
+        destination: Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, flat ? 2500000 : 3500000),
         duration: 1.2,
       });
     }
@@ -1210,22 +1297,17 @@ function resolveCoords(inc) {
   }, [selectedId, showBlastRadius, blastRadius]);
 
 
-  // ── Zoom / reset controls (reliable, cursor-independent) ────────────────
+  // ── Zoom / reset controls (reliable, cursor-independent), both views ────
   const zoomStep = (factor) => {
     const viewer = viewerRef.current;
-    if (!viewer) return;
-    const h = viewer.camera.positionCartographic.height;
-    if (factor < 1) viewer.camera.zoomIn(h * (1 - factor));
-    else viewer.camera.zoomOut(h * (factor - 1));
-    viewer.scene.requestRender();
+    if (!viewer || !window.Cesium) return;
+    zoomByFactor(viewer, factor);
   };
   const resetView = () => {
     const viewer = viewerRef.current;
     if (!viewer || !window.Cesium) return;
-    viewer.camera.flyTo({
-      destination: window.Cesium.Cartesian3.fromDegrees(LOCAL_LON, 15, 24000000),
-      duration: 1.1,
-    });
+    if (viewer.scene.mode === window.Cesium.SceneMode.SCENE2D) frameFlatWorld(viewer);
+    else flyHome3D(viewer);
   };
 
   const zBtn = {
@@ -1273,7 +1355,9 @@ function resolveCoords(inc) {
           border-radius: 0;
         }
       `}</style>
-      <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+      {/* When the Cesium CDN never arrives, the parent's fallback (the SVG
+          map) takes the stage instead of an empty black box. */}
+      {failed && fallback ? fallback : <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />}
 
       {/* Hover tooltip — handles both blast nodes and incident pins */}
       {tooltip && (
@@ -1332,8 +1416,8 @@ function resolveCoords(inc) {
         </div>
       )}
 
-      {/* Zoom and navigation controls — bottom-left; hidden in FLAT (static one-frame map). */}
-      {ready && !failed && mapMode !== "flat" && (
+      {/* Zoom and navigation controls — bottom-left, in both views. */}
+      {ready && !failed && (
         <div style={{ position: "absolute", left: 24, bottom: 56, zIndex: 25, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
           <button className="nav-btn nav-btn-top" title="Zoom in" onClick={() => zoomStep(0.5)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1359,9 +1443,9 @@ function resolveCoords(inc) {
           Initializing satellite link…
         </div>
       )}
-      {failed && (
+      {failed && !fallback && (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#A8A8A8", fontFamily: "Inter, sans-serif", fontSize: 13, textAlign: "center", padding: 24 }}>
-          Couldn’t load the satellite globe engine.<br />Switch to Flat view.
+          Couldn’t load the satellite map engine.<br />Check your connection and reload.
         </div>
       )}
     </div>

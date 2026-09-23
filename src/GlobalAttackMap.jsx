@@ -10316,44 +10316,40 @@ export default function GlobalAttackMap() {
               bot-left, bot-right) plus the two mid-edges; they do not push
               the globe aside. */}
           <div style={{ position: "absolute", inset: 0 }}>
-            {/* FLAT is an SVG map, not Cesium in 2D. Cesium is a 3D globe
-                engine: its 2D mode is a camera looking at a plane, so the
-                framing is a camera fit that drifts with container aspect and
-                it wraps infinitely east-west by default. Keeping the whole
-                world in one frame meant fighting it on every axis. An SVG
-                equirectangular projection simply cannot scroll or crop —
-                there is no camera — and it costs no WebGL context and no
-                satellite tile requests. Cesium still owns the GLOBE view,
-                which is what it is actually good at. */}
+            {/* FLAT and GLOBE are the SAME Cesium viewer (Globe3D): FLAT is
+                its 2D scene mode — the globe morphs into a Web-Mercator map
+                with the same satellite imagery, markers, highlights and blast
+                radius, and the camera is clamped so the world never repeats
+                or leaves the frame (2026-09-23). The SVG MapCanvas survives
+                only as the fallback for when the Cesium CDN cannot load. */}
             <GlobeErrorBoundary>
-              {mapMode === "flat" ? (
-                <MapCanvas
-                  world={world}
-                  visibleIncidents={visibleIncidents}
-                  viewMode={viewMode}
-                  hoveredId={hoveredId}
-                  selectedId={selectedId}
-                  onHover={setHoveredId}
-                  onSelect={setSelectedId}
-                  showBlastRadius={showBlastRadius}
-                  showHeat={showHeat}
-                  showLabels={showLabels}
-                />
-              ) : (
-                <Globe3D
-                  mapMode={mapMode}
-                  visibleIncidents={visibleIncidents}
-                  selectedId={selectedId}
-                  hoveredId={hoveredId}
-                  activeCountries={activeCountries}
-                  onSelect={setSelectedId}
-                  onHover={setHoveredId}
-                  showBlastRadius={showBlastRadius}
-                  blastRadius={selBlast}
-                  showLabels={showLabels}
-                  world={world}
-                />
-              )}
+              <Globe3D
+                mapMode={mapMode}
+                visibleIncidents={visibleIncidents}
+                selectedId={selectedId}
+                hoveredId={hoveredId}
+                activeCountries={activeCountries}
+                onSelect={setSelectedId}
+                onHover={setHoveredId}
+                showBlastRadius={showBlastRadius}
+                blastRadius={selBlast}
+                showLabels={showLabels}
+                world={world}
+                fallback={(
+                  <MapCanvas
+                    world={world}
+                    visibleIncidents={visibleIncidents}
+                    viewMode={viewMode}
+                    hoveredId={hoveredId}
+                    selectedId={selectedId}
+                    onHover={setHoveredId}
+                    onSelect={setSelectedId}
+                    showBlastRadius={showBlastRadius}
+                    showHeat={showHeat}
+                    showLabels={showLabels}
+                  />
+                )}
+              />
             </GlobeErrorBoundary>
           </div>
 
