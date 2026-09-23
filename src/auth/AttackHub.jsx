@@ -355,7 +355,12 @@ function ArticleView({ article, onBack, onMap, user }) {
       try {
         const { data: rows } = await supabase
           .from("incidents")
-          .select("article_body,summary,entity,country,location_name,primary_subcategory_name,severity_rationale,threat_actor,if_you_operate_x_then_y,financial_impact_disclosed")
+          // Only columns public.incidents actually has: PostgREST rejects the
+          // WHOLE select on one unknown name, and this request is what loads the
+          // article text — threat_actor / if_you_operate_x_then_y /
+          // financial_impact_disclosed left with the schema restructure and were
+          // silently 400ing it. The three fields below degrade to nothing.
+          .select("article_body,summary,entity,country,location_name,primary_subcategory_name,severity_rationale,image_url")
           .eq("id", article.id).limit(1);
         const r = rows && rows[0];
         if (!r || cancelled) return;
@@ -367,9 +372,7 @@ function ArticleView({ article, onBack, onMap, user }) {
           country: r.country || prev.country,
           location_name: r.location_name || r.country || prev.location_name,
           severity_rationale: r.severity_rationale || prev.severity_rationale,
-          threat_actor: r.threat_actor || prev.threat_actor,
-          if_you_operate_x_then_y: r.if_you_operate_x_then_y || prev.if_you_operate_x_then_y,
-          financial_impact_disclosed: r.financial_impact_disclosed || prev.financial_impact_disclosed,
+          image_url: r.image_url || prev.image_url,
         }));
       } catch { /* keep the lightweight version */ }
     })();
@@ -470,7 +473,7 @@ function ReportFrame({ article, onBack, onMap, user, subscriber }) {
 
 // One incident row → the article shape the Hub renders (list rows and the
 // ?open= single fetch share it, so a deep-opened article looks like a listed one).
-const HUB_COLS = "id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,event_date,incident_day";
+const HUB_COLS = "id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,event_date,incident_day,image_url";
 
 function shapeRow(r, reportByIncident = {}) {
     const day = r.incident_day || r.event_date || null;
