@@ -78,7 +78,7 @@ function CardImage({ article, height = 130 }) {
   }
   return (
     <div style={{ position: "relative", height, overflow: "hidden" }}>
-      <img src={CATEGORY_IMG[cat] || CATEGORY_IMG._default} alt="" loading="lazy"
+      <img src={article.image_url || CATEGORY_IMG[cat] || CATEGORY_IMG._default} alt="" loading="lazy"
         onError={() => setFailed(true)}
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(8,8,8,0.05), rgba(8,8,8,0.62))" }} />
@@ -118,9 +118,9 @@ function useLiveIntel() {
           // NULLs first on DESC, which made "latest day" resolve to null.
           supabase.from("incidents").select("incident_day").not("incident_day", "is", null).order("incident_day", { ascending: false, nullsFirst: false }).limit(1),
           supabase.from("incidents")
-            // image_url was dropped in the 2026-07-28 restructure; asking for it
-            // 400'd this whole select and left the sample card on "Loading…".
-            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry")
+            // image_url is BACK since 2026-09-23 (migration 20260923_incident_images:
+            // the stored picture written by the incident-images function).
+            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry,image_url")
             .not("incident_day", "is", null)
             .order("incident_day", { ascending: false, nullsFirst: false })
             .order("severity", { ascending: false })

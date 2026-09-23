@@ -135,7 +135,7 @@ const d = new Date(`${targetDay}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - 6);
 const weekStart = d.toISOString().slice(0, 10);
 
 // Same select the function uses (layer_counts(*) = the public counts embed).
-const COLS = "id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day,layer_counts(*)";
+const COLS = "id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day,image_url,layer_counts(*)";
 const weekIncidents = await rest(
   `incidents?select=${COLS}&incident_day=gte.${weekStart}&incident_day=lte.${targetDay}` +
   `&latitude=not.is.null&longitude=not.is.null&order=incident_day.asc,severity.desc.nullslast,id.desc&limit=800`,
@@ -191,7 +191,7 @@ const wCorePath = resolve(OUT, "_welcome-core.ts");
 writeFileSync(wCorePath, wCore);
 const { welcomeHtml, welcomeSubject } = await import(pathToFileURL(wCorePath).href);
 {
-  const cols = "id,headline,summary,entity,country,industry,severity,primary_category,incident_day,layer_counts(*)";
+  const cols = "id,headline,summary,entity,country,industry,severity,primary_category,incident_day,image_url,layer_counts(*)";
   let first = await rest(`incidents?select=${cols}&industry=eq.${encodeURIComponent(industry)}&incident_day=gte.${weekStart}&incident_day=lte.${targetDay}&latitude=not.is.null&order=severity.desc.nullslast,incident_day.desc,id.desc&limit=3`);
   if (!first.length) first = await rest(`incidents?select=${cols}&incident_day=eq.${targetDay}&latitude=not.is.null&order=severity.desc.nullslast,id.desc&limit=3`);
   const profile = { email: "reader@example.com", full_name: "Priya Nair", tier: "free", industry, watch_categories: null, digest_frequency: "daily", min_severity: 3, unsubscribe_token: "PREVIEW" };

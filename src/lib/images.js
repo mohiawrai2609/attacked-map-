@@ -81,10 +81,16 @@ const LOCAL_BY_HEADLINE = [
 ];
 
 // The real picture for an incident (see header).
+//
+// Since 2026-09-23 the backend owns the picture: incidents.image_url is filled
+// once per incident by the incident-images edge function (generated from the
+// whole record, stored in the incident-media bucket) or set by an admin. That
+// wins. The hand-made local pictures and the on-the-fly generator URL remain
+// only for rows the backfill has not reached yet.
 export function incidentPhoto(i) {
+  if (i?.image_url) return i.image_url;
   const h = i?.headline || "";
   for (const [needle, src] of LOCAL_BY_HEADLINE) if (h.includes(needle)) return src;
-  if (i?.image_url) return i.image_url;
   if (!h) return incidentImage(i);
   const prompt = encodeURIComponent(`${h}, realistic news photography, editorial`);
   return `https://image.pollinations.ai/prompt/${prompt}?width=800&height=500&nologo=true`;

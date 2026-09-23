@@ -24,7 +24,7 @@ import { CATEGORY_NAME, SEVERITY } from "../lib/taxonomy";
 // until the reader opens the incident; loadCounts() fills them in then.
 export const COLS_LIGHT =
   "id,headline,summary,entity,sector,industry,country,location_name,severity,severity_rationale,confidence," +
-  "primary_category,primary_subcategory_code,primary_subcategory_name,secondary_mappings,incident_day,event_date,article_body";
+  "primary_category,primary_subcategory_code,primary_subcategory_name,secondary_mappings,incident_day,event_date,article_body,image_url";
 const COUNT_EMBEDS = "sources(count),blast_radius(count),peer_watchlist(count),adaptive_controls(count),historical_analogues(count)";
 // Legacy full list (embed shape); kept for anything that still imports it.
 export const COLS = `${COLS_LIGHT},${COUNT_EMBEDS}`;

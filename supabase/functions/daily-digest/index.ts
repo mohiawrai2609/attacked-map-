@@ -352,8 +352,11 @@ function shell(title: string, bodyHtml: string, unsubUrl: string, eyebrowText: s
 }
 
 // ── Building blocks ───────────────────────────────────────────────────────────
-function card(innerHtml: string, pad = "22px"): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${OBSIDIAN};border:1px solid #333;border-radius:8px;margin-bottom:16px;"><tr><td style="padding:${pad};">${innerHtml}</td></tr></table>`;
+function card(innerHtml: string, pad = "22px", imageUrl = ""): string {
+  const img = imageUrl
+    ? `<tr><td style="padding:0;"><img src="${escape(imageUrl)}" width="618" alt="" style="display:block;width:100%;height:auto;border-radius:8px 8px 0 0;border:0;"></td></tr>`
+    : "";
+  return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${OBSIDIAN};border:1px solid #333;border-radius:8px;margin-bottom:16px;overflow:hidden;">${img}<tr><td style="padding:${pad};">${innerHtml}</td></tr></table>`;
 }
 const kicker = (text: string, color = GOLD, mb = 6) =>
   `<div style="font-family:${INTER};font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:${color};margin:0 0 ${mb}px;">${text}</div>`;
@@ -436,7 +439,8 @@ function incidentCard(i: any, tier: "free" | "subscriber", layer: Layer): string
     `<td style="text-align:right;vertical-align:middle;"><a href="${mapUrl(i)}" style="font-family:${INTER};font-size:12px;color:#EDEDED;text-decoration:none;font-weight:600;">View on map →</a></td>` +
   `</tr></table>`;
 
-  return card(meta + headline + entity + summary + depth + actions);
+  // The stored picture (incidents.image_url) tops the card when the incident has one.
+  return card(meta + headline + entity + summary + depth + actions, "22px", i.image_url || "");
 }
 
 // Numbered list of incidents — headline links to the Hub, a small map link.
@@ -641,7 +645,7 @@ async function pgFetch(path: string, options: RequestInit = {}) {
 }
 
 // The incident columns the brief renders, plus the public counts embed.
-const INCIDENT_COLS = "id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day,layer_counts(*)";
+const INCIDENT_COLS = "id,headline,summary,entity,sector,industry,country,severity,primary_category,severity_rationale,incident_day,image_url,layer_counts(*)";
 
 const PROFILE_COLS = "id,email,tier,full_name,industry,unsubscribe_token,watch_industries,watch_categories,digest_frequency";
 // min_severity arrives with migration 20260922_brief_prefs.sql. PostgREST

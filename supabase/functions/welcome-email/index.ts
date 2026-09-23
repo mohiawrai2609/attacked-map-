@@ -166,7 +166,8 @@ async function pgFetch(path: string) {
 function incidentCard(i: any): string {
   const sev = sevOf(i);
   const c = SEV_COLOR[sev] || GOLD;
-  const img = CATEGORY_IMG[i.primary_category as string] || CATEGORY_IMG._default;
+  // The incident's stored picture (incidents.image_url); category stock as fallback.
+  const img = i.image_url || CATEGORY_IMG[i.primary_category as string] || CATEGORY_IMG._default;
   const cat = CATEGORY_NAME[i.primary_category] || i.primary_category || "Operational";
   const n = countsOf(i);
   const locked = n
@@ -289,7 +290,7 @@ function welcomeSubject(profile: any): string {
 // The three strongest incidents in the reader's industry over the last 7
 // days of the corpus, falling back to the sweep's top three.
 async function firstBriefIncidents(industry: string): Promise<any[]> {
-  const cols = "id,headline,summary,entity,country,industry,severity,primary_category,incident_day,layer_counts(*)";
+  const cols = "id,headline,summary,entity,country,industry,severity,primary_category,incident_day,image_url,layer_counts(*)";
   const latest = await pgFetch(`incidents?select=incident_day&incident_day=not.is.null&order=incident_day.desc&limit=1`);
   const latestDay: string | undefined = latest?.[0]?.incident_day;
   if (!latestDay) return [];

@@ -1273,6 +1273,7 @@ async function loadFromSupabase() {
     "location_name", "country",
     "latitude", "longitude", "event_date", "disclosure_date", "incident_day",
     "primary_category", "primary_subcategory_code", "primary_subcategory_name",
+    "image_url", // the stored picture (incident-images function), 2026-09-23
     // PostgREST rejects the WHOLE select when any single column is unknown, so
     // a single stale name here takes down the only query that loads live
     // incidents, and every visitor silently falls back to the sweep files
@@ -1431,7 +1432,7 @@ async function loadOneDayFast(day, incidentId) {
     d = rows[0] && rows[0].incident_day ? String(rows[0].incident_day).slice(0, 10) : null;
   }
   if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
-  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence";
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,image_url";
   const [reg, reporters] = await Promise.all([
     _fetchSupabaseTable(url, key, "incidents", `select=${cols}&incident_day=eq.${d}&latitude=not.is.null&longitude=not.is.null&limit=2000`),
     _fetchSupabaseTable(url, key, "reporters", "select=slug,name,desk,cats,color&limit=200"),
@@ -1463,7 +1464,7 @@ async function loadIncidentsFast(preferDay = null, incidentId = null) {
   // Keep this list in lockstep with incidentCols in loadFromSupabase — a name
   // that is not on public.incidents 400s this fast-paint query and drops the
   // first render back to the baked May sweeps. See the note there.
-  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence";
+  const cols = "id,headline,summary,entity,sector,industry,location_name,country,latitude,longitude,event_date,disclosure_date,incident_day,primary_category,primary_subcategory_code,primary_subcategory_name,severity,severity_rationale,confidence,image_url";
   try {
     // vi_incidents / vi_sweeps were dropped on 2026-07-28. They 404'd on every
     // single page load; keep the downstream shape with empty arrays instead.
@@ -4981,10 +4982,13 @@ function MapIncidentImage({ incident, height = 150 }) {
   const aiPrompt = encodeURIComponent(`${incident.headline || ""}, realistic news photography, editorial`);
   const generatedImg = `https://image.pollinations.ai/prompt/${aiPrompt}?width=800&height=500&nologo=true`;
 
+  // The stored picture (incidents.image_url, written once per incident by the
+  // incident-images function or an admin) wins; the local overrides and the
+  // on-the-fly generator only cover rows the backfill has not reached.
   let primary = incident.image_url || generatedImg;
 
   // Specific overrides for the images we generated locally
-  if (incident.headline) {
+  if (!incident.image_url && incident.headline) {
     if (incident.headline.includes("Rocket Lab")) {
       primary = "/incidents/rocket_lab_iridium_1782896030009.png";
     } else if (incident.headline.includes("The Founder-Fused Brand")) {
