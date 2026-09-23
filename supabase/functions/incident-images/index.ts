@@ -38,9 +38,13 @@ const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BUCKET = "incident-media";
 const FOLDER = "incidents";
 const GENERATOR = "https://image.pollinations.ai/prompt/";
-const GEN_WIDTH = 1280, GEN_HEIGHT = 720;   // asked for; the service answers 1024×576 anonymously
-const CROP_BOTTOM = 0.075;                  // the watermark lives in the bottom strip
-const JPEG_QUALITY = 84;
+// The free generator renders a SQUARE and stretches it to any other aspect (a
+// circle asked for at 16:9 comes back as an ellipse), so we ask for a square
+// (answered 768×768 anonymously) and cut the 3:2 picture out of its middle.
+// That crop also removes the watermark, which sits in the bottom strip.
+const GEN_WIDTH = 1024, GEN_HEIGHT = 1024;
+const OUT_ASPECT = 3 / 2;
+const JPEG_QUALITY = 86;
 const MAX_LIMIT = 20;
 const DEFAULT_LIMIT = 8;
 const CONCURRENCY = 1;                      // the generator 429s parallel requests
@@ -142,13 +146,18 @@ async function generate(prompt: string, seed: number): Promise<Uint8Array> {
   }
 }
 
-// Crop the watermark strip, re-encode. Falls back to the original bytes if the
-// decoder cannot read the file (a picture with a small mark beats no picture).
+// Centre-crop to OUT_ASPECT (never keeping the bottom 8 %, where the watermark
+// is), re-encode. Falls back to the original bytes if the decoder cannot read
+// the file (a picture with a small mark beats no picture).
 async function cropAndEncode(bytes: Uint8Array): Promise<{ jpeg: Uint8Array; width: number; height: number; cropped: boolean }> {
   try {
     const img = await Image.decode(bytes);
-    const h = Math.max(1, Math.round(img.height * (1 - CROP_BOTTOM)));
-    const out = img.crop(0, 0, img.width, h);
+    const W = img.width, H = img.height;
+    let w = W, h = Math.round(W / OUT_ASPECT);
+    if (h > H * 0.92) { h = Math.round(H * 0.92); w = Math.round(h * OUT_ASPECT); }
+    const x = Math.round((W - w) / 2);
+    const y = Math.max(0, Math.min(Math.round((H - h) / 2), H - h - Math.round(H * 0.08)));
+    const out = img.crop(x, y, w, h);
     const jpeg = await out.encodeJPEG(JPEG_QUALITY);
     return { jpeg, width: out.width, height: out.height, cropped: true };
   } catch (err) {

@@ -33,6 +33,15 @@ const ONCE = process.argv.includes("--once");
 const WORKERS = Math.max(1, Math.min(16, Number(arg("--workers", 4))));
 const LIMIT = Math.max(1, Math.min(20, Number(arg("--limit", 12))));
 const IDS = (arg("--ids", "") || "").split(",").map((s) => Number(s.trim())).filter((n) => Number.isFinite(n) && n > 0);
+// --redo-before <ISO|now>: instead of rows WITHOUT a picture, redo generated
+// pictures written before that moment (used on 2026-09-23 to replace the
+// first batch, which the generator had stretched). Each row is overwritten
+// one at a time; rows redone after the cutoff drop out of the set.
+const REDO_RAW = arg("--redo-before", null);
+const REDO_BEFORE = REDO_RAW === "now" ? new Date().toISOString() : REDO_RAW;
+const FILTER = REDO_BEFORE
+  ? `image_source=eq.generated&image_updated_at=lt.${encodeURIComponent(REDO_BEFORE)}`
+  : "image_url=is.null&headline=not.is.null";
 
 const t0 = Date.now();
 let total = 0, failures = 0;
@@ -42,7 +51,11 @@ const elapsed = () => `${Math.round((Date.now() - t0) / 1000)}s`;
 //    keep the two prompt builders identical) ────────────────────────────────
 const BUCKET = "incident-media", FOLDER = "incidents";
 const GENERATOR = "https://image.pollinations.ai/prompt/";
-const GEN_WIDTH = 1280, GEN_HEIGHT = 720, CROP_BOTTOM = 0.075, JPEG_QUALITY = 84;
+// The free generator renders a SQUARE and stretches it to any other aspect
+// (a circle asked for at 16:9 comes back as an ellipse), so we ask for a
+// square and cut the 3:2 picture out of its middle ourselves. That crop also
+// removes the watermark, which sits in the bottom strip of the square.
+const GEN_WIDTH = 1024, GEN_HEIGHT = 1024, OUT_ASPECT = 3 / 2, JPEG_QUALITY = 86;
 const CREDIT = "Illustration generated from the incident record";
 const CATEGORY_SCENE = {
   CYB: "a darkened security operations centre, rows of monitors showing network maps and red alert dashboards, blue and amber light",
@@ -104,17 +117,17 @@ async function pendingDirect(limit, mod, rem) {
   if (IDS.length) {
     const mine = IDS.filter((id) => id % mod === rem);
     if (!mine.length) return [];
-    const r = await pgFetch(`incidents?select=id,headline,summary,entity,industry,primary_category,location_name,country&id=in.(${mine.join(",")})&image_url=is.null`);
+    const r = await pgFetch(`incidents?select=id,headline,summary,entity,industry,primary_category,location_name,country&id=in.(${mine.join(",")})&${FILTER}`);
     return (await r.json()).slice(0, limit);
   }
   const fetchN = mod > 1 ? limit * mod * 2 : limit;
-  const r = await pgFetch(`incidents?select=id,headline,summary,entity,industry,primary_category,location_name,country&image_url=is.null&headline=not.is.null&order=incident_day.desc.nullslast,id.desc&limit=${fetchN}`);
+  const r = await pgFetch(`incidents?select=id,headline,summary,entity,industry,primary_category,location_name,country&${FILTER}&order=incident_day.desc.nullslast,id.desc&limit=${fetchN}`);
   const rows = await r.json();
   return (mod > 1 ? rows.filter((x) => Number(x.id) % mod === rem) : rows).slice(0, limit);
 }
 async function remainingDirect() {
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/incidents?select=id&image_url=is.null&headline=not.is.null`, { method: "HEAD", headers: { ...dbHeaders(), Prefer: "count=exact" } });
+    const r = await fetch(`${SB_URL}/rest/v1/incidents?select=id&${FILTER}`, { method: "HEAD", headers: { ...dbHeaders(), Prefer: "count=exact" } });
     const n = Number((r.headers.get("content-range") || "").split("/")[1]);
     return Number.isFinite(n) ? n : null;
   } catch { return null; }
@@ -151,10 +164,16 @@ function generate(prompt, seed) {
 async function cropAndEncode(buf) {
   if (!Jimp) ({ Jimp } = await import("jimp"));
   const img = await Jimp.read(buf);
-  const h = Math.max(1, Math.round(img.height * (1 - CROP_BOTTOM)));
-  img.crop({ x: 0, y: 0, w: img.width, h });
+  // Centre crop to OUT_ASPECT; whatever the source shape, the bottom 8 % (the
+  // watermark) must go, so never keep more than 92 % of the height.
+  const W = img.width, H = img.height;
+  let w = W, h = Math.round(W / OUT_ASPECT);
+  if (h > H * 0.92) { h = Math.round(H * 0.92); w = Math.round(h * OUT_ASPECT); }
+  const x = Math.round((W - w) / 2);
+  const y = Math.min(Math.round((H - h) / 2), H - h - Math.round(H * 0.08));
+  img.crop({ x, y: Math.max(0, y), w, h });
   const jpeg = await img.getBuffer("image/jpeg", { quality: JPEG_QUALITY });
-  return { jpeg, width: img.width, height: h };
+  return { jpeg, width: w, height: h };
 }
 async function upload(id, jpeg) {
   const path = `${FOLDER}/${id}.jpg`;
@@ -217,6 +236,6 @@ async function worker(rem) {
   }
 }
 
-console.log(`incident images · ${DIRECT ? "direct from this machine" : "via " + FN}\n  ${WORKERS} workers × ${LIMIT} per batch${ONCE ? " · once" : ""}${IDS.length ? ` · ids ${IDS.join(",")}` : ""}\n`);
+console.log(`incident images · ${DIRECT ? "direct from this machine" : "via " + FN}\n  ${WORKERS} workers × ${LIMIT} per batch${ONCE ? " · once" : ""}${IDS.length ? ` · ids ${IDS.join(",")}` : ""}${REDO_BEFORE ? ` · redo pictures generated before ${REDO_BEFORE}` : ""}\n`);
 await Promise.all(Array.from({ length: WORKERS }, (_, k) => worker(k)));
 console.log(`\ndone: ${total} pictures stored, ${failures} failures, ${elapsed()}`);
