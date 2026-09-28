@@ -8,3 +8,6 @@ dist/
 .env.local
 build_demo_doc.cjs
 Attacked.ai Demo Script.docx
+
+# The FastAPI service is hosted separately, never as Vercel functions
+api/
