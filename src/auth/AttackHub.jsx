@@ -17,6 +17,7 @@ import { supabase } from "../lib/supabaseClient";
 import { isSubscriber } from "../lib/taxonomy";
 import { prepareReportFrame } from "../lib/reportLock";
 import { reportHtml } from "../lib/api";
+import { fetchReportHtml, listPublishedReports } from "../lib/reports";
 import { useAuth } from "./AuthProvider";
 import { AuthModal } from "./AuthModal";
 import { SiteNav } from "./SiteNav";
@@ -437,11 +438,23 @@ function ArticleView({ article, onBack, onMap, user }) {
 function ReportFrame({ article, onBack, onMap, user, subscriber }) {
   const ref = useRef(null);
   const reportRef = article.reportRef || article.id;
-  // Server-locked HTML via srcdoc when the API is on (see src/lib/api.js).
+  // Where the HTML comes from, in order:
+  //   1. the reports CMS (public.hub_reports_public + report_html) — authored
+  //      in the admin console, published only;
+  //   2. the API, which applies the subscriber lock server-side;
+  //   3. the static file baked at public/reports/<ref>.html.
+  // 1 and 2 render through srcdoc, which keeps the frame same-origin so
+  // prepareReportFrame can still lock r-blast / r-ctrl / r-vend for free
+  // readers — the CMS renderer emits the same shell and section ids.
   const [doc, setDoc] = useState(undefined);
   useEffect(() => {
     let dead = false; setDoc(undefined);
-    reportHtml(reportRef).then((html) => { if (!dead) setDoc(html || null); }).catch(() => { if (!dead) setDoc(null); });
+    (async () => {
+      let html = null;
+      try { html = await fetchReportHtml(reportRef); } catch { /* not a CMS report */ }
+      if (!html) { try { html = await reportHtml(reportRef); } catch { /* API off or refused */ } }
+      if (!dead) setDoc(html || null);
+    })();
     return () => { dead = true; };
   }, [reportRef]);
   useEffect(() => {
@@ -520,22 +533,37 @@ export function AttackHub() {
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(0);
 
-  // Which incidents have a pre-baked full report at /reports/<ref>.html.
-  // manifest.json v2 (2026-09-21) carries byIncident: { "<incident id>": "<ref>" }
-  // because hub_ref left the DB in the schema restructure. The legacy array
-  // shape is still accepted.
+  // Which incidents have a full report, from TWO sources:
+  //   • the 310 baked files — manifest.json v2 carries byIncident:
+  //     { "<incident id>": "<ref>" } (hub_ref left the DB in the restructure);
+  //     the legacy array shape is still accepted;
+  //   • the reports CMS — published rows in public.hub_reports_public, whose
+  //     incident_id (when set) says which incident the report is about.
+  // BOTH must feed reportIds, because the render gate below asks
+  // reportIds.has(ref): a CMS ref would otherwise fall through to the plain
+  // article view with no error anywhere. CMS wins a collision — it is the
+  // authored, newer one. Either source failing leaves the other working.
   const [reportByIncident, setReportByIncident] = useState({});
+  const [cmsReports, setCmsReports] = useState([]);   // published rows, for the reports section
   useEffect(() => {
     let cancelled = false;
-    fetch("/reports/manifest.json")
-      .then(r => r.ok ? r.json() : [])
-      .then(m => {
-        if (cancelled) return;
-        const refs = Array.isArray(m) ? m : (m.refs || Object.values(m.byIncident || {}));
-        setReportIds(new Set(refs));
-        setReportByIncident((m && m.byIncident) || {});
-      })
-      .catch(() => { if (!cancelled) { setReportIds(new Set()); setReportByIncident({}); } });
+    (async () => {
+      let baked = { refs: [], byIncident: {} };
+      try {
+        const r = await fetch("/reports/manifest.json");
+        const m = r.ok ? await r.json() : null;
+        if (Array.isArray(m)) baked = { refs: m, byIncident: {} };
+        else if (m) baked = { refs: m.refs || Object.values(m.byIncident || {}), byIncident: m.byIncident || {} };
+      } catch { /* no manifest — the CMS alone still works */ }
+      let rows = [];
+      try { rows = await listPublishedReports({ limit: 1000 }); } catch { /* CMS unreachable — the baked files alone still work */ }
+      if (cancelled) return;
+      const cmsByIncident = {};
+      for (const row of rows) if (row && row.incident_id != null && row.ref) cmsByIncident[String(row.incident_id)] = row.ref;
+      setReportIds(new Set([...baked.refs, ...rows.map(r => r && r.ref).filter(Boolean)]));
+      setReportByIncident({ ...baked.byIncident, ...cmsByIncident });
+      setCmsReports(rows);
+    })();
     return () => { cancelled = true; };
   }, []);
 
