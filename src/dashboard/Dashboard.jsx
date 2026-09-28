@@ -24,6 +24,7 @@ import { loadCounts, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadR
 import { incidentImage, incidentPhoto } from "../lib/images";
 import { prepareReportFrame } from "../lib/reportLock";
 import { reportHtml } from "../lib/api";
+import { fetchReportHtml } from "../lib/reports";
 import "./dashboard.css";
 
 const DEFAULT_INDUSTRY = "Automotive & EV";
@@ -360,7 +361,11 @@ function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
   const [doc, setDoc] = useState(undefined);
   useEffect(() => {
     let dead = false; setDoc(undefined);
-    reportHtml(reportRef).then((html) => { if (!dead) setDoc(html || null); }).catch(() => { if (!dead) setDoc(null); });
+    // CMS report (hub_reports, via src/lib/reports.js) → API → static file.
+    fetchReportHtml(reportRef)
+      .then((cms) => cms || reportHtml(reportRef))
+      .then((html) => { if (!dead) setDoc(html || null); })
+      .catch(() => { if (!dead) setDoc(null); });
     return () => { dead = true; };
   }, [reportRef]);
   useEffect(() => {

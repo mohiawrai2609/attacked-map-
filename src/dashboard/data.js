@@ -17,6 +17,7 @@
 // drift), so the column list is defined ONCE here and reused.
 
 import { supabase } from "../lib/supabaseClient";
+import { publishedReportsByIncident } from "../lib/reports";
 import { subscriberLayer } from "../lib/api";
 import { CATEGORY_NAME, SEVERITY } from "../lib/taxonomy";
 
@@ -195,11 +196,17 @@ export async function loadHub(industry) {
 let reportIndex = null;
 export async function loadReportIndex() {
   if (reportIndex) return reportIndex;
+  let baked = {};
   try {
     const r = await fetch("/reports/manifest.json", { cache: "force-cache" });
     const m = await r.json();
-    reportIndex = (m && m.byIncident) || {};
-  } catch { reportIndex = {}; }
+    baked = (m && m.byIncident) || {};
+  } catch { baked = {}; }
+  // CMS-published reports (public.hub_reports) that belong to an incident;
+  // a CMS report wins over a baked one for the same incident (2026-09-28).
+  let cms = {};
+  try { cms = await publishedReportsByIncident(); } catch { cms = {}; }
+  reportIndex = { ...baked, ...cms };
   return reportIndex;
 }
 export const reportRefFor = (id) => (reportIndex ? reportIndex[String(id)] || null : null);

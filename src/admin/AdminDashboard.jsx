@@ -15,6 +15,7 @@ import { AdminUsers } from "./AdminUsers";
 import { AdminStats } from "./AdminStats";
 import { AdminFeedback } from "./AdminFeedback";
 import { AdminBriefings } from "./AdminBriefings";
+import { AdminReports } from "./AdminReports";
 import { Logo } from "../auth/Logo";
 
 const BRAND = {
@@ -71,11 +72,20 @@ function TabIcon({ name, size = 15 }) {
         <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" />
       </svg>
     );
+    case "reports": return (
+      <svg {...common}>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="8" y1="13" x2="16" y2="13" />
+        <line x1="8" y1="17" x2="13" y2="17" />
+      </svg>
+    );
     default: return null;
   }
 }
 
 const TABS = [
+  { id: "reports",   label: "Reports",   icon: "reports",   body: AdminReports },
   { id: "inbox",     label: "Inbox",     icon: "inbox",     body: AdminInbox },
   { id: "briefings", label: "Briefings", icon: "briefings", body: AdminBriefings },
   { id: "users",     label: "Users",     icon: "users",     body: AdminUsers },
@@ -96,7 +106,9 @@ function FontLoader() {
 }
 
 export function AdminDashboard() {
-  const [active, setActive] = useState("inbox");
+  const [active, setActive] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get("tab") || "reports"; } catch { return "reports"; }
+  });
   const ActiveBody = TABS.find(t => t.id === active)?.body;
   return (
     <div style={{
