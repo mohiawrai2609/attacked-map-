@@ -22,12 +22,14 @@ from email.message import EmailMessage
 from email.utils import formataddr, parseaddr
 
 import httpx
-from fastapi import APIRouter, HTTPException
+import logging
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
 from ..config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+log = logging.getLogger("uvicorn.error")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -78,7 +80,7 @@ def _send(to: str, code: str) -> None:
 
 
 @router.post("/send-code")
-async def send_code(body: SendCodeBody):
+async def send_code(body: SendCodeBody, background: BackgroundTasks):
     email = body.email.strip().lower()
     if not EMAIL_RE.match(email):
         raise HTTPException(400, "that does not look like an email address")
@@ -105,8 +107,24 @@ async def send_code(body: SendCodeBody):
         code = j.get("email_otp") or (j.get("properties") or {}).get("email_otp")
     if not code:
         raise HTTPException(502, "Supabase returned no code")
-    _send(email, code)
+    # Gmail costs ~7 s just to connect and ~30 s for the round trip, and the
+    # reader is staring at the sign-in form for all of it. The code is already
+    # issued at this point, so hand the send to a background task and answer
+    # now: the code screen appears at once, exactly as it does with Supabase's
+    # own (also asynchronous) email. A failure is logged and the reader has
+    # "Resend code".
+    background.add_task(_send_logged, email, code)
     return {"sent": True, "created": created, "length": len(code)}
+
+
+def _send_logged(to: str, code: str) -> None:
+    try:
+        _send(to, code)
+        log.info("sign-in code emailed to %s", to)
+    except HTTPException as e:
+        log.error("sign-in code to %s FAILED: %s", to, e.detail)
+    except Exception as e:  # never let a background task die silently
+        log.error("sign-in code to %s FAILED: %s", to, e.__class__.__name__)
 
 
 def _throwaway_password() -> str:

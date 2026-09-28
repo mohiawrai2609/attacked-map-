@@ -484,6 +484,24 @@ function ReportFrame({ article, onBack, onMap, user, subscriber }) {
   );
 }
 
+// A published CMS report → the same article shape. Standalone reports (no
+// incident_id) have no incident row behind them, so this is the whole record:
+// the ref doubles as the id, and reportRef sends it straight to ReportFrame.
+function reportArticle(r) {
+  const day = (r.published_at || "").slice(0, 10);
+  return {
+    id: r.ref, _key: `rep-${r.ref}`, reportRef: r.ref,
+    headline: r.title, summary: r.subtitle || r.summary || "", article_body: r.summary || "",
+    severity: r.severity, primary_category: r.primary_category, primary_subcategory_name: null,
+    industry: r.industry, sector: r.industry,
+    entity: null, country: null, location_name: null,
+    image_url: r.hero_image_url || null,
+    incident_day: day, event_date: day, sortDay: day,
+    confidence: null, status: null, reporter: null, data: null,
+    _report: r,
+  };
+}
+
 // One incident row → the article shape the Hub renders (list rows and the
 // ?open= single fetch share it, so a deep-opened article looks like a listed one).
 const HUB_COLS = "id,headline,summary,entity,country,location_name,industry,sector,severity,confidence,primary_category,primary_subcategory_name,event_date,incident_day,image_url";
@@ -652,6 +670,21 @@ export function AttackHub() {
       .catch(() => { /* stay on the feed */ });
   }, [articles, reportByIncident]);
 
+  // Deep link: /?hub&report=<ref> opens a published report directly — the
+  // admin console's "Open on Hub" for standalone reports (incident-linked
+  // ones use ?open=<incident id>, handled above).
+  const didReportOpen = useRef(false);
+  useEffect(() => {
+    if (didReportOpen.current) return;
+    let want = null;
+    try { want = new URLSearchParams(window.location.search).get("report"); } catch { /* noop */ }
+    if (!want) { didReportOpen.current = true; return; }
+    if (!cmsReports.length) return;                    // wait for the index
+    didReportOpen.current = true;
+    const row = cmsReports.find(r => r && r.ref === want);
+    if (row) { setSelected(reportArticle(row)); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { window.scrollTo(0, 0); } }
+  }, [cmsReports]);
+
   const cats = ["ALL", ...Array.from(new Set(articles.map(a => a.primary_category).filter(Boolean)))];
   const inds = ["ALL", ...Array.from(new Set(articles.map(a => a.industry).filter(Boolean))).sort()];
   const days = ["ALL", ...Array.from(new Set(articles.map(a => a.incident_day).filter(Boolean))).sort((a, b) => a < b ? 1 : -1)];
@@ -677,6 +710,9 @@ export function AttackHub() {
   for (const a of visible) (byCat[a.primary_category] = byCat[a.primary_category] || []).push(a);
   const bandCats = cats.filter(c => c !== "ALL" && (byCat[c] || []).length >= 4).slice(0, 4);
   const analysis = visible.filter(a => a.if_you_operate_x_then_y || a.severity_rationale).slice(0, 3);
+  // Reports that stand on their own (no incident behind them); the
+  // incident-linked ones already appear as that incident's card.
+  const standaloneReports = cmsReports.filter(r => r && r.incident_id == null).slice(0, 6);
   const decon = visible.slice().sort((a, b) => (b.severity || 0) - (a.severity || 0))[0];
   const mostCritical = visible.slice().sort((a, b) => (b.severity || 0) - (a.severity || 0)).slice(0, 5);
 
@@ -757,6 +793,26 @@ export function AttackHub() {
       </div>
     </div>
   );
+  // Standalone reports: analyst pieces that are not about one incident. The
+  // hero is the report's own picture when it has one; NewsImage falls back to
+  // a category image when it does not, so both shapes look deliberate.
+  const ReportCard = (r) => {
+    const a = reportArticle(r);
+    return (
+      <div key={r.ref} className="opc" style={{ cursor: "pointer", padding: 0, overflow: "hidden" }} onClick={() => openArticle(a)}>
+        <NewsImage a={a} height={150} />
+        <div style={{ padding: "16px 18px 18px" }}>
+          <div className="mrow" style={{ marginBottom: 8, gap: 8 }}><SevChip a={a} /><span className="by">{fmtShort(a.incident_day)}</span></div>
+          <h3 style={{ margin: "0 0 6px" }}>{r.title}</h3>
+          {r.subtitle && <p style={{ margin: 0 }}>{r.subtitle}</p>}
+          <div className="by" style={{ marginTop: 10 }}>
+            {[r.industry, CAT_NAME[r.primary_category] || r.primary_category].filter(Boolean).join("  ·  ")}
+            {Array.isArray(r.tags) && r.tags.length ? `  ·  ${r.tags.slice(0, 3).join(", ")}` : ""}
+          </div>
+        </div>
+      </div>
+    );
+  };
   const SecHead = ({ children }) => (
     <div className="sh"><span className="ln" /><h2>{children}</h2><span className="ln" /></div>
   );
@@ -996,6 +1052,15 @@ export function AttackHub() {
                         </section>
                       );
                     })}
+
+                    {standaloneReports.length > 0 && (
+                      <section className="reports sec" style={{ marginTop: 48, padding: "42px 0" }}>
+                        <div className="wrap">
+                          <div className="sh l"><span className="sq" style={{ background: GOLD }} /><h2>Reports</h2></div>
+                          <div className="an3">{standaloneReports.map(ReportCard)}</div>
+                        </div>
+                      </section>
+                    )}
 
                     {analysis.length > 0 && (
                       <section className="analysis sec" style={{ marginTop: 48, padding: "42px 0" }}>
