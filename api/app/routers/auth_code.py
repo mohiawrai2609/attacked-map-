@@ -53,7 +53,11 @@ def _mail_html(code: str) -> str:
 
 
 def _send(to: str, code: str) -> None:
-    user, pw = settings.gmail_user, settings.gmail_app_password
+    # Google shows app passwords as "abcd efgh ijkl mnop"; pasting them with the
+    # spaces is the obvious thing to do and Gmail then refuses the login, so
+    # strip whitespace rather than make that the reader's problem.
+    user = (settings.gmail_user or "").strip()
+    pw = "".join((settings.gmail_app_password or "").split())
     if not user or not pw:
         raise HTTPException(503, "code email is not configured on the API (GMAIL_USER / GMAIL_APP_PASSWORD)")
     sender = settings.email_from if settings.email_from and parseaddr(settings.email_from)[1] else formataddr(("Attacked.ai", user))
