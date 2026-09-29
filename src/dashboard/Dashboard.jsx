@@ -186,7 +186,11 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
           </div>
           <div className="filter-row">
             <button className={`chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>All <span className="n">{P.total}</span></button>
-            {P.cats.map((c) => <button key={c.code} className={`chip ${filter === c.code ? "active" : ""}`} title={c.name} onClick={() => setFilter(c.code)}>{c.name} <span className="n">{c.n}</span></button>)}
+            {P.cats.map((c) => (
+              <button key={c.code} className={`chip ${filter === c.code ? "active" : ""}`} title={c.name} onClick={() => setFilter(c.code)}>
+                <span className="gdot" style={{ background: `var(--g-${c.code})` }} />{c.name} <span className="n">{c.n}</span>
+              </button>
+            ))}
           </div>
           <div className="incident-grid" ref={gridRef}>
             {cards.length ? cards.map((i) => <IncidentCard key={i.id} i={i} onOpen={onOpen} onSubscribe={onSubscribe} subscriber={subscriber} />)
@@ -220,7 +224,7 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
         </div>
         <div className="sector-wrap">
           <div className="cat-bars"><h3>Where the risk is landing</h3><p>Incidents in your industry by primary GUARD category. Click a bar to filter the cards above.</p>
-            <div>{P.cats.map((c) => <div key={c.code} className="bar" onClick={() => { setFilter(c.code); gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><span className="code">{c.code}</span><div className="track"><div className="fill" style={{ width: `${Math.max(3, c.n / max * 100)}%` }} /><span className="lbl">{c.name}</span></div><span className="n">{c.n}</span></div>)}</div>
+            <div>{P.cats.map((c) => <div key={c.code} className="bar" style={{ "--bar-c": `var(--g-${c.code})`, "--bar-fill": `var(--gc-${c.code})` }} onClick={() => { setFilter(c.code); gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><span className="code">{c.code}</span><div className="track"><div className="fill" style={{ width: `${Math.max(3, c.n / max * 100)}%` }} /><span className="lbl">{c.name}</span></div><span className="n">{c.n}</span></div>)}</div>
           </div>
           <section className="briefs">
             <div className="briefs-head"><div><h3>Latest long-form briefings</h3><p>Full analyst write-ups for incidents in your industry.</p></div><span className="briefs-count">{P.briefings} available</span></div>
