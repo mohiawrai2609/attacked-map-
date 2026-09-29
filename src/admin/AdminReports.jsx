@@ -12,10 +12,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { adminDeleteReport, adminGetReport, adminListReports, adminSetReportStatus, adminUpsertReport, makeReportRef, uploadReportHero } from "../lib/reports";
-import { DEFAULT_BRAND, REPORT_FONTS, REPORT_SECTIONS, applyBrandToHtml, renderReport } from "../lib/reportTemplate";
+import { DEFAULT_BRAND, REPORT_FONTS, REPORT_SECTIONS, applyBrandToHtml, renderReport, reportMetaFromHtml } from "../lib/reportTemplate";
 import { CATEGORIES, INDUSTRIES } from "../lib/taxonomy";
+import { ReportPageEditor } from "./ReportPageEditor";
 
-const BRAND = { gold: "#F5B800", obsidian: "#1A1A1A", card: "#242424", deep: "#080808", white: "#FFFFFF", muted: "#A8A8A8", dim: "#585858", border: "#333333" };
+const BRAND = { gold: "#FCBD00", obsidian: "#1A1A1A", card: "#242424", deep: "#080808", white: "#FFFFFF", muted: "#A8A8A8", dim: "#585858", border: "#333333" };
 const SEVS = [[5, "Critical"], [4, "High"], [3, "Medium"], [2, "Low"], [1, "Minimal"]];
 
 const inp = { width: "100%", boxSizing: "border-box", background: BRAND.deep, color: BRAND.white, border: `1px solid ${BRAND.border}`, borderRadius: 4, padding: "9px 11px", fontFamily: "Inter, sans-serif", fontSize: 13, outline: "none" };
@@ -136,10 +137,35 @@ export function AdminReports() {
     try { const url = await uploadReportHero(data.ref.trim() || makeReportRef(data.title), f); setData((d) => ({ ...d, heroImageUrl: url })); toast("Picture uploaded."); }
     catch (er) { toast(er.message || "Upload failed."); } finally { setBusy(false); e.target.value = ""; }
   }
+  // Uploading a finished report keeps the file as-is for rendering AND reads
+  // its own metadata into the form, so the admin edits rather than retypes.
+  // Anything already typed is left alone; a field still empty or still on the
+  // editor's default takes the file's value. Every field stays editable after,
+  // and the toast names what the file could not supply.
   function onHtmlFile(e) {
     const f = e.target.files?.[0]; if (!f) return;
     const rd = new FileReader();
-    rd.onload = () => { const html = String(rd.result || ""); const t = html.match(/<title>([^<]*)<\/title>/i); setData((d) => ({ ...d, mode: "html", uploadedHtml: html, title: d.title || (t ? t[1].replace(/^Attacked\.ai · Intelligence Briefing — /, "") : f.name.replace(/\.html?$/i, "")) })); toast(`${f.name} loaded — ${Math.round(html.length / 1024)} KB.`); };
+    rd.onload = () => {
+      const html = String(rd.result || "");
+      const meta = reportMetaFromHtml(html);
+      let filled = 0, blank = [];
+      setData((d) => {
+        const base = emptyData();
+        const next = { ...d, mode: "html", uploadedHtml: html };
+        for (const [k, v] of Object.entries(meta.fields)) {
+          const mine = next[k];
+          if (mine === "" || mine == null || mine === base[k]) { next[k] = v; filled++; }
+        }
+        if (!next.title) next.title = f.name.replace(/\.html?$/i, "");
+        blank = [["heroImageUrl", "hero image"], ["industry", "industry"], ["category", "category"], ["incidentId", "incident link"], ["tags", "tags"]]
+          .filter(([k]) => !String(next[k] || "").trim()).map(([, name]) => name);
+        return next;
+      });
+      const kb = Math.round(html.length / 1024);
+      toast(meta.found
+        ? `${f.name} — ${kb} KB, ${filled} field${filled === 1 ? "" : "s"} read from the file.${blank.length ? " Still to add: " + blank.join(", ") + "." : ""}`
+        : `${f.name} — ${kb} KB. No metadata block in this file; fill the fields in by hand.`);
+    };
     rd.readAsText(f);
     e.target.value = "";
   }
@@ -244,7 +270,12 @@ export function AdminReports() {
                     <div><label style={lbl}>Brand footer</label><select style={inp} value={brand.showBrandFooter ? "1" : "0"} onChange={(e) => setBrand({ ...brand, showBrandFooter: e.target.value === "1" })}><option value="1">Attacked.ai footer on</option><option value="0">Off (white-label)</option></select></div>
                   </div>
                   <button style={btn(false)} onClick={() => setBrand({ ...DEFAULT_BRAND })}>Reset to brand defaults</button>
-                  <div style={{ fontSize: 11, color: BRAND.muted, lineHeight: 1.6 }}>Defaults are the Attacked.ai brand: gold {DEFAULT_BRAND.accent}, Inter, light paper. Everything here also applies to an uploaded HTML report.</div>
+                  <div style={{ fontSize: 11, color: BRAND.muted, lineHeight: 1.6 }}>
+                    Defaults are the Attacked.ai brand: gold {DEFAULT_BRAND.accent}, Inter, light paper.
+                    {data.mode === "html"
+                      ? " On an uploaded file, accent, typeface and heading weight are applied by rewriting the file's own stylesheet, so they take effect everywhere in it. Theme, classification kicker and brand footer belong to the authored layout — a baked briefing keeps the palette and footer it shipped with."
+                      : " Everything here applies to the rendered report."}
+                  </div>
                 </div>
               )}
 
@@ -273,8 +304,17 @@ export function AdminReports() {
 
             {preview && (
               <div style={{ position: "sticky", top: 16 }}>
-                <div style={{ ...lbl, marginBottom: 8 }}>Live preview · exactly what readers see</div>
-                <iframe title="Report preview" srcDoc={previewHtml} style={{ width: "100%", height: "78vh", border: `1px solid ${BRAND.border}`, borderRadius: 8, background: "#fff" }} />
+                {data.mode === "html" && data.uploadedHtml ? (
+                  // An uploaded briefing is a finished page, so it can be edited
+                  // where it is read: click an element, restyle it, and the
+                  // edited document becomes what Save stores.
+                  <ReportPageEditor html={previewHtml} brand={brand} onChange={(h) => setData((d) => ({ ...d, uploadedHtml: h }))} />
+                ) : (
+                  <>
+                    <div style={{ ...lbl, marginBottom: 8 }}>Live preview · exactly what readers see</div>
+                    <iframe title="Report preview" srcDoc={previewHtml} style={{ width: "100%", height: "78vh", border: `1px solid ${BRAND.border}`, borderRadius: 8, background: "#fff" }} />
+                  </>
+                )}
               </div>
             )}
           </div>

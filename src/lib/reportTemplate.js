@@ -35,7 +35,7 @@ export const REPORT_FONTS = [
   { id: "Source Serif 4", label: "Source Serif (editorial)", css: "'Source Serif 4', Georgia, serif", gf: "Source+Serif+4:wght@400;600;700" },
 ];
 
-export const DEFAULT_BRAND = { accent: "#F5B800", theme: "light", font: "Inter", headingWeight: 800, kicker: "Confidential Intelligence", showBrandFooter: true };
+export const DEFAULT_BRAND = { accent: "#FCBD00", theme: "light", font: "Inter", headingWeight: 800, kicker: "Confidential Intelligence", showBrandFooter: true };
 
 export const CATEGORY_NAME = {
   CYB: "Cyber Security", DAT: "Data & Privacy", ENV: "Environmental", FIN: "Financial", GEO: "Geopolitical",
@@ -49,7 +49,7 @@ const md = (s) => (s && String(s).trim() ? marked.parse(String(s), { breaks: fal
 
 function hexToRgb(hex) {
   const m = String(hex || "").trim().match(/^#?([0-9a-f]{6})$/i);
-  if (!m) return [245, 184, 0];
+  if (!m) return [252, 189, 0];   // Signal Gold, when a brand hex will not parse
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
@@ -186,11 +186,185 @@ export function renderReport(data = {}, brand = {}) {
 
 // For an UPLOADED baked report: inject the brand overrides without touching
 // the file otherwise. Returns the html unchanged when it has no </head>.
-export function applyBrandToHtml(html, brand = {}) {
-  const i = String(html || "").lastIndexOf("</head>");
-  if (i < 0) return html;
+// A finished report file already carries its own facts: the page script opens
+// with `const INCIDENT = { … }`, a JSON object holding the reference, headline,
+// standfirst, date, severity, confidence and byline. Reading it lets an upload
+// fill this form instead of making the admin retype what the file already says.
+//
+// Deliberately NOT the <title> tag: in every one of the baked briefings it
+// reads "Attacked.ai · Intelligence Briefing — Getty / Shutterstock · CMA
+// Merger Remedy", a leftover from the template that was being copied into
+// Title on every upload.
+function incidentBlock(html) {
+  const at = html.indexOf("const INCIDENT = ");
+  if (at < 0) return null;
+  const start = html.indexOf("{", at);
+  if (start < 0) return null;
+  let depth = 0, inStr = false, esc = false, i = start;
+  for (; i < html.length; i++) {
+    const c = html[i];
+    if (inStr) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}") { depth--; if (!depth) break; }
+  }
+  if (depth) return null;                                  // never closed
+  try { return JSON.parse(html.slice(start, i + 1)); } catch { return null; }
+}
+
+const trimmed = (v) => (typeof v === "string" && v.trim() ? v.trim() : "");
+
+// What an uploaded file can tell us, keyed by this editor's own field names.
+export function reportMetaFromHtml(html) {
+  const o = incidentBlock(html);
+  if (!o) return { found: false, fields: {} };
+  const fields = {
+    ref: trimmed(o.id),
+    title: trimmed(o.title),
+    subtitle: trimmed(o.subtitle),
+    dek: trimmed(o.standfirst) || trimmed(o.dek),
+    kicker: trimmed(o.kicker),
+    author: trimmed(o.author),
+    authorTitle: trimmed(o.authorTitle) || trimmed(o.byline),
+    assessedAt: trimmed(o.asOf) || trimmed(o.assessedAt),
+    confidence: trimmed(o.confidence),
+    status: trimmed(o.ref),                                // "ASSESSMENT v1 · point-in-time"
+    takeaway: trimmed(o.takeaway),
+  };
+  for (const k of Object.keys(fields)) if (!fields[k]) delete fields[k];
+  if (typeof o.severity === "number" && o.severity >= 1 && o.severity <= 5) fields.severity = o.severity;
+  // categoriesTouched lists the GUARD codes the incident spans, primary first
+  // — the file's own classification, so no guessing from the desk name.
+  const code = Array.isArray(o.categoriesTouched) ? trimmed(o.categoriesTouched[0]) : "";
+  if (code && CATEGORY_NAME[code]) fields.category = code;
+  return { found: true, fields };
+}
+
+// A baked briefing from the pipeline arrives with its own stylesheet, and that
+// stylesheet hardcodes the brand: 51 selectors name a font outright, and the
+// accent and everything derived from it are written as literals — #F5B800 and
+// rgba(245,184,0,a) for the accent itself, #8A6D00 / #9A7400 / #7A5C00 for the
+// darker text tones, #EBCB5B / #FEF8E3 for the tint pair, #E0A800 for the far
+// end of the severity gradient. Appending overrides therefore changed almost
+// nothing, which is why the Design tab looked dead on an uploaded file.
+//
+// So we make the file's own CSS brand-aware instead: every non-monospace
+// font-family becomes var(--r-font) and every accent literal becomes the
+// variable it was derived from. After that one rewrite the :root block drives
+// the whole document, and the rewrite is a no-op to re-apply — which matters,
+// because a saved report is re-opened from its rendered HTML and so passes
+// through here again every time an admin edits it.
+//
+// #141414 needs more care: 17 of its 21 rules are text sitting ON the accent
+// (badges, chips, the wordmark), which must flip to white when the admin picks
+// a dark accent, but the other 4 are dark marks on a light surface, which must
+// not. So it is only rewritten inside declaration blocks that reference the
+// accent — innermost {...} blocks, which is what a declaration block is.
+function brandifyCss(css) {
+  return String(css)
+    .replace(/font-family\s*:\s*([^;}]+)/gi, (m, decl) => (/mono|inherit|--r-font/i.test(decl) ? m : "font-family:var(--r-font)"))
+    .replace(/#f5b800\b/gi, "var(--gold)")
+    .replace(/rgba\(\s*245\s*,\s*184\s*,\s*0\s*,\s*([0-9.]+)\s*\)/gi, "rgba(var(--gold-rgb),$1)")
+    .replace(/#e0a800\b/gi, "var(--gold-mid)")
+    .replace(/#8a6d00\b|#7a5c00\b/gi, "var(--gold-text)")
+    .replace(/#9a7400\b/gi, "var(--gold-dim)")
+    .replace(/#ebcb5b\b/gi, "var(--yellow-edge)")
+    .replace(/#fef8e3\b/gi, "var(--yellow-tint)")
+    .replace(/\{([^{}]*)\}/g, (m, body) => (/var\(--gold|var\(--yellow/.test(body) ? "{" + body.replace(/#141414\b/gi, "var(--on-accent)") + "}" : m));
+}
+
+// Text that sits on the accent: near-black on a light accent, white on a dark
+// one, so a badge stays readable whatever colour the admin picks. The default
+// gold resolves to #141414, which is exactly what the files already ship.
+const onAccent = (hex) => { const [r, g, b] = hexToRgb(hex); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.55 ? "#141414" : "#FFFFFF"; };
+
+// The variables an uploaded file needs on top of brandCss: the font and the
+// accent tones the rewrite above now points at.
+function uploadBrandCss(b) {
+  const font = REPORT_FONTS.find((f) => f.id === b.font) || REPORT_FONTS[0];
+  const [r, g, bl] = hexToRgb(b.accent);
+  return `
+:root{--r-font:${font.css};--gold-rgb:${r},${g},${bl};--gold-mid:${darken(b.accent, 0.86)};--on-accent:${onAccent(b.accent)};--yellow:${b.accent};--yellow-tint:${rgba(b.accent, 0.1)};--yellow-edge:${rgba(b.accent, 0.45)};--shadow-gold:0 6px 24px ${rgba(b.accent, 0.2)};}
+.r-title,.r-sec-title{font-weight:${Number(b.headingWeight) || 800} !important;}
+`;
+}
+
+// ── on-page edits ────────────────────────────────────────────────────────
+// A baked briefing ships a skeleton — about 20 elements — and its own script
+// builds the other 900 from the INCIDENT object every time the page loads. So
+// on-page edits cannot be saved by serialising the edited DOM: that would store
+// the generated markup alongside the script that regenerates it, inflating the
+// file by half and losing every edit the moment the script ran again.
+//
+// Instead the edits are saved as data — a selector-keyed map in a JSON block —
+// with a small script that re-applies them after the report has built itself.
+// The stored file stays the original plus a few hundred bytes, the edits survive
+// the rebuild, and re-opening a report can read the map straight back out.
+const AE_APPLY_JS = `(function(){try{
+var n=document.querySelector('script[type="application/json"][data-ae-edits]');if(!n)return;
+var E=JSON.parse(n.textContent||'{}');var K=Object.keys(E);
+function sel(k){try{return document.querySelector(k);}catch(e){return null;}}
+function go(){
+K.forEach(function(k){var e=E[k],el=sel(k);if(el&&e&&e.html!=null)el.innerHTML=e.html;});
+K.forEach(function(k){var e=E[k],el=sel(k);if(!el||!e||!e.style)return;
+Object.keys(e.style).forEach(function(p){el.style.setProperty(p,e.style[p],'important');});});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();
+setTimeout(go,0);
+}catch(err){}})();`;
+
+const AE_JSON_RE = /<script type="application\/json" data-ae-edits>[\s\S]*?<\/script>/gi;
+const AE_APPLY_RE = /<script data-ae-apply>[\s\S]*?<\/script>/gi;
+
+// The edits already saved in a report, so re-opening one shows what was done.
+export function readEdits(html) {
+  const m = String(html || "").match(/<script type="application\/json" data-ae-edits>([\s\S]*?)<\/script>/i);
+  if (!m) return {};
+  try { const o = JSON.parse(m[1].replace(/<\\\//g, "</")); return o && typeof o === "object" ? o : {}; } catch { return {}; }
+}
+
+// Replace the saved edits with this set. Passing an empty set removes them, so
+// "reset everything" needs no special case.
+export function injectEdits(html, edits) {
+  let doc = String(html || "").replace(AE_JSON_RE, "").replace(AE_APPLY_RE, "");
+  const keys = Object.keys(edits || {});
+  if (!keys.length || !doc) return doc;
+  const json = JSON.stringify(edits).replace(/<\//g, "<\\/");
+  const head = doc.lastIndexOf("</head>");
+  if (head < 0) return doc;
+  doc = doc.slice(0, head) + `<script type="application/json" data-ae-edits>${json}</script>` + doc.slice(head);
+  const body = doc.lastIndexOf("</body>");
+  const apply = `<script data-ae-apply>${AE_APPLY_JS}</script>`;
+  return body < 0 ? doc + apply : doc.slice(0, body) + apply + doc.slice(body);
+}
+
+export function brandFontHref(brand = {}) {
   const b = { ...DEFAULT_BRAND, ...(brand || {}) };
   const font = REPORT_FONTS.find((f) => f.id === b.font) || REPORT_FONTS[0];
-  const inject = `<link href="https://fonts.googleapis.com/css2?family=${font.gf}&display=swap" rel="stylesheet"><style data-cms-brand>${brandCss(b)}</style>`;
-  return html.slice(0, i) + inject + html.slice(i);
+  return `https://fonts.googleapis.com/css2?family=${font.gf}&display=swap`;
+}
+
+export function brandStyleCss(brand = {}) {
+  const b = { ...DEFAULT_BRAND, ...(brand || {}) };
+  return brandCss({ ...b, theme: "light" }) + uploadBrandCss(b);
+}
+
+export function applyBrandToHtml(html, brand = {}) {
+  let doc = String(html || "");
+  if (!doc) return doc;
+  const b = { ...DEFAULT_BRAND, ...(brand || {}) };
+  // Theme is deliberately not forwarded: a baked briefing hardcodes its own
+  // light palette in 45 further literals (surfaces, borders, the good/fail
+  // semantics, near-black text on chips), so flipping only the handful of
+  // variables brandCss knows about produced a half-dark, unreadable page.
+  // The Design tab says as much for an uploaded file.
+  // Clear what an earlier pass injected, so re-editing re-brands instead of stacking.
+  doc = doc.replace(/<link[^>]*data-cms-brand[^>]*>/gi, "").replace(/<style data-cms-brand>[\s\S]*?<\/style>/gi, "");
+  // …except the admin's own per-element block, whose font and colour choices
+  // are deliberate and must not be folded back into the brand variables.
+  doc = doc.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (m, attrs, css) => (/data-ae-edits/i.test(attrs) ? m : `<style${attrs}>${brandifyCss(css)}</style>`));
+  const i = doc.lastIndexOf("</head>");
+  if (i < 0) return doc;
+  const inject = `<link data-cms-brand href="${brandFontHref(b)}" rel="stylesheet"><style data-cms-brand>${brandStyleCss(b)}</style>`;
+  return doc.slice(0, i) + inject + doc.slice(i);
 }
