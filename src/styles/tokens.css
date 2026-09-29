@@ -1,0 +1,73 @@
+/* Attacked.ai design tokens
+   The single source of truth for colour, type, radius and motion.
+   Imported once in main.jsx, so every page and component reads the same values.
+   Source: Attacked.ai World Class Brand Guidelines v1.0, as delivered in the
+   designed dashboard (2026-09-29). Edit the tokens, not the call sites. */
+:root {
+  /* Surfaces (layered, not flooded) */
+  --ink: #0E1116;          /* Command Ink — page canvas */
+  --ink-2: #1A1A1A;        /* Operational Black — sidebar, hero panel */
+  --charcoal: #242424;     /* Card Charcoal — cards, panels */
+  --raised: #2E2E2E;       /* Raised Grey — inputs, chips, secondary panels */
+  --raised-2: #383838;     /* hover step above Raised Grey */
+  --mist: #EDEDED;         /* soft white — body copy on dark, paper panels */
+  --white: #FFFFFF;
+  --muted: #A6A8AD;        /* metadata, timestamps, labels */
+  --muted-2: #8E9198;      /* quiet metadata on charcoal (4.5:1 floor) */
+
+  /* Signal */
+  --gold: #FCBD00;
+  --gold-press: #E0A800;
+  --on-gold: #0E1116;
+
+  /* Canvas (V1: warm off-white content on ink chrome) */
+  --canvas: #F5F2E9;       /* warm off-white page canvas */
+  --canvas-2: #EDE8DB;     /* secondary off-white: chips, tracks, hover */
+  --card: #FFFFFF;         /* cards and panels on the canvas */
+  --ink-text: #0E1116;     /* headings on canvas */
+  --body-text: #1A1A1A;    /* copy on canvas */
+  --muted-light: #5B5F66;  /* metadata on canvas (6.9:1 on white) */
+  --quiet-light: #7A7E86;  /* quietest labels on canvas (4.6:1 on white) */
+  --line-l: rgba(14,17,22,.12);
+  --line-l2: rgba(14,17,22,.22);
+  --line-l3: rgba(14,17,22,.40);
+  /* Severity text on white — deepened for AA; the dot keeps the brand hex */
+  --s5-tx: #B21F31; --s4-tx: #A94B0F; --s3-tx: #7A6000; --s2-tx: #1E7A3D; --s1-tx: #55565A;
+
+  /* Rules (dark chrome) */
+  --line: rgba(255,255,255,.10);
+  --line-2: rgba(255,255,255,.16);
+  --line-3: rgba(255,255,255,.28);
+
+  /* Severity — brand RAG scale (5 Critical → 1 Minimal) */
+  --s5: #FF3B30; --s4: #FF6B35; --s3: #FCBD00; --s2: #34C759; --s1: #8E8E93;
+  --s5-bg: rgba(255,59,48,.14); --s4-bg: rgba(255,107,53,.14); --s3-bg: rgba(252,189,0,.14);
+  --s2-bg: rgba(52,199,89,.14); --s1-bg: rgba(142,142,147,.16);
+
+  /* GUARD category colours — markers, bars, dots */
+  --g-STR: #6E2F8F; --g-FIN: #007A3D; --g-REG: #E45700; --g-GEO: #70513A; --g-TPR: #D69A00;
+  --g-OPS: #00A39A; --g-REP: #B80F2A; --g-CYB: #0057D9; --g-DAT: #B8008A; --g-PPL: #E65A9B;
+  --g-PHY: #3D4A5C; --g-ENV: #6C9F16; --g-TEC: #0087B8;
+  /* AA-deepened fills for white text on a chip */
+  --gc-STR: #6E2F8F; --gc-FIN: #007A3D; --gc-REG: #C54B00; --gc-GEO: #70513A; --gc-TPR: #946A00;
+  --gc-OPS: #007F78; --gc-REP: #B80F2A; --gc-CYB: #0057D9; --gc-DAT: #B8008A; --gc-PPL: #DC2178;
+  --gc-PHY: #3D4A5C; --gc-ENV: #578012; --gc-TEC: #007CA9;
+
+  /* Geometry */
+  --r-xs: 2px; --r-sm: 3px; --r-md: 6px;
+  --nav-h: 64px; --topbar-h: 60px; --sidebar: 240px;
+  --shadow-float: 0 24px 60px rgba(0,0,0,.45);
+
+  /* Type */
+  --ui: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+
+::selection { background: var(--gold); color: var(--on-gold); }
+
+/* Deliberately not here: the html/body reset and the global box-sizing that
+   shipped with the design. index.html already owns the page base, and the
+   dashboard scopes its own reset under .dash — applying the warm canvas to
+   <body> would have repainted the landing page, the map and the Hub, which
+   are dark by design. Tokens only, so importing this file can break nothing. */

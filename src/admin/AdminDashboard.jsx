@@ -19,7 +19,7 @@ import { AdminReports } from "./AdminReports";
 import { Logo } from "../auth/Logo";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidianDeep: "#080808",
   obsidian: "#1A1A1A",
   obsidianCard: "#242424",
@@ -27,7 +27,7 @@ const BRAND = {
   textSecondary: "#A8A8A8",
   textMuted: "#585858",
   borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
 };
 
 // Clean stroke icons (Lucide-style, 1.5px stroke, currentColor) — emoji-free
@@ -139,7 +139,7 @@ export function AdminDashboard() {
           }}>
             <span style={{
               width: 6, height: 6, borderRadius: 3, background: BRAND.gold,
-              boxShadow: "0 0 8px rgba(245,184,0,0.55)",
+              boxShadow: "0 0 8px rgba(252,189,0,0.55)",
             }} />
             Admin Console
           </span>

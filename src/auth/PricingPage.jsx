@@ -20,7 +20,7 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidian: "#1A1A1A",
   obsidianDeep: "#080808",
   obsidianCard: "#242424",
@@ -29,7 +29,7 @@ const BRAND = {
   textSecondary: "#A8A8A8",
   textMuted: "#585858",
   borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
   cyan: "#4FC3D7",
   violet: "#9D7BEC",
@@ -356,7 +356,7 @@ export function PricingPage() {
                 padding: hi ? "30px 26px" : "26px 24px",
                 display: "flex", flexDirection: "column",
                 position: "relative",
-                boxShadow: hi ? "0 16px 48px rgba(245,184,0,0.16)" : "0 10px 30px rgba(16,16,16,0.06)",
+                boxShadow: hi ? "0 16px 48px rgba(252,189,0,0.16)" : "0 10px 30px rgba(16,16,16,0.06)",
               }}>
                 {hi && (
                   <div style={{
@@ -416,7 +416,7 @@ export function PricingPage() {
                 {plan.commitment && (
                   <div style={{
                     marginTop: 16, padding: "10px 12px",
-                    background: "#FFF7DE", border: "1px solid rgba(245,184,0,0.55)",
+                    background: "#FFF7DE", border: "1px solid rgba(252,189,0,0.55)",
                     borderRadius: 0, fontSize: 11.5, color: "#3F3F46", lineHeight: 1.5,
                   }}>
                     <b style={{ color: "#8A6D00" }}>In return:</b> {plan.commitment}

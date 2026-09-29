@@ -32,7 +32,7 @@ const C = {
   ink4: "#9A9A98",
   line: "#E7E5DE",
   line2: "#CFCDC4",
-  gold: "#F5B800",
+  gold: "#FCBD00",
   goldDeep: "#8A6D00", // text-safe gold on white
   err: "#C0341D",
   ok: "#1E7A3D",
@@ -204,7 +204,7 @@ export function AuthModal({ open, onClose, intent = null }) {
   const opt = { color: C.ink, background: C.paper };
   const goldBtn = (disabled) => ({
     width: "100%", padding: "12px 16px",
-    background: disabled ? "rgba(245,184,0,0.55)" : C.gold, color: "#1A1A1A",
+    background: disabled ? "rgba(252,189,0,0.55)" : C.gold, color: "#1A1A1A",
     border: "none", borderRadius: 4, fontFamily: "Inter, sans-serif", fontSize: 13.5,
     fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
     cursor: disabled ? "not-allowed" : "pointer",

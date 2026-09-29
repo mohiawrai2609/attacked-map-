@@ -46,10 +46,10 @@ def _mail_html(code: str) -> str:
     return f"""<!doctype html><html><body style="margin:0;background:#0f0f0f;font-family:Inter,Arial,sans-serif;color:#fff">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px">
 <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;background:#161616;border:1px solid #2a2a2a;border-radius:14px">
-<tr><td style="padding:28px 32px 8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#F5B800;font-weight:700">Attacked.ai&trade; &middot; Secure sign-in</td></tr>
+<tr><td style="padding:28px 32px 8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#FCBD00;font-weight:700">Attacked.ai&trade; &middot; Secure sign-in</td></tr>
 <tr><td style="padding:0 32px 6px;font-size:22px;font-weight:700">Your sign-in code.</td></tr>
 <tr><td style="padding:0 32px 22px;font-size:14px;line-height:1.55;color:#bdbdbd">Enter this code back on Attacked.ai. It is valid for one hour and works once.</td></tr>
-<tr><td align="center" style="padding:0 32px 26px"><div style="display:inline-block;padding:18px 28px;border:1px solid #3a3a3a;border-radius:12px;background:#0f0f0f;font-family:'JetBrains Mono','Courier New',monospace;font-size:38px;font-weight:700;letter-spacing:.32em;color:#F5B800">{c}</div></td></tr>
+<tr><td align="center" style="padding:0 32px 26px"><div style="display:inline-block;padding:18px 28px;border:1px solid #3a3a3a;border-radius:12px;background:#0f0f0f;font-family:'JetBrains Mono','Courier New',monospace;font-size:38px;font-weight:700;letter-spacing:.32em;color:#FCBD00">{c}</div></td></tr>
 <tr><td style="padding:0 32px 30px;font-size:12px;line-height:1.55;color:#7a7a7a">Didn&rsquo;t request this? Someone may have typed your address by mistake &mdash; you can ignore this email.</td></tr>
 </table></td></tr></table></body></html>"""
 

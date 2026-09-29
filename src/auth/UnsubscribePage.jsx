@@ -16,7 +16,7 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 
 const BRAND = {
-  gold:     "#F5B800",
+  gold:     "#FCBD00",
   obsidian: "#1A1A1A",
   deep:     "#080808",
   card:     "#242424",
@@ -72,7 +72,7 @@ export function UnsubscribePage({ token }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: `radial-gradient(ellipse at center top, rgba(245,184,0,0.06), transparent 70%), ${BRAND.deep}`,
+      background: `radial-gradient(ellipse at center top, rgba(252,189,0,0.06), transparent 70%), ${BRAND.deep}`,
       color: BRAND.white,
       fontFamily: "Inter, sans-serif",
       display: "flex", flexDirection: "column",

@@ -79,7 +79,7 @@ const SOCIAL = {
   instagram: "https://www.instagram.com/attacked.ai",
 };
 
-const GOLD     = "#F5B800";
+const GOLD     = "#FCBD00";
 const OBSIDIAN = "#1A1A1A";
 const DEEP     = "#080808";
 const MUTED    = "#A8A8A8";
@@ -395,7 +395,7 @@ function incidentCard(i: any, tier: "free" | "subscriber", layer: Layer): string
   let depth = "";
   if (tier === "subscriber") {
     if (i.severity_rationale) {
-      depth += `<div style="padding:11px 13px;background:rgba(245,184,0,0.07);border-left:3px solid ${GOLD};border-radius:0 4px 4px 0;font-family:${INTER};font-size:12px;color:#FFF;line-height:1.55;margin-bottom:14px;"><b style="color:${GOLD};">Why it matters →</b> ${escape(trim(i.severity_rationale, 320))}</div>`;
+      depth += `<div style="padding:11px 13px;background:rgba(252,189,0,0.07);border-left:3px solid ${GOLD};border-radius:0 4px 4px 0;font-family:${INTER};font-size:12px;color:#FFF;line-height:1.55;margin-bottom:14px;"><b style="color:${GOLD};">Why it matters →</b> ${escape(trim(i.severity_rationale, 320))}</div>`;
     }
     const blast = (layer.blast.get(Number(i.id)) || []).slice(0, 3);
     const controls = (layer.controls.get(Number(i.id)) || []).slice(0, 2);

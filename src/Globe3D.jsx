@@ -15,7 +15,7 @@ import React, { useEffect, useRef, useState } from "react";
 const SEV_COLOR = {
   5: "#FF3B30", // CRITICAL
   4: "#FF6B35", // HIGH
-  3: "#F5B800", // MEDIUM
+  3: "#FCBD00", // MEDIUM
   2: "#34C759", // LOW
   1: "#8E8E93", // MINIMAL
 };
@@ -547,8 +547,8 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     const ds = geoDataSourceRef.current;
     if (!ds || !window.Cesium) return;
     const Cesium = window.Cesium;
-    const goldColor = Cesium.Color.fromCssColorString("#F5B800");
-    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#F5B800");
+    const goldColor = Cesium.Color.fromCssColorString("#FCBD00");
+    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#FCBD00");
     ds.entities.values.forEach(ent => {
       if (!ent.polygon) return;
       const countryName = ent._countryName;
@@ -637,7 +637,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
       statesHiDsRef.current = null;
     }
     if (!highlightedState) { viewer.scene.requestRender(); return; }
-    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#F5B800");
+    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#FCBD00");
     Cesium.GeoJsonDataSource.load({ type: "FeatureCollection", features: [highlightedState] }, { clampToGround: true })
       .then(ds => {
         if (token !== stateLoadTokenRef.current || viewer.isDestroyed()) return; // superseded
@@ -663,7 +663,7 @@ export default function Globe3D({ mapMode = "globe", visibleIncidents = [], sele
     const Cesium = window.Cesium;
     viewer.entities.values.filter(e => e._isExactHi).forEach(e => viewer.entities.remove(e));
     if (!highlightedPoint) { viewer.scene.requestRender(); return; }
-    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#F5B800");
+    const c = Cesium.Color.fromCssColorString(SEV_COLOR[highlightSevRef.current] || "#FCBD00");
     const disc = viewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(highlightedPoint.lng, highlightedPoint.lat, 5000),
       ellipse: {
@@ -1130,7 +1130,7 @@ function resolveCoords(inc) {
     if (!Object.keys(radius).length) return;
 
     const channelDefs = {
-      internal:              { color: "#F5B800", width: 3, opacity: 0.75 },
+      internal:              { color: "#FCBD00", width: 3, opacity: 0.75 },
       supply_chain:          { color: "#FF8C5A", width: 3, opacity: 0.75 },
       customer_counterparty: { color: "#4FC3D7", width: 3, opacity: 0.75 },
       competitive_peer:      { color: "#9D7BEC", width: 2.5, opacity: 0.65 },
@@ -1328,7 +1328,7 @@ function resolveCoords(inc) {
   const zBtn = {
     width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
     background: "rgba(26,26,26,0.85)", backdropFilter: "blur(10px)",
-    border: "1px solid #333", color: "#F5B800", fontSize: 20, fontWeight: 700,
+    border: "1px solid #333", color: "#FCBD00", fontSize: 20, fontWeight: 700,
     cursor: "pointer", lineHeight: 1, userSelect: "none",
   };
 
@@ -1343,21 +1343,21 @@ function resolveCoords(inc) {
           justify-content: center;
           background: rgba(20, 20, 20, 0.85);
           backdrop-filter: blur(12px);
-          border: 1px solid rgba(245, 184, 0, 0.15);
-          color: #F5B800;
+          border: 1px solid rgba(252,189,0, 0.15);
+          color: #FCBD00;
           cursor: pointer;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           padding: 0;
           outline: none;
         }
         .nav-btn:hover {
-          background: rgba(245, 184, 0, 0.15);
+          background: rgba(252,189,0, 0.15);
           color: #FFF;
-          border-color: #F5B800;
+          border-color: #FCBD00;
         }
         .nav-btn:active {
           transform: scale(0.92);
-          background: rgba(245, 184, 0, 0.25);
+          background: rgba(252,189,0, 0.25);
         }
         .nav-btn-top {
           border-radius: 0;
@@ -1454,7 +1454,7 @@ function resolveCoords(inc) {
         </div>
       )}
       {!ready && !failed && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#F5B800", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#FCBD00", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
           Initializing satellite link…
         </div>
       )}

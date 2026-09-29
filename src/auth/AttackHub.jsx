@@ -5,7 +5,7 @@
 // as a filter, 3-column hero, Top Stories, Spotlight, per-category section bands
 // with "More in X" rails, GUARD Analysis op-eds, a cinematic Deconstructed band,
 // Most Critical, and a paginated Latest grid) — rendered in our brand: white
-// body, gold #F5B800, single Inter typeface, dark SiteNav/SiteFooter.
+// body, gold #FCBD00, single Inter typeface, dark SiteNav/SiteFooter.
 //
 // Fully data-driven and scalable: the live feed merges `incidents` +
 // `vi_incidents` (as the map does) and every section/band/KPI is derived from
@@ -24,7 +24,7 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 import { SEVERITY_INK, SEVERITY_CHIP } from "../brand.js";
 
-const GOLD = "#F5B800", GOLD_D = "#8A6D00", OB = "#1A1A1A";  // GOLD_D = the reference's --gold-text; 4.92:1 on white  // GOLD_D darkened from #8A6D00: on the cream ground (#F5F3ED) it measured 4.43:1, just under the 4.5 minimum for the 10px kicker labels.
+const GOLD = "#FCBD00", GOLD_D = "#8A6D00", OB = "#1A1A1A";  // GOLD_D = the reference's --gold-text; 4.92:1 on white  // GOLD_D darkened from #8A6D00: on the cream ground (#F5F3ED) it measured 4.43:1, just under the 4.5 minimum for the 10px kicker labels.
 const SEV_C = { 5: "#FF3B30", 4: "#FF6B35", 3: GOLD, 2: "#34C759", 1: "#8E8E93" };
 const SEV_L = { 5: "CRITICAL", 4: "HIGH", 3: "MEDIUM", 2: "LOW", 1: "MINIMAL" };
 const CAT_NAME = {
@@ -90,7 +90,7 @@ const HUB_CSS = `
 .hubft .sev{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:0;border:1px solid;white-space:nowrap}
 .hubft .by{font-size:11px;color:var(--mut)}
 .hubft img{display:block}
-.hubft .mast{text-align:center;padding:34px 0 22px;border-bottom:1px solid var(--line);background:radial-gradient(ellipse 60% 100% at 50% 0%,rgba(245,184,0,.07),transparent 70%)}
+.hubft .mast{text-align:center;padding:34px 0 22px;border-bottom:1px solid var(--line);background:radial-gradient(ellipse 60% 100% at 50% 0%,rgba(252,189,0,.07),transparent 70%)}
 .hubft .mast .bar{width:54px;height:3px;background:var(--gold);margin:0 auto 18px}
 .hubft .mast h1{font-size:clamp(44px,6.6vw,78px);font-weight:600;line-height:.95;letter-spacing:-.055em;text-wrap:balance}
 .hubft .mast h1 i{color:var(--gold-d);font-style:italic}
@@ -109,10 +109,10 @@ const HUB_CSS = `
 .hubft .filterbar{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;padding:18px 0 0}
 .hubft .filterbar .cnt{margin-right:auto;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
 .hubft select{appearance:none;-webkit-appearance:none;padding:7px 28px 7px 11px;border-radius:0;cursor:pointer;outline:none;background:#fff;border:1px solid var(--line);color:var(--sub);font-family:inherit;font-size:11px;font-weight:500;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6A60' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center}
-.hubft select.act{background-color:rgba(245,184,0,.12);border-color:rgba(245,184,0,.4);color:var(--gold-d)}
+.hubft select.act{background-color:rgba(252,189,0,.12);border-color:rgba(252,189,0,.4);color:var(--gold-d)}
 .hubft .clr{padding:7px 12px;border-radius:0;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
 .hubft .sh{display:flex;align-items:center;gap:18px;margin:4px 0 16px}
-.hubft .sh .ln{flex:1;border-top:1px solid rgba(245,184,0,.42)}
+.hubft .sh .ln{flex:1;border-top:1px solid rgba(252,189,0,.42)}
 .hubft .sh h2{font-weight:700;font-size:17px;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
 .hubft .sh.l{justify-content:flex-start;border-bottom:2px solid var(--gold);padding-bottom:8px;margin-bottom:18px;gap:12px}
 .hubft .sh.l .ln{display:none}.hubft .sh.l h2{font-size:20px;letter-spacing:-.01em;text-transform:none}
@@ -183,7 +183,7 @@ const HUB_CSS = `
 .hubft .opc:hover h3{color:var(--gold-d)}
 .hubft .opc p{margin-top:9px;font-size:13px;color:var(--sub);line-height:1.6;-webkit-line-clamp:4;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .opc .auth{display:flex;align-items:center;gap:10px;margin-top:13px}
-.hubft .opc .av{width:38px;height:38px;border-radius:50%;background:rgba(245,184,0,.14);border:1px solid var(--gold-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold-d)}
+.hubft .opc .av{width:38px;height:38px;border-radius:50%;background:rgba(252,189,0,.14);border:1px solid var(--gold-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold-d)}
 .hubft .opc .an{font-size:12px;font-weight:700}.hubft .opc .ad{font-size:10px;color:var(--mut)}
 .hubft .decon{background:var(--ob);color:#fff}
 .hubft .decon .in{display:grid;grid-template-columns:1.3fr 1fr;gap:34px;align-items:center}
@@ -408,7 +408,7 @@ function ArticleView({ article, onBack, onMap, user }) {
             ...(longBody && !expanded ? { display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" } : {}) }}>{body}</p>
         )}
         {(longBody || a.severity_rationale || a.threat_actor || a.if_you_operate_x_then_y || a.financial_impact_disclosed) && (
-          <button onClick={() => setExpanded(v => !v)} style={{ marginTop: 16, padding: "10px 18px", borderRadius: 0, cursor: "pointer", background: "transparent", border: `1px solid rgba(245,184,0,0.3)`, color: GOLD_D, fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{expanded ? "Read less ↑" : "Read more ↓"}</button>
+          <button onClick={() => setExpanded(v => !v)} style={{ marginTop: 16, padding: "10px 18px", borderRadius: 0, cursor: "pointer", background: "transparent", border: `1px solid rgba(252,189,0,0.3)`, color: GOLD_D, fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{expanded ? "Read less ↑" : "Read more ↓"}</button>
         )}
         {expanded && (
           <>
@@ -851,7 +851,7 @@ export function AttackHub() {
                 .hub-ticker-track { animation: hubticker 90s linear infinite; }
                 .hub-ticker:hover .hub-ticker-track { animation-play-state: paused; }
                 @keyframes hubpulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-                .hub-ticker-item:hover .hti-h { color: #F5B800; }
+                .hub-ticker-item:hover .hti-h { color: #FCBD00; }
               `}</style>
               <div style={{
                 flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 8,

@@ -19,7 +19,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "./AuthProvider";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidian: "#1A1A1A",
   obsidianDeep: "#080808",
   obsidianCard: "#242424",
@@ -28,7 +28,7 @@ const BRAND = {
   textSecondary: "#A8A8A8",
   textMuted: "#585858",
   borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
   red: "#FF6B6B",
   green: "#34C759",
   vendorGreen: "#34C759",

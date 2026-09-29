@@ -15,7 +15,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidianDeep: "#080808",
   obsidian: "#1A1A1A",
   obsidianCard: "#242424",
@@ -24,7 +24,7 @@ const BRAND = {
   textSecondary: "#A8A8A8",
   textMuted: "#585858",
   borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
   red: "#FF6B6B",
   vendorGreen: "#34C759",
@@ -287,7 +287,7 @@ export function AdminInbox() {
           return (
             <button key={s} onClick={() => setStatusFilter(s)} style={{
               padding: "6px 14px", borderRadius: 4,
-              background: active ? "rgba(245,184,0,0.12)" : "transparent",
+              background: active ? "rgba(252,189,0,0.12)" : "transparent",
               color: active ? BRAND.gold : BRAND.textSecondary,
               border: `1px solid ${active ? BRAND.borderGold : BRAND.borderSubtle}`,
               fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,

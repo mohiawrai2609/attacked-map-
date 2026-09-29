@@ -25,10 +25,10 @@ LOCKED = ("r-blast", "r-ctrl", "r-vend")
 REF_OK = re.compile(r"^[A-Za-z0-9._-]{3,64}$")
 
 LOCK_BLOCK = """
-<div class="dash-lock-server" style="margin:18px 0 8px;padding:22px 20px;border:1px solid #F5B800;border-radius:12px;background:#0f0f0f;color:#fff;font:14px/1.5 Inter,system-ui,sans-serif">
-  <div style="font-weight:700;color:#F5B800;letter-spacing:.08em;text-transform:uppercase;font-size:11px;margin-bottom:6px">Subscriber layer</div>
+<div class="dash-lock-server" style="margin:18px 0 8px;padding:22px 20px;border:1px solid #FCBD00;border-radius:12px;background:#0f0f0f;color:#fff;font:14px/1.5 Inter,system-ui,sans-serif">
+  <div style="font-weight:700;color:#FCBD00;letter-spacing:.08em;text-transform:uppercase;font-size:11px;margin-bottom:6px">Subscriber layer</div>
   <div style="font-size:15px;font-weight:600;margin-bottom:12px">Who it reaches, and what to do about it.</div>
-  <a href="/?subscribe" style="display:inline-block;background:#F5B800;color:#0f0f0f;text-decoration:none;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;border-radius:8px">Subscribe →</a>
+  <a href="/?subscribe" style="display:inline-block;background:#FCBD00;color:#0f0f0f;text-decoration:none;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;border-radius:8px">Subscribe →</a>
 </div>
 """
 

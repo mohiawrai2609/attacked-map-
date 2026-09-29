@@ -20,7 +20,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 import React, { useState, useRef } from "react";
 
-const GOLD = "#F5B800";
+const GOLD = "#FCBD00";
 const WHITE = "#FFFFFF";
 
 const SIZES = {

@@ -13,17 +13,23 @@
 // VISUAL DIRECTION (2026-07-27) — editorial intelligence.
 // Derived from the Grey Teamer 001 reference: magazine-scale display type,
 // sharp corners, alternating dark / cream "paper" bands, Inter throughout.
-// Accent stays the official Attacked.ai gold #F5B800 — the reference's
-// #FCBD00 is Wargaming.ai's yellow and must not leak across sub-brands.
+// ACCENT (2026-09-29) — Signal Gold #FCBD00, per the Attacked.ai World Class
+// Brand Guidelines v1.0. This file used to warn that #FCBD00 was Wargaming.ai's
+// yellow and must not cross sub-brands; the guidelines have since made it
+// Attacked.ai's own accent, and the owner confirmed the roll-out from #F5B800.
+//
+// src/styles/tokens.css is the source of truth for anything CSS can reach.
+// This module exists only for components that style in JS — prefer var(--gold)
+// in a stylesheet over importing BRAND into a new component.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const BRAND = {
   // ── Accent — official Attacked.ai gold ──────────────────────────────────
-  gold:       "#F5B800",
+  gold:       "#FCBD00",
   goldSoft:   "#FFD75A",   // hover lift / luminous edge
   goldDim:    "#D4A000",   // pressed state
   goldDeep:   "#8A6D00",   // on-paper accent text (passes contrast on cream)
-  goldTint:   "rgba(245,184,0,0.12)",
+  goldTint:   "rgba(252,189,0,0.12)",
 
   // ── Dark surfaces ───────────────────────────────────────────────────────
   // Blue-black, not neutral black: the reference's #0E1116 reads colder and
@@ -64,7 +70,7 @@ export const BRAND = {
   lineDark:     "rgba(14,17,22,.14)",
   border:       "#333333",
   borderSubtle: "#333333",
-  borderGold:   "rgba(245,184,0,0.3)",
+  borderGold:   "rgba(252,189,0,0.3)",
 
   // ── Semantic (NOT decorative — never reuse these as accents) ────────────
   // Broadcast-red for the pulsing LIVE badge only. This is a functional
@@ -86,13 +92,13 @@ export const BRAND = {
 export const SEVERITY = {
   5: { label: "CRITICAL", color: "#FF3B30", glow: "rgba(255,59,48,0.4)" },
   4: { label: "HIGH",     color: "#FF6B35", glow: "rgba(255,107,53,0.35)" },
-  3: { label: "MEDIUM",   color: "#F5B800", glow: "rgba(245,184,0,0.35)" },
+  3: { label: "MEDIUM",   color: "#FCBD00", glow: "rgba(252,189,0,0.35)" },
   2: { label: "LOW",      color: "#34C759", glow: "rgba(52,199,89,0.30)" },
   1: { label: "MINIMAL",  color: "#8E8E93", glow: "rgba(142,142,147,0.25)" },
 };
 
 // Severity colours are tuned for DARK surfaces. Used as text on white — as
-// the Attacked Hub's newspaper layout does — they fail badly: gold #F5B800 on
+// the Attacked Hub's newspaper layout does — they fail badly: gold #FCBD00 on
 // white measures 1.79:1, well under the 4.5:1 minimum, which is why MEDIUM
 // badges were barely legible. These are the same hues darkened to pass on
 // paper. Use SEVERITY[n].color for fills, dots and rules on any background;

@@ -13,7 +13,7 @@ import { useAuth } from "./AuthProvider";
 import { supabase } from "../lib/supabaseClient";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidian: "#1A1A1A",
   obsidianDeep: "#080808",
   obsidianCard: "#242424",
@@ -21,7 +21,7 @@ const BRAND = {
   textSecondary: "#A8A8A8",
   textMuted: "#585858",
   borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
   red: "#FF6B6B",
 };
@@ -243,7 +243,7 @@ export function PartnerFeedbackModal({ open, onClose }) {
 
               <button type="submit" disabled={submitting} style={{
                 marginTop: 22, width: "100%", padding: "13px 16px",
-                background: submitting ? "rgba(245,184,0,0.4)" : BRAND.gold,
+                background: submitting ? "rgba(252,189,0,0.4)" : BRAND.gold,
                 color: BRAND.obsidian, border: "none", borderRadius: 4,
                 fontFamily: "Inter, sans-serif", fontSize: 13.5, fontWeight: 600,
                 letterSpacing: "0.06em", textTransform: "uppercase",

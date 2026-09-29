@@ -15,14 +15,14 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidian: "#1A1A1A",
   card: "#242424",
   white: "#FFFFFF",
   t2: "#A8A8A8",
   tmuted: "#585858",
   border: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
   danger: "#FF3B30",
   ok: "#34C759",
 };
@@ -158,7 +158,7 @@ export function AdminBriefings() {
               return (
                 <button key={`${r._source}-${r.id}`} onClick={() => pick(r)} style={{
                   textAlign: "left", padding: "11px 13px", borderRadius: 6, cursor: "pointer",
-                  background: active ? "rgba(245,184,0,0.10)" : BRAND.obsidian,
+                  background: active ? "rgba(252,189,0,0.10)" : BRAND.obsidian,
                   border: `1px solid ${active ? BRAND.borderGold : BRAND.border}`,
                   color: BRAND.white, fontFamily: "Inter, sans-serif",
                 }}>

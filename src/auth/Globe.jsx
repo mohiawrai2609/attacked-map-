@@ -48,7 +48,7 @@ export function Globe({ size = 380 }) {
     const TILT = 16*DEG;
     const sinP0 = Math.sin(TILT), cosP0 = Math.cos(TILT);
     const HOTGOLD = '#FFD24F';
-    const SEV = {critical:'#FF453A',high:'#FF6B35',medium:'#F5B800',low:'#34C759'};
+    const SEV = {critical:'#FF453A',high:'#FF6B35',medium:'#FCBD00',low:'#34C759'};
     const INC = INC_RAW.map(function(d){ return Object.assign({}, d); });
 
     function trig(lon,lat){const la=lat*DEG,lo=lon*DEG;return{sp:Math.sin(la),cp:Math.cos(la),sl:Math.sin(lo),cl:Math.cos(lo)};}
@@ -72,10 +72,10 @@ export function Globe({ size = 380 }) {
       let s=ctx.createRadialGradient(cx-R*0.34,cy-R*0.34,R*0.05,cx,cy,R*1.02);
       s.addColorStop(0,'rgba(255,246,214,0.07)'); s.addColorStop(0.62,'rgba(0,0,0,0)'); s.addColorStop(1,'rgba(0,0,0,0.52)');
       ctx.fillStyle=s; ctx.beginPath(); ctx.arc(cx,cy,R,0,6.283); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx,cy,R,0,6.283); ctx.strokeStyle='rgba(245,184,0,0.34)'; ctx.lineWidth=1.2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,6.283); ctx.strokeStyle='rgba(252,189,0,0.34)'; ctx.lineWidth=1.2; ctx.stroke();
     }
     function drawGraticule(sinL0,cosL0){
-      ctx.strokeStyle='rgba(245,184,0,0.07)'; ctx.lineWidth=1;
+      ctx.strokeStyle='rgba(252,189,0,0.07)'; ctx.lineWidth=1;
       for(let j=0;j<GRAT.length;j++){const line=GRAT[j]; ctx.beginPath(); let pen=false;
         for(let i=0;i<line.length;i++){const p=proj(line[i],sinL0,cosL0);
           if(p){if(pen)ctx.lineTo(p[0],p[1]);else{ctx.moveTo(p[0],p[1]);pen=true;}}else pen=false;}
@@ -96,7 +96,7 @@ export function Globe({ size = 380 }) {
     }
     function reticle(x,y){
       const rr=Math.max(11,R*0.055), tick=rr*0.5;
-      ctx.strokeStyle='rgba(245,184,0,0.5)'; ctx.lineWidth=1;
+      ctx.strokeStyle='rgba(252,189,0,0.5)'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.arc(x,y,rr,0,6.283); ctx.stroke();
       ctx.beginPath();
       const dirs=[[0,-1],[0,1],[-1,0],[1,0]];
@@ -112,7 +112,7 @@ export function Globe({ size = 380 }) {
         ctx.beginPath(); let pen=false;
         for(let i=0;i<=N;i++){const p=proj(arcPoint(v1,v2,om,so,i/N),sinL0,cosL0);
           if(p){if(pen)ctx.lineTo(p[0],p[1]);else{ctx.moveTo(p[0],p[1]);pen=true;}}else pen=false;}
-        ctx.strokeStyle='rgba(245,184,0,0.38)'; ctx.lineWidth=1.1; ctx.stroke();
+        ctx.strokeStyle='rgba(252,189,0,0.38)'; ctx.lineWidth=1.1; ctx.stroke();
         if(!reduce){const prog=((t/2600+k*0.3)%1); const p=proj(arcPoint(v1,v2,om,so,prog),sinL0,cosL0);
           if(p){ctx.beginPath(); ctx.fillStyle='rgba(255,240,200,0.98)'; ctx.shadowColor=HOTGOLD; ctx.shadowBlur=8; ctx.arc(p[0],p[1],2,0,6.283); ctx.fill(); ctx.shadowBlur=0;}}
       }
@@ -152,14 +152,14 @@ export function Globe({ size = 380 }) {
     <div style={{ position:'relative', width:'100%', maxWidth:size, margin:'0 auto', aspectRatio:'1 / 1', background:'transparent', overflow:'visible' }}>
       <div className="globe-ovl" style={{ position:'absolute', top:14, left:16, right:16, display:'flex', justifyContent:'space-between', zIndex:4, pointerEvents:'none' }}>
         <span style={{ display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter, sans-serif', fontSize:10.5, letterSpacing:'0.14em', textTransform:'uppercase', color:'#A8A8A8' }}>
-          <span style={{ width:7, height:7, borderRadius:'50%', background:'#F5B800', boxShadow:'0 0 8px rgba(245,184,0,0.6)' }} />Live incidents · 18 Jun 2026
+          <span style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00', boxShadow:'0 0 8px rgba(252,189,0,0.6)' }} />Live incidents · 18 Jun 2026
         </span>
       </div>
       <canvas ref={canvasRef} style={{ display:'block', width:'100%', height:'100%', cursor:'grab' }} aria-label="Live rotating globe of classified incidents — drag to rotate, scroll to zoom" />
       <div className="globe-ovl" style={{ position:'absolute', left:16, bottom:14, display:'flex', gap:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6a6a6a', flexWrap:'wrap', pointerEvents:'none' }}>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF453A', display:'inline-block' }} />Critical</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF6B35', display:'inline-block' }} />High</span>
-        <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#F5B800', display:'inline-block' }} />Medium</span>
+        <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00', display:'inline-block' }} />Medium</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#34C759', display:'inline-block' }} />Low</span>
       </div>
       <div ref={coordRef} className="globe-ovl" style={{ position:'absolute', right:16, bottom:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6a6a6a', textAlign:'right', lineHeight:1.5, pointerEvents:'none' }}>TRACKING<br/>11 COUNTRIES · 17 SECTORS</div>

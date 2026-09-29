@@ -13,9 +13,9 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 
 const BRAND = {
-  gold: "#F5B800", obsidian: "#1A1A1A", deep: "#080808",
+  gold: "#FCBD00", obsidian: "#1A1A1A", deep: "#080808",
   white: "#FFFFFF", t2: "#A8A8A8", tmuted: "#585858", border: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
 };
 const CONTACT_EMAIL = "hello@attacked.ai";
 

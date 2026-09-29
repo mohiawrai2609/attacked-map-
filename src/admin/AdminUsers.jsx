@@ -13,7 +13,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../auth/AuthProvider";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidian: "#1A1A1A",
   obsidianDeep: "#080808",
   obsidianCard: "#242424",
@@ -21,14 +21,14 @@ const BRAND = {
   textSecondary: "#A8A8A8",
   textMuted: "#585858",
   borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
   red: "#FF6B6B",
 };
 
 const TIER_OPTIONS = [
   { v: "free",       label: "FREE",       color: "#4FC3D7" },
-  { v: "enterprise", label: "SUBSCRIBER", color: "#F5B800" },
+  { v: "enterprise", label: "SUBSCRIBER", color: "#FCBD00" },
   { v: "vendor",     label: "VENDOR",      color: "#34C759" },
   { v: "admin",      label: "ADMIN",       color: "#9D7BEC" },
 ];
@@ -253,7 +253,7 @@ export function AdminUsers() {
                 gap: 12, padding: "14px 18px",
                 borderBottom: `1px solid ${BRAND.borderSubtle}`,
                 alignItems: "center",
-                background: isMe ? "rgba(245,184,0,0.04)" : "transparent",
+                background: isMe ? "rgba(252,189,0,0.04)" : "transparent",
               }}>
                 {/* User col */}
                 <div style={{ minWidth: 0 }}>
@@ -266,7 +266,7 @@ export function AdminUsers() {
                       <span style={{
                         marginLeft: 8, fontSize: 9, fontWeight: 700,
                         padding: "1px 6px", borderRadius: 2,
-                        background: "rgba(245,184,0,0.15)", color: BRAND.gold,
+                        background: "rgba(252,189,0,0.15)", color: BRAND.gold,
                         letterSpacing: "0.10em",
                       }}>YOU</span>
                     )}

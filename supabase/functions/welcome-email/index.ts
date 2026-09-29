@@ -45,7 +45,7 @@ const SOCIAL = {
   instagram: "https://www.instagram.com/attacked.ai",
 };
 
-const GOLD = "#F5B800", OBSIDIAN = "#1A1A1A", DEEP = "#080808", MUTED = "#A8A8A8", GREEN = "#34C759", ORANGE = "#FF8C5A";
+const GOLD = "#FCBD00", OBSIDIAN = "#1A1A1A", DEEP = "#080808", MUTED = "#A8A8A8", GREEN = "#34C759", ORANGE = "#FF8C5A";
 const INTER = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
 const SEV_LABEL: Record<number,string> = { 5:"CRITICAL", 4:"HIGH", 3:"MEDIUM", 2:"LOW", 1:"MINIMAL" };

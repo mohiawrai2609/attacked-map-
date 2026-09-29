@@ -16,7 +16,7 @@ import { SiteFooter } from "./SiteFooter";
 const C = {
   paper: "#FFFFFF", paper2: "#FAFAFA", ink: "#101010", ink2: "#52525B", ink3: "#6A6A6A",
   ink4: "#9A9A98", line: "#E7E7E9", line2: "#CFCDC4",
-  gold: "#F5B800", goldDeep: "#8A6D00", obsidian: "#1A1A1A", deep: "#080808",
+  gold: "#FCBD00", goldDeep: "#8A6D00", obsidian: "#1A1A1A", deep: "#080808",
   err: "#C0341D", ok: "#1E7A3D",
 };
 const FONT = "Inter, sans-serif";
@@ -168,7 +168,7 @@ export function ProfilePage() {
               <span style={{
                 padding: "3px 9px", borderRadius: 3, fontSize: 10, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
-                background: "rgba(245,184,0,0.12)", color: C.gold, border: "1px solid rgba(245,184,0,0.35)",
+                background: "rgba(252,189,0,0.12)", color: C.gold, border: "1px solid rgba(252,189,0,0.35)",
               }}>{tier || "free"} tier</span>
             </div>
             <button type="button" onClick={() => fileRef.current && fileRef.current.click()} disabled={avatarBusy} style={{
@@ -213,7 +213,7 @@ export function ProfilePage() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
             <button type="submit" disabled={busy} style={{
-              padding: "11px 22px", background: busy ? "rgba(245,184,0,0.55)" : C.gold, color: C.obsidian,
+              padding: "11px 22px", background: busy ? "rgba(252,189,0,0.55)" : C.gold, color: C.obsidian,
               border: "none", borderRadius: 4, cursor: busy ? "default" : "pointer",
               fontFamily: FONT, fontSize: 12.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
             }}>{busy ? "Saving…" : "Save changes"}</button>

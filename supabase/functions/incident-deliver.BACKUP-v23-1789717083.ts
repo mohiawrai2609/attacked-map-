@@ -60,43 +60,6 @@ function summaryHtml(s: unknown) {
   }).join("<br><br>");
 }
 
-// The 13 GUARD risk categories. secondary_mappings.category is a 3-letter code in ~96% of rows but free text in the
-// rest ("Operations", "GEOPOLITICAL"); the subcategory_code prefix comes from the framework, so it wins — same rule
-// as the dashboard.
-const CAT_LABEL: Record<string, string> = {
-  OPS: "Operational", GEO: "Geopolitical", STR: "Strategic", CYB: "Cyber Security", PPL: "People & Human Capital",
-  REP: "Reputational", ENV: "Environmental", TEC: "Technology", DAT: "Data & Privacy", PHY: "Physical Security",
-  TPR: "Third-Party Risk", REG: "Regulatory", FIN: "Financial",
-};
-const secCode = (s: any) => {
-  const fromCode = String(s?.subcategory_code ?? "").split("-")[0].toUpperCase();
-  if (CAT_LABEL[fromCode]) return fromCode;
-  const raw = String(s?.category ?? "").trim().toUpperCase();
-  return CAT_LABEL[raw] ? raw : (fromCode || raw);
-};
-const secParent = (s: any) => CAT_LABEL[secCode(s)] ?? (String(s?.category ?? "").trim() || "Other");
-
-// Classification tags for one incident, as a small labelled fact box: category, subcategory, and the secondary
-// categories grouped under their parent category. Written for readers: full names, no framework codes, no monospace —
-// codes and tiny tracked labels made the first version read like a code listing (owner feedback, 2026-09-18).
-function tagsHtml(m: any) {
-  const groups = new Map<string, string[]>();
-  for (const s of Array.isArray(m.secondary) ? m.secondary : []) {
-    const name = String(s?.subcategory_name ?? "").trim();
-    if (!name) continue;
-    const parent = secParent(s);
-    groups.set(parent, [...(groups.get(parent) ?? []), name]);
-  }
-  const row = (label: string, value: string) =>
-    `<tr><td style="padding:3px 16px 3px 0;color:#8C8C8C;font-size:11.5px;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:3px 0;font-size:12.5px;line-height:1.55;color:#C8C8C8">${value}</td></tr>`;
-  const rows = [
-    m.category ? row("Category", `<span style="color:#FCBD00;font-weight:600">${esc(m.category)}</span>`) : "",
-    m.subcategory ? row("Subcategory", `<span style="color:#fff">${esc(m.subcategory)}</span>`) : "",
-    groups.size ? row("Secondary categories", [...groups].map(([p, subs]) => `<span style="color:#fff">${esc(p)}:</span> ${subs.map((x) => esc(x)).join(", ")}`).join("<br>")) : "",
-  ].join("");
-  return rows ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 8px;background:#222;border:1px solid #333;border-radius:6px"><tr><td style="padding:8px 12px"><table role="presentation" cellpadding="0" cellspacing="0">${rows}</table></td></tr></table>` : "";
-}
-
 const DEV_LABEL: Record<string, string> = {
   root_cause: "Root cause", leadership_change: "Leadership change", regulatory_action: "Regulator action",
   legal_action: "Legal action", financial_impact: "Financial impact", casualties: "Casualties",
@@ -141,9 +104,9 @@ function emailHtml(rep: any, exec: boolean) {
   const fullLog = exec ? "" : (rep.incidents ?? []).map((m: any) => `
     <tr><td style="padding:12px 0;border-bottom:1px solid #2a2a2a">
       <span style="font-family:monospace;font-size:10px;color:${SEVCOL(m.severity)};border:1px solid ${SEVCOL(m.severity)}55;padding:1px 6px;border-radius:3px">S${m.severity} ${SEVNAME(m.severity)}</span>
-      &nbsp;<b style="color:#fff;font-size:14px">${m.headline}</b><br>
-      <span style="color:#8C8C8C;font-size:12px">${m.entity ?? ""}${m.country ? " · " + m.country : ""}${m.sector ? " · " + m.sector : ""}</span>
-      ${tagsHtml(m)}
+      &nbsp;<b style="color:#fff;font-size:14px">${m.headline}</b>
+      &nbsp;<span style="font-family:monospace;font-size:10px;color:#FCBD00">${m.category}</span><br>
+      <span style="color:#777;font-size:11px;font-family:monospace">${m.entity ?? ""}${m.country ? " · " + m.country : ""}${m.sector ? " · " + m.sector : ""}</span>
       ${m.summary ? `<div style="color:#A8A8A8;font-size:13px;margin-top:5px;line-height:1.55">${summaryHtml(m.summary)}</div>` : ""}
     </td></tr>`).join("");
   return `<div style="background:#1A1A1A;color:#fff;font-family:Inter,Arial,sans-serif;padding:28px;max-width:680px;margin:0 auto">

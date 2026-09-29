@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 const BRAND = {
-  gold: "#F5B800",
+  gold: "#FCBD00",
   obsidian: "#1A1A1A",
   obsidianDeep: "#080808",
   obsidianCard: "#242424",
@@ -17,7 +17,7 @@ const BRAND = {
   textSecondary: "#A8A8A8",
   textMuted: "#585858",
   borderSubtle: "#333333",
-  borderGold: "rgba(245,184,0,0.3)",
+  borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
   red: "#FF6B6B",
 };
@@ -218,7 +218,7 @@ export function AdminFeedback() {
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <span style={{
                       padding: "3px 9px", borderRadius: 3,
-                      background: "rgba(245,184,0,0.15)", color: BRAND.gold,
+                      background: "rgba(252,189,0,0.15)", color: BRAND.gold,
                       fontSize: 10, fontWeight: 700, letterSpacing: "0.10em",
                     }}>{(item.tier_at_submission || "—").toUpperCase()}</span>
                     <span style={{ fontSize: 13.5, fontWeight: 600 }}>{item.email}</span>

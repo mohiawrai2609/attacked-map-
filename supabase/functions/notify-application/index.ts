@@ -17,7 +17,7 @@ const ADMIN_EMAIL        = Deno.env.get("ADMIN_EMAIL")        ?? "mohiniawari201
 const SENDER_NAME        = Deno.env.get("SENDER_NAME")        ?? "Attacked.ai";
 const APP_URL            = Deno.env.get("APP_URL")            ?? "https://attackedmap.vercel.app";
 
-const GOLD     = "#F5B800";
+const GOLD     = "#FCBD00";
 const OBSIDIAN = "#1A1A1A";
 const DEEP     = "#080808";
 const MUTED    = "#A8A8A8";
@@ -55,7 +55,7 @@ function adminAlertHtml(app: any) {
     `Inbound · design partner application`,
     `<div style="font-family:${INTER};font-size:10.5px;color:${GOLD};letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:8px;">New design partner application</div>` +
     `<h1 style="font-family:${INTER};font-size:24px;font-weight:800;color:#FFF;margin:0 0 14px;line-height:1.2;letter-spacing:-0.015em;">${escape(app.full_name)} <span style="color:${MUTED};font-weight:500;">@ ${escape(app.company)}</span></h1>` +
-    `<div style="background:rgba(245,184,0,0.06);border-left:2px solid ${GOLD};padding:14px 16px;border-radius:4px;margin:14px 0;">` +
+    `<div style="background:rgba(252,189,0,0.06);border-left:2px solid ${GOLD};padding:14px 16px;border-radius:4px;margin:14px 0;">` +
       `<table cellpadding="4" style="font-family:${INTER};font-size:13px;color:#FFF;line-height:1.6;width:100%;">` +
         `<tr><td style="color:${MUTED};width:120px;">Email:</td><td><a href="mailto:${escape(app.email)}" style="color:${GOLD};text-decoration:none;">${escape(app.email)}</a></td></tr>` +
         `<tr><td style="color:${MUTED};">Role:</td><td>${escape(app.role)}</td></tr>` +
@@ -84,7 +84,7 @@ function userConfirmHtml(app: any) {
     `<p style="font-family:${INTER};font-size:14px;color:${MUTED};line-height:1.6;margin:0 0 14px;">Thanks, ${escape(firstName)} — your design partner application is in the queue.</p>` +
     `<div style="background:rgba(52,199,89,0.10);border:1px solid #34C75955;border-radius:4px;padding:12px 14px;margin:14px 0;font-family:${INTER};font-size:11.5px;color:${GREEN};letter-spacing:0.10em;font-weight:700;">REF #${String(app.id).padStart(5,"0")} · STATUS: PENDING</div>` +
     `<p style="font-family:${INTER};font-size:13.5px;color:#FFF;line-height:1.6;margin:14px 0;">We review applications within <b>48 hours</b>. You'll get another email here when you're approved — your account will unlock to the partner tier automatically.</p>` +
-    `<div style="background:rgba(245,184,0,0.06);border-left:2px solid ${GOLD};padding:12px 14px;border-radius:4px;margin:18px 0;font-family:${INTER};font-size:12.5px;color:#FFF;line-height:1.55;"><b>Tip:</b> if you haven't signed in yet, do that now with this same email (<b>${escape(app.email)}</b>). When you're approved, your tier flips on the next refresh — no extra step.</div>` +
+    `<div style="background:rgba(252,189,0,0.06);border-left:2px solid ${GOLD};padding:12px 14px;border-radius:4px;margin:18px 0;font-family:${INTER};font-size:12.5px;color:#FFF;line-height:1.55;"><b>Tip:</b> if you haven't signed in yet, do that now with this same email (<b>${escape(app.email)}</b>). When you're approved, your tier flips on the next refresh — no extra step.</div>` +
     `<div style="margin-top:20px;">` +
       `<a href="${APP_URL}" style="display:inline-block;padding:11px 22px;background:${GOLD};color:${OBSIDIAN};text-decoration:none;border-radius:4px;font-family:${INTER};font-size:12.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Go to Attacked.ai →</a>` +
     `</div>`
