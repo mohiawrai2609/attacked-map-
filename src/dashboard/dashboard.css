@@ -245,3 +245,45 @@
   .dash .panel-head, .dash .today { padding-left: 16px; padding-right: 16px; }
   .dash .filter-row { padding-left: 16px; padding-right: 16px; }
 }
+
+/* ==========================================================================
+   Free tier
+   The delivered design was exported from a subscriber session, so none of
+   these components appeared in it and the port left them with no rules at
+   all — browser defaults, which is why the sidebar card, the per-card
+   upgrade button and the comparison panel rendered as raw oversized text.
+   Rebuilt here on the same tokens, following the same rules as the rest of
+   the system: flat surfaces, thin rules, one gold emphasis, no gradients.
+   ========================================================================== */
+
+/* Sidebar upgrade card — sits on Operational Black, so it is a dark surface. */
+.dash .upgrade-card { margin: 14px 12px; padding: 16px; background: var(--charcoal); border: 1px solid var(--line-2); border-radius: var(--r-md); }
+.dash .upgrade-card .eyebrow { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin-bottom: 9px; }
+.dash .upgrade-card h4 { margin: 0 0 8px; font-family: var(--ui); font-size: 17px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; color: var(--white); }
+.dash .upgrade-card p { margin: 0 0 14px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.dash .upgrade-card button { width: 100%; height: 36px; padding: 0 14px; background: var(--gold); color: var(--on-gold); border: 1px solid var(--gold); border-radius: var(--r-xs); font-family: var(--ui); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; transition: background .18s var(--ease), border-color .18s var(--ease); }
+.dash .upgrade-card button:hover { background: var(--gold-press); border-color: var(--gold-press); }
+
+/* Per-incident upgrade prompt — sits on a white card, so it is a light surface. */
+.dash .inc-premium { width: 100%; margin-top: 10px; padding: 8px 11px; min-height: 38px; display: flex; align-items: center; gap: 9px; text-align: left; background: rgba(252,189,0,.10); border: 1px solid rgba(252,189,0,.38); border-radius: var(--r-sm); font-family: var(--ui); font-size: 11.5px; font-weight: 600; color: var(--ink-text); cursor: pointer; transition: background .18s var(--ease), border-color .18s var(--ease); }
+.dash .inc-premium:hover { background: rgba(252,189,0,.18); border-color: var(--gold); }
+.dash .inc-premium .lk { flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: var(--on-gold); }
+.dash .inc-premium .lk svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+.dash .inc-premium .end { margin-left: auto; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gc-TPR); white-space: nowrap; }
+
+/* "What free shows. What subscribing adds." — the two-column comparison. */
+.dash .panel.tiers { padding: 18px; }
+.dash .tiers h3 { margin: 0 0 6px; font-family: var(--ui); font-size: 17px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; color: var(--ink-text); }
+.dash .tiers > p { margin: 0 0 14px; font-size: 12px; line-height: 1.5; color: var(--muted-light); }
+.dash .tiers .split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dash .mini-tier { padding: 12px; background: var(--canvas-2); border: 1px solid var(--line-l); border-radius: var(--r-sm); }
+.dash .mini-tier.sub { background: rgba(252,189,0,.10); border-color: rgba(252,189,0,.38); }
+.dash .mini-tier b { display: block; margin-bottom: 8px; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-text); }
+.dash .mini-tier.sub b { color: var(--gc-TPR); }
+.dash .mini-tier ul { margin: 0; padding-left: 15px; }
+.dash .mini-tier li { font-size: 11.5px; line-height: 1.6; color: var(--body-text); }
+.dash .mini-tier li::marker { color: var(--quiet-light); }
+
+@media (max-width: 560px) {
+  .dash .tiers .split { grid-template-columns: 1fr; }
+}
