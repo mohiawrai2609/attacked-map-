@@ -147,7 +147,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
             const isSub = p.id === "subscriber";
             const current = isSub ? subscriber : (!!user && !subscriber);
             return (
-              <article key={p.id} style={{ ...S.card, ...(isSub ? { borderColor: BRAND.gold, boxShadow: "0 18px 44px rgba(245,184,0,.14)", background: "#FFFDF5" } : {}) }}>
+              <article key={p.id} style={{ ...S.card, ...(isSub ? { borderColor: BRAND.gold, boxShadow: "0 18px 44px rgba(252,189,0,.14)", background: "#FFFDF5" } : {}) }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                   <h3 style={S.name}>{p.name}</h3>
                   {isSub ? <span style={S.tag}>Recommended</span> : current ? <span style={S.tag}>Your plan</span> : null}
@@ -184,7 +184,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
       {/* 2 · Organisation intelligence */}
       <section style={{ ...S.section, paddingTop: 10, paddingBottom: embedded ? 20 : 56 }}>
         <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 16, padding: "28px 26px 26px", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 85% 20%, rgba(245,184,0,.16), transparent 30%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 85% 20%, rgba(252,189,0,.16), transparent 30%)", pointerEvents: "none" }} />
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>♛ Organisation intelligence · Premium</div>
           <h2 style={{ ...S.h2, color: "#fff" }}>Industry intelligence first. Organisation intelligence when you need it.</h2>
           <p style={{ ...S.lede, color: "rgba(255,255,255,.72)" }}>Free and Subscriber keep you informed at sector level. Premium adds your organisation: its suppliers, dependencies, materiality and controls — what an incident could mean for you, not just for your industry.</p>
@@ -193,7 +193,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
               <article key={p.key} style={{ ...S.card, background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.12)", color: "#fff" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
                   <h3 style={{ ...S.name, color: "#fff", fontSize: 15 }}>{p.name}</h3>
-                  <span style={{ ...S.tag, background: "rgba(245,184,0,.14)", borderColor: "rgba(245,184,0,.4)", color: BRAND.gold }}>Pro</span>
+                  <span style={{ ...S.tag, background: "rgba(252,189,0,.14)", borderColor: "rgba(252,189,0,.4)", color: BRAND.gold }}>Pro</span>
                 </div>
                 <p style={{ ...S.pitch, color: "#fff", fontWeight: 600, marginTop: 12 }}>{p.lead}</p>
                 <p style={{ ...S.pitch, color: "rgba(255,255,255,.66)", marginTop: 6, flex: 1 }}>{p.body}</p>
@@ -216,7 +216,10 @@ export function SubscribePage() {
   const [authIntent, setAuthIntent] = useState("subscribe");
   return (
     <div style={{ background: BRAND.paper, minHeight: "100vh", color: BRAND.ink }}>
-      <SiteNav active="subscribe" />
+      {/* The nav item that leads here is "Pricing" (?pricing routes to this
+          page), so that is the one to mark as current — "subscribe" matched no
+          nav item and left the bar with nothing highlighted. */}
+      <SiteNav active="pricing" />
       <header style={{ background: BRAND.obsidian, color: "#fff", padding: "54px 24px 46px", borderBottom: `1px solid ${BRAND.border}` }}>
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>Subscribe · Attacked.ai</div>

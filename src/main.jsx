@@ -1,5 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+// Brand system first: fonts and tokens, then the shared navigation that every
+// page renders. Page-level stylesheets (dashboard, map) read the same tokens.
+import "./styles/fonts.css";
+import "./styles/tokens.css";
+import "./styles/site-nav.css";
 import "./responsive.css";
 import GlobalAttackMap from "./GlobalAttackMap.jsx";
 import { AuthProvider, useAuth } from "./auth/AuthProvider.jsx";
@@ -131,11 +136,10 @@ function AppShell() {
     try { return new URLSearchParams(window.location.search).has("subscriptions"); } catch { return false; }
   })();
   if (showSubscriptions) {
-    // The static subscriptions-v3.html page saved nothing (its Confirm was a
-    // toast). Preferences now live on the dashboard's Configure Alerts view,
-    // which writes profiles via update_subscription_prefs. Anonymous visitors
-    // still bounce to the landing page below.
-    if (user || hasPreviewOverride) return <Dashboard initialPage="alerts" />;
+    // Configure Alerts was removed from the dashboard (2026-09-29), so a
+    // signed-in visitor lands on the dashboard itself rather than a view that
+    // no longer exists. Anonymous visitors still get the public page below.
+    if (user || hasPreviewOverride) return <Dashboard />;
     return <SubscriptionsPage />;
   }
 
@@ -176,7 +180,7 @@ function AppShell() {
             This page is restricted to the internal team. Your current tier is <b>{tier || "free"}</b>.
           </div>
           <a href="/" style={{
-            padding: "10px 20px", background: "#F5B800", color: "#1A1A1A",
+            padding: "10px 20px", background: "#FCBD00", color: "#1A1A1A",
             textDecoration: "none", borderRadius: 4, fontSize: 12,
             fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase",
           }}>← Back to map</a>

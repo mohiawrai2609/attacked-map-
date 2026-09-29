@@ -57,6 +57,20 @@ export function incidentImage(i) {
   return alt && hash(i?.id) % 2 ? alt : primary;
 }
 
+// The dashboard masthead picture for an industry.
+//
+// The delivered design puts a full-bleed photograph behind the masthead, with
+// a gradient over it. Curating one image per industry would mean 43 hand-picked
+// photographs and a gap every time a new industry is added, so it is derived
+// instead: the most severe recent incident in that industry supplies the
+// picture, which is both relevant and automatic for every customer.
+export function industryPhoto(incidents, fallbackCat) {
+  const list = Array.isArray(incidents) ? incidents : [];
+  const best = [...list].sort((a, b) => (b?.severity || 0) - (a?.severity || 0))[0];
+  if (best) return incidentPhoto(best);
+  return CATEGORY_IMG[fallbackCat] || CATEGORY_IMG._default;
+}
+
 // Hand-made pictures in public/incidents/, keyed by a headline fragment.
 // Same list as MapIncidentImage in GlobalAttackMap.jsx.
 const LOCAL_BY_HEADLINE = [

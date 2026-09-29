@@ -1,6 +1,6 @@
 // taxonomy.js — the one place the product's classification vocabulary lives.
 //
-// Sign-up, the signed-in dashboard, Configure Alerts and the daily brief all
+// Sign-up, the signed-in dashboard and the daily brief all
 // read from here, so the industry a reader picks at registration is the exact
 // string the sweeper writes on incidents.industry and the digest partitions
 // on. (Previously this list lived inline in the retired OnboardingWizard.)
@@ -43,7 +43,7 @@ export const CATEGORY_NAME = Object.fromEntries(CATEGORIES);
 
 // Attacked.ai 5-tier severity (never the 3-tier RPI scale).
 export const SEVERITY = { 5: "Critical", 4: "High", 3: "Medium", 2: "Low", 1: "Minimal" };
-export const SEVERITY_COLOR = { 5: "#FF3B30", 4: "#FF6B35", 3: "#F5B800", 2: "#34C759", 1: "#8E8E93" };
+export const SEVERITY_COLOR = { 5: "#FF3B30", 4: "#FF6B35", 3: "#FCBD00", 2: "#34C759", 1: "#8E8E93" };
 
 // ── Access tiers ─────────────────────────────────────────────────────────
 // profiles.tier ∈ free | enterprise | vendor | admin (partner is retired).

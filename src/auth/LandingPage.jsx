@@ -169,7 +169,7 @@ function BlastRadiusViz() {
     const canvas = ref.current; if (!canvas) return;
     const ctx = canvas.getContext("2d");
     const reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
-    const GOLD = "#F5B800", RED = "#FF3B30";
+    const GOLD = "#FCBD00", RED = "#FF3B30";
     const NODES = [
       { a: -0.35, r: 0.92, nm: "Transneft", role: "SUPPLIER" },
       { a: 0.6, r: 0.82, nm: "Lukoil", role: "CUSTOMER" },
@@ -201,7 +201,7 @@ function BlastRadiusViz() {
       for (let i = 0; i < NODES.length; i++) {
         const n = NODES[i], p = pos(n), c = ctrl(p);
         ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo(c[0], c[1], p[0], p[1]);
-        ctx.strokeStyle = n.you ? "rgba(255,59,48,0.22)" : "rgba(245,184,0,0.15)"; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = n.you ? "rgba(255,59,48,0.22)" : "rgba(252,189,0,0.15)"; ctx.lineWidth = 1; ctx.stroke();
         if (!reduce) {
           const prog = ((t / 2600 + i * 0.17) % 1), pt = bez(c, p, prog);
           ctx.beginPath(); ctx.fillStyle = n.you ? "#FF6B6B" : GOLD;
@@ -381,7 +381,7 @@ export function LandingPage() {
           fontSize: 10.5, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase",
           color: BRAND.gold, background: BRAND.deep, zIndex: 2, whiteSpace: "nowrap",
         }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: BRAND.gold, boxShadow: "0 0 10px rgba(245,184,0,0.7)" }} />
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: BRAND.gold, boxShadow: "0 0 10px rgba(252,189,0,0.7)" }} />
           13 GUARD Categories · Live
         </div>
         <div className="attacked-tickwrap" style={{ flex: 1, overflow: "hidden", position: "relative" }}>
@@ -402,7 +402,7 @@ export function LandingPage() {
       <main id="main-content" tabIndex={-1} style={{ outline: "none" }}>
       <section aria-label="Introduction" className="r-pad r-pad-y" style={{
         position: "relative",
-        background: `radial-gradient(ellipse 80% 60% at 70% 20%, rgba(245,184,0,0.07), transparent 60%), ${BRAND.black}`,
+        background: `radial-gradient(ellipse 80% 60% at 70% 20%, rgba(252,189,0,0.07), transparent 60%), ${BRAND.black}`,
         padding: "96px 36px 84px",
       }}>
         <div className="r-herogrid" style={{
@@ -508,7 +508,7 @@ export function LandingPage() {
                   <div style={{ padding: "18px 0", color: BRAND.tmuted, fontSize: 13 }}>Loading latest intelligence…</div>
                 )}
               </div>
-              <div style={{ flex: "1 1 180px", padding: "16px 18px", borderLeft: `1px solid ${BRAND.border}`, background: "rgba(245,184,0,0.04)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ flex: "1 1 180px", padding: "16px 18px", borderLeft: `1px solid ${BRAND.border}`, background: "rgba(252,189,0,0.04)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.gold, marginBottom: 8 }}>What happened</div>
                 <div style={{ fontSize: 11.5, lineHeight: 1.55, color: BRAND.t2, display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {hero?.summary || "Geolocated and GUARD-classified, with the blast radius traced to the named companies in scope."}
@@ -521,7 +521,7 @@ export function LandingPage() {
 
       {/* ───────────────────────── EXPLAINER VIDEO ───────────────────────── */}
       <section aria-label="How Attacked.ai works" className="r-pad" style={{
-        background: `radial-gradient(ellipse 70% 60% at 50% 0%, rgba(245,184,0,0.05), transparent 60%), ${BRAND.obsidian}`,
+        background: `radial-gradient(ellipse 70% 60% at 50% 0%, rgba(252,189,0,0.05), transparent 60%), ${BRAND.obsidian}`,
         borderTop: `1px solid ${BRAND.border}`,
         padding: "76px 36px 84px",
       }}>
@@ -572,7 +572,7 @@ export function LandingPage() {
             }}>
               <span style={{
                 width: 7, height: 7, borderRadius: 0, background: BRAND.gold,
-                boxShadow: "0 0 10px rgba(245,184,0,0.5)",
+                boxShadow: "0 0 10px rgba(252,189,0,0.5)",
               }} />
               Live from the latest incidents
               <span style={{ color: "#6A6A6A" }}>· {fmtDay(intel.latestDay)}</span>
@@ -751,7 +751,7 @@ export function LandingPage() {
                 <div style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   width: 42, height: 42, borderRadius: 0, marginBottom: 18,
-                  background: "#FFF7DE", border: "1px solid rgba(245,184,0,0.5)",
+                  background: "#FFF7DE", border: "1px solid rgba(252,189,0,0.5)",
                 }}>{c.icon}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 10, color: "#FFFFFF" }}>
                   {c.t}
@@ -797,19 +797,19 @@ export function LandingPage() {
                 Every incident we catch — headline, severity, category and country.
                 The full day's breadth at a glance, in your inbox.
               </div>
-              <button onClick={() => { if (user) window.location.href = "/?subscriptions"; else { setAuthIntent(null); setAuthOpen(true); } }} style={{
+              <button onClick={() => { if (user) window.location.href = "/?dashboard"; else { setAuthIntent(null); setAuthOpen(true); } }} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: "transparent", color: "#8A6D00",
                 border: `1px solid ${BRAND.gold}`, borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 11.5, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
-              }}>{user ? "Configure alerts →" : "Get the free daily brief →"}</button>
+              }}>{user ? "Open your dashboard →" : "Get the free daily brief →"}</button>
             </div>
             {/* Subscriber Brief — featured (gold-tint) */}
             <div style={{
               background: "#FFFDF5", border: `1px solid ${BRAND.gold}`,
               borderRadius: 0, padding: "26px 26px 24px",
-              position: "relative", boxShadow: "0 16px 40px rgba(245,184,0,0.14)",
+              position: "relative", boxShadow: "0 16px 40px rgba(252,189,0,0.14)",
             }}>
               <div style={{
                 fontSize: 10.5, fontWeight: 700, color: "#8A6D00",
@@ -864,7 +864,7 @@ export function LandingPage() {
       {/* ───────────────── FINAL CTA + FOOTER ───────────────── */}
       <section className="r-pad" style={{
         padding: "84px 36px",
-        background: `radial-gradient(ellipse 70% 80% at 50% 100%, rgba(245,184,0,0.06), transparent 65%), ${BRAND.deep}`,
+        background: `radial-gradient(ellipse 70% 80% at 50% 100%, rgba(252,189,0,0.06), transparent 65%), ${BRAND.deep}`,
         borderTop: `1px solid ${BRAND.border}`, textAlign: "center",
       }}>
         <h2 style={{

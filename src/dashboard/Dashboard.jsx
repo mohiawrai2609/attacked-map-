@@ -1,7 +1,7 @@
 // Dashboard — the signed-in home. Personalised to profiles.industry.
 //
 // Ported from dashboard-industry/template.html (the approved prototype). Three
-// views inside one shell: Your Industry, Configure Alerts (writes the real
+// views inside one shell: Your Industry, an article reader, and (removed
 // profile fields), and an article view. The Attack Hub and the Attack Map
 // elements were removed from the dashboard on 2026-09-22 (owner's call: the
 // dashboard is the industry page only for now; both stay in git history).
@@ -19,9 +19,10 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import { CATEGORIES, CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
-import { loadCounts, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor, savePrefs } from "./data";
-import { incidentImage, incidentPhoto } from "../lib/images";
+import { SiteNav } from "../auth/SiteNav";
+import { CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
+import { loadCounts, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor } from "./data";
+import { incidentImage, incidentPhoto, industryPhoto } from "../lib/images";
 import { prepareReportFrame } from "../lib/reportLock";
 import { reportHtml } from "../lib/api";
 import { fetchReportHtml } from "../lib/reports";
@@ -79,18 +80,22 @@ function IncidentCard({ i, onOpen, onSubscribe, subscriber }) {
     <article className="incident" onClick={() => { window.location.href = hubHref(i); }}>
       <div className="inc-img" style={{ backgroundImage: `url(${incidentImage(i)})` }}>
         <img className="incident-photo" src={incidentPhoto(i)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-        {(report || i.body) && <span className="inc-tag on-img">{report ? "Full report" : "Briefing"}</span>}
       </div>
       <div className="inc-body">
       <div className="inc-top"><Sev i={i} /><span className="inc-date">{fmtDay(i.day)}</span><span className="inc-chev">›</span></div>
       <h3>{i.headline}</h3>
       <p className="inc-sum">{i.summary}</p>
       <div className="inc-chips">{topics.map((t) => <span key={t} title={t}>{t}</span>)}</div>
-      <div className="inc-sig-label">Sector-level signals</div>
+      <div className="inc-sig-label">Sector signals</div>
       <div className="inc-chips">
-        <span className="gold">Criticality: {i.sevLabel}</span>
-        <span className="gold">{i.cat} · {i.catName}</span>
-        {i.country ? <span className="gold">{i.country}</span> : null}
+        {/* Criticality carries the severity level as a class so it takes the
+            brand RAG scale; the GUARD chip is filled with its own category
+            colour from the token set (--gc-CYB, --gc-OPS, …). */}
+        <span className={`crit c${i.severity || 3}`}>Criticality: {i.sevLabel}</span>
+        <span className="gchip" data-guard={i.cat} style={{ background: `var(--gc-${i.cat})` }}>
+          <span className="code">{i.cat}</span>{i.catName}
+        </span>
+        {i.country ? <span>{i.country}</span> : null}
       </div>
       <div className="inc-src"><Icon name="link" />Attacked.ai intelligence{i.n && i.n.sources ? ` · ${i.n.sources} sources` : ""}</div>
       <div className="inc-actions">
@@ -121,9 +126,9 @@ function ArtCanvas({ points, className }) {
         const s = Math.sin(i.id * 12.9898) * 43758.5453, t = Math.sin(i.id * 78.233) * 43758.5453;
         const x = 20 + (s - Math.floor(s)) * (r.width - 40), y = 20 + (t - Math.floor(t)) * (r.height - 40);
         const rad = 1.5 + i.severity * 0.7;
-        g.fillStyle = i.severity >= 4 ? "rgba(245,184,0,.95)" : "rgba(245,184,0,.45)";
+        g.fillStyle = i.severity >= 4 ? "rgba(252,189,0,.95)" : "rgba(252,189,0,.45)";
         g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
-        if (i.severity >= 4) { g.strokeStyle = "rgba(245,184,0,.25)"; g.beginPath(); g.arc(x, y, rad + 6, 0, Math.PI * 2); g.stroke(); }
+        if (i.severity >= 4) { g.strokeStyle = "rgba(252,189,0,.25)"; g.beginPath(); g.arc(x, y, rad + 6, 0, Math.PI * 2); g.stroke(); }
       }
     };
     draw(); window.addEventListener("resize", draw); return () => window.removeEventListener("resize", draw);
@@ -145,33 +150,33 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
   const gridRef = useRef(null);
   return (
     <div className="content">
-      <section className="masthead">
+      <section className="masthead no-band">
         <div className="mast-copy">
-          <div className="mast-eyebrow"><span className="live" />Your industry · {subscriber ? "subscriber" : "free"} intelligence · <span className="mono">{fmtDay(P.latestDay)}</span></div>
+          <div className="mast-eyebrow">
+            <span className="live" />
+            <span>Your industry</span>
+            <span className="sep">·</span>
+            <span>{P.industry}</span>
+            <span className="sep">·</span>
+            <span className="mono">Updated {fmtDay(P.latestDay)}</span>
+          </div>
           <h1>{greeting}, {name}<strong>{P.industry}</strong></h1>
           <p><b>{P.total} incidents</b> in {P.industry} sit in the Attacked.ai corpus, <b>{P.week} of them this week</b> and <b>{P.critical} rated High or Critical</b>. {top ? <>The category landing hardest on your industry right now is <b>{top.name}</b> ({top.n}).</> : null} Every one is classified through the GUARD framework, geolocated, and traced to the companies in its blast radius.</p>
           <div className="mast-actions">
-            <button className="btn btn-dark" onClick={() => go("alerts")}><Icon name="bell" /> Configure alerts</button>
-            <div className="mast-meta"><b>{subscriber ? "SUBSCRIBER" : "FREE"}</b><span>·</span><span>{subscriber ? "full operational view" : "industry-level view"}</span></div>
+            <div className="mast-meta">
+              <b>{subscriber ? "Subscriber plan" : "Free plan"}</b>
+              <span>·</span>
+              <span>{subscriber ? "Blast radius, GUARD controls and peer watchlist unlocked" : "Every incident in your industry, classified"}</span>
+            </div>
           </div>
         </div>
-        <div className="mast-art" aria-hidden="true">
-          <ArtCanvas points={P.incidents} />
-          <div className="art-label"><div className="tiny">Live sector context</div><b>{P.industry}</b></div>
-          <div className="art-foot"><span><b>{P.total}</b> in your industry</span><span><b>{INDUSTRIES.length}</b> industries tracked</span><span><b>{P.countries}</b> countries</span></div>
+        <div className="mast-art" aria-hidden="true"
+             style={{ backgroundImage: `url(${incidentImage({ cat: P.cats?.[0]?.cat })})`, backgroundSize: "cover", backgroundPosition: "58% 55%" }}>
+          <img className="mast-photo" src={industryPhoto(P.incidents, P.cats?.[0]?.cat)}
+               alt="" width="1220" height="860" decoding="async" fetchpriority="high"
+               onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </div>
       </section>
-
-      <div className="strip">
-        <div className="stat"><div className="stat-icon"><Icon name="file" /></div><div><b>{P.today}</b><small>in latest sweep</small></div></div>
-        <div className="stat"><div className="stat-icon"><Icon name="bars" /></div><div><b>{P.week}</b><small>last 7 sweep days</small></div></div>
-        <div className="stat"><div className="stat-icon"><Icon name="database" /></div><div><b>{P.total}</b><small>in your archive</small></div></div>
-        <div className="stat"><div className="stat-icon"><Icon name="industry" /></div><div><b className="txt" title={P.industry}>{P.industry}</b><small>selected industry</small></div></div>
-        <div className="stat"><div className="stat-icon"><Icon name="user" /></div><div><b className="txt">{subscriber ? "Subscriber" : "Free"}</b><small>access level</small></div></div>
-        {subscriber
-          ? <div className="strip-sub" style={{ cursor: "default" }}><div className="lock"><Icon name="shield" /></div><div><strong>Full operational layer unlocked</strong><span>Named blast radius, GUARD controls and peers on every incident.</span></div></div>
-          : <button className="strip-sub" onClick={onSubscribe}><div className="lock"><Icon name="lock" /></div><div><strong>Unlock who is exposed</strong><span>Named blast radius, GUARD controls and peers on every incident.</span></div><div className="arrow">→</div></button>}
-      </div>
 
       <div className="grid">
         <section className="panel">
@@ -223,7 +228,7 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
               : <div className="empty" style={{ textAlign: "center" }}>No long-form briefings yet for this industry. The incident cards above are live.</div>}</div>
           </section>
         </div>
-        <div className="sector-note">Everything on this page is live data from the Attacked.ai corpus, filtered to the industry you gave us at sign-up. Change it any time under Configure alerts.</div>
+        <div className="sector-note">Everything on this page is live data from the Attacked.ai corpus, filtered to the industry you gave us at sign-up. Tell us if it should change and we will move it.</div>
       </section>
     </div>
   );
@@ -231,124 +236,6 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
 
 // "Your plan" — the one place a signed-in reader sees their tier and switches
 // it. The nav's "Manage subscription" lands here (?subscriptions → alerts).
-function PlanPanel({ subscriber, tier, onSubscribe, toast }) {
-  const { setSubscribed } = useAuth();
-  const [busy, setBusy] = useState(false);
-  async function off() {
-    setBusy(true);
-    try { const t = await setSubscribed(false); toast(t === "free" ? "Subscription switched off." : `Tier is ${t}.`); }
-    catch (e) { toast(e?.message || "Could not switch off."); }
-    finally { setBusy(false); }
-  }
-  return (
-    <section className="panel plan-panel">
-      <div>
-        <div className="eyebrow">Your plan</div>
-        <h2>{subscriber ? (tier === "admin" ? "Admin" : "Subscriber") : "Free"}</h2>
-        <p>{subscriber
-          ? "Named blast radius, adaptive GUARD controls, the peer watchlist and full reports are open on every incident."
-          : "Every incident in your industry, classified, with the counts. Subscribe to see who each one reaches and what to do."}</p>
-      </div>
-      <div className="plan-actions">
-        {subscriber
-          ? (tier === "admin" ? <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>Admin accounts always have full access.</span>
-             : <button className="secondary" disabled={busy} onClick={off}>{busy ? "Switching…" : "Switch off"}</button>)
-          : <button className="primary" onClick={onSubscribe}>Subscribe →</button>}
-      </div>
-    </section>
-  );
-}
-
-function ConfigureAlerts({ P, profile, subscriber, tier, onSubscribe, onSaved, onIndustryChange, go, toast }) {
-  const [industry, setIndustry] = useState(P.industry);
-  const [role, setRole] = useState(profile?.role || "");
-  const [cats, setCats] = useState(() => new Set(Array.isArray(profile?.watch_categories) && profile.watch_categories.length ? profile.watch_categories : CATEGORIES.map(([c]) => c)));
-  // Stored on profiles.min_severity (migration 20260922_brief_prefs.sql); the
-  // brief only mails incidents at or above it. Default S3 = Medium and above.
-  const [minSev, setMinSev] = useState(() => { const v = Number(profile?.min_severity); return v >= 1 && v <= 5 ? v : 3; });
-  const [on, setOn] = useState(profile?.email_subscribed !== false);
-  const [freq, setFreq] = useState(profile?.digest_frequency || "daily");
-  const [busy, setBusy] = useState(false);
-  const { saveProfileBasics, user } = useAuth();
-  // The inbox preview applies the same filters the brief does, so the reader
-  // sees the effect of their choices before saving.
-  const lead = [...P.incidents].filter((i) => cats.has(i.cat) && i.severity >= minSev).sort((a, b) => b.severity - a.severity).slice(0, 3);
-  const toggleCat = (c) => { const n = new Set(cats); n.has(c) ? n.delete(c) : n.add(c); setCats(n); };
-  async function save() {
-    if (!user) { toast("Sign in to save preferences."); return; }
-    setBusy(true);
-    try {
-      await saveProfileBasics({ industry, role: role || null });
-      // Separate call on purpose: until the owner applies the min_severity
-      // migration PostgREST rejects the whole update on the unknown column,
-      // and that must not take industry/role down with it.
-      await saveProfileBasics({ min_severity: minSev });
-      await savePrefs({ watchIndustries: [industry], watchCategories: [...cats], frequency: freq, subscribed: on });
-      toast("Preferences saved to your profile");
-      onSaved(); if (industry !== P.industry) onIndustryChange(industry);
-    } catch (e) { toast(e?.message || "Could not save."); }
-    finally { setBusy(false); }
-  }
-  return (
-    <div className="content subpage">
-      <div className="subpage-header">
-        <div><h1>Configure alerts</h1><p>Choose what lands in your inbox. Your dashboard always keeps the full industry view.</p></div>
-        <button className="secondary" onClick={() => { setCats(new Set(CATEGORIES.map(([c]) => c))); setMinSev(3); setOn(true); setFreq("daily"); toast("Defaults restored"); }}>Reset defaults</button>
-      </div>
-      <PlanPanel subscriber={subscriber} tier={tier} onSubscribe={onSubscribe} toast={toast} />
-      <div className="settings-layout">
-        <section className="panel settings-card">
-          <h2>Your intelligence feed</h2>
-          <p>These are the same fields you gave us at sign-up. They drive the dashboard, the daily brief and the map's default filter.</p>
-          <div className="setting-group">
-            <h3>Industry and role</h3><p className="hint">One primary industry. It decides what leads your dashboard and your brief.</p>
-            <div className="select-row">
-              <div className="field"><label>Primary industry</label><select value={industry} onChange={(e) => setIndustry(e.target.value)}>{SECTORS.map(([s, list]) => <optgroup key={s} label={s}>{list.map((i) => <option key={i} value={i}>{i}</option>)}</optgroup>)}</select></div>
-              <div className="field"><label>Role</label><select value={role} onChange={(e) => setRole(e.target.value)}><option value="">Select your role</option>{ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></div>
-            </div>
-          </div>
-          <div className="setting-group">
-            <h3>GUARD categories</h3><p className="hint">Which of the 13 risk categories should reach your inbox. Leave all selected to receive the full industry brief.</p>
-            <div className="choices">{CATEGORIES.map(([code, name]) => <label key={code} className={`choice ${cats.has(code) ? "selected" : ""}`} onClick={(e) => { e.preventDefault(); toggleCat(code); }}><span className="code">{code}</span>{name}</label>)}</div>
-          </div>
-          <div className="setting-group">
-            <h3>Minimum severity</h3><p className="hint">Attacked.ai scores every incident 1 to 5. Only incidents at or above this level are emailed.</p>
-            <div className="choices">{SEV_ORDER.map((s) => <label key={s} className={`choice ${minSev === s ? "selected" : ""}`} onClick={(e) => { e.preventDefault(); setMinSev(s); }}><span className={`sev s${s}`} style={{ padding: "2px 6px" }}><i />S{s}</span>{SEVERITY[s]} and above</label>)}</div>
-          </div>
-          <div className="setting-group">
-            <h3>Email delivery</h3>
-            <div className="switch-row"><div><strong>Daily intelligence brief</strong><span>Incidents in your industry at or above your minimum severity, in your categories — plus anything high or critical elsewhere.</span></div><button className={`switch ${on ? "on" : ""}`} aria-label="toggle daily brief" onClick={() => setOn(!on)} /></div>
-            <div className="select-row" style={{ marginTop: 6 }}>
-              <div className="field"><label>Frequency</label><select value={freq} onChange={(e) => setFreq(e.target.value)}><option value="daily">Daily</option><option value="weekly">Weekly (Monday)</option></select></div>
-              <div className="field"><label>Sends at</label><input value="08:00 UTC · after the morning sweep" disabled /></div>
-            </div>
-          </div>
-          <div className="save-row"><button className="secondary" onClick={() => go("dashboard")}>Cancel</button><button className="primary" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save preferences"}</button></div>
-        </section>
-        <aside className="panel preview-card">
-          <div className="preview-label">Inbox preview · {subscriber ? "subscriber" : "free"} brief</div>
-          <h3>Your {industry} brief</h3>
-          <p>Built from real incidents in your industry, exactly as the daily brief renders them.</p>
-          <div className="email">
-            <div className="email-head"><b>Attacked<i>.ai</i></b><span>{fmtDay(P.latestDay)}</span></div>
-            <div className="email-body">
-              <p className="greet">{lead.length ? <>Hey there, <b>{lead.length} {lead.length === 1 ? "incident" : "incidents"}</b> in {industry} cleared your filters (S{minSev}+). Here is what moved.</> : <>Hey there, nothing new in {industry} cleared your filters (S{minSev}+). You still get anything high or critical elsewhere.</>}</p>
-              {lead.map((i) => <div key={i.id} className="ti"><div className="sv" style={{ color: `var(--s${i.severity})` }}>S{i.severity} {SEVERITY[i.severity]} · {i.cat}</div><b>{i.headline}</b><span>{i.entity || ""} · {i.country || ""}</span></div>)}
-              {!subscriber && <div className="locked">Named blast radius, recommended actions and vendor defence ratings are subscriber-only.</div>}
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-// ReportFrame — the baked full report (public/reports/<ref>.html) inside the
-// dashboard chrome. The file is same-origin, so once it loads we reach into
-// it: stamp the reader's licence, and for FREE readers lock the three subscriber
-// sections in place — "Who else is exposed" (#r-blast), "GUARD controls"
-// (#r-ctrl) and "Vendor intelligence" (#r-vend). The gate itself lives in
-// src/lib/reportLock.js and is shared with the public Attacked Hub.
 function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
   const ref = useRef(null);
   // The report scrolls inside its own .reader wrapper (body overflow hidden),
@@ -489,6 +376,19 @@ export function Dashboard({ initialPage = "dashboard" }) {
   const [err, setErr] = useState(null);
   const [reportsReady, setReportsReady] = useState(false);
   useEffect(() => { loadReportIndex().then(() => setReportsReady(true)); }, []);
+  // The shared navbar sits above the app shell and the sidebar is fixed, so the
+  // sidebar has to start below it. Measured rather than hard-coded, because the
+  // navbar grows a second row on narrow screens.
+  const [navH, setNavH] = useState(73);
+  useEffect(() => {
+    const el = document.querySelector(".dash > header[role='banner']");
+    if (!el) return;
+    const set = () => setNavH(el.offsetHeight || 73);
+    set();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(set); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [menu, setMenu] = useState(false);
   const [sideOpen, setSideOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
@@ -515,10 +415,10 @@ export function Dashboard({ initialPage = "dashboard" }) {
   // First-run: an account with no industry yet (older sign-ups) picks one here.
   if (!industry) {
     return (
-      <div className="dash"><div className="content" style={{ maxWidth: 620, paddingTop: 60 }}>
+      <div className="dash"><SiteNav /><div className="content" style={{ maxWidth: 620, paddingTop: 60 }}>
         <section className="panel settings-card">
           <h2>Which industry should your dashboard lead with?</h2>
-          <p>Your account has no industry on file yet. Pick one and we will build your view around it. You can change it later under Configure alerts.</p>
+          <p>Your account has no industry on file yet. Pick one and we will build your view around it. Tell us if it should change later.</p>
           <div className="field"><label>Primary industry</label>
             <select defaultValue="" onChange={async (e) => { const v = e.target.value; if (!v) return; await saveProfileBasics({ industry: v }); setIndustry(v); }}>
               <option value="" disabled>Select your industry</option>
@@ -533,18 +433,12 @@ export function Dashboard({ initialPage = "dashboard" }) {
 
   return (
     <div className="dash">
-      <div className="app">
-        <aside className={`sidebar ${sideOpen ? "open" : ""}`}>
-          {/* Logo returns to the public landing page; the landing nav has a
-              "My dashboard" button back here, so the two are one click apart. */}
-          <a className="brand" href="/?home" title="Attacked.ai home" style={{ textDecoration: "none" }}>
-            <img src="/attacked-ai-logo.svg" alt="" />
-            <div><div className="brand-name">Attacked<i>.ai</i><sup style={{ fontSize: 8, marginLeft: 1 }}>™</sup></div><div className="brand-tag">Global risk intelligence</div></div>
-          </a>
+      <SiteNav />
+      <div className="app" style={{ minHeight: `calc(100vh - ${navH}px)` }}>
+        <aside className={`sidebar ${sideOpen ? "open" : ""}`} style={{ top: navH }}>
           <div className="side-label">Intelligence</div>
           <nav className="nav">
             <button className={`nav-btn ${page === "dashboard" || (page === "article" && lastPage === "dashboard") ? "active" : ""}`} onClick={() => go("dashboard")}><Icon name="home" />Your Industry</button>
-            <button className={`nav-btn ${page === "alerts" ? "active" : ""}`} onClick={() => go("alerts")}><Icon name="bell" />Configure Alerts</button>
           </nav>
           <div className="side-label">Subscriber</div>
           <nav className="nav">
@@ -581,14 +475,12 @@ export function Dashboard({ initialPage = "dashboard" }) {
           {err && <div className="content"><div className="panel empty" style={{ color: "#B21F31" }}>Could not load your industry: {err}</div></div>}
           {!P && !err && <div className="content"><div className="panel empty mono">Loading {industry}…</div></div>}
           {P && page === "dashboard" && <YourIndustry P={P} name={name} subscriber={subscriber} query={query} onOpen={openArticle} onSubscribe={() => openSubscribe()} go={go} />}
-          {P && page === "alerts" && <ConfigureAlerts tier={tier} onSubscribe={() => openSubscribe()} P={P} profile={profile} subscriber={subscriber} onSaved={() => {}} onIndustryChange={setIndustry} go={go} toast={toast} />}
           {P && page === "article" && article && <ArticleView key={`${article.id}-${reportsReady}`} readerName={profile?.full_name || user?.email || ""} i={article} subscriber={subscriber} back={() => go(lastPage)} backLabel="Back to your industry" onSubscribe={() => openSubscribe()} />}
         </main>
       </div>
 
       {menu && (
         <div className="profile-menu open">
-          <button onClick={() => go("alerts")}>Alert preferences</button>
           <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?profile">Profile</a>
           {subscriber && user && tier !== "admin" && <button onClick={async () => { try { await setSubscribed(false); toast("Subscription switched off."); } catch (e) { toast(e.message); } setMenu(false); }}>Switch off subscription</button>}
           {!subscriber && <button onClick={() => { setMenu(false); openSubscribe(); }}>Subscribe</button>}

@@ -110,36 +110,12 @@
   .map-counter > div:nth-child(4) { display: none !important; }
 }
 
-/* ── Shared site nav: collapse the link row into a hamburger panel ─────────── */
-.site-nav-burger { display: none; }   /* desktop: no burger */
-@media (max-width: 768px) {
-  .site-nav-burger {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; padding: 0; cursor: pointer;
-    background: transparent; border: 1px solid #333; border-radius: 6px;
-    color: #fff;
-  }
-  .site-nav-links {
-    position: absolute; top: 100%; left: 0; right: 0;
-    flex-direction: column !important; align-items: stretch !important;
-    gap: 2px !important;
-    background: #080808; box-shadow: 0 18px 50px rgba(0,0,0,0.6);
-    border-bottom: 1px solid #333;
-    padding: 10px 20px 18px !important;
-    display: none !important;
-  }
-  .site-nav-links.open { display: flex !important; }
-  /* Full-width tappable rows inside the open panel. */
-  .site-nav-links > a,
-  .site-nav-links > button,
-  .site-nav-links > span {
-    width: 100% !important; text-align: left !important;
-    padding: 13px 12px !important; margin: 0 !important;
-    border-radius: 6px !important;
-  }
-  /* The signed-in account dropdown anchors full-width too. */
-  .site-nav-links > div { width: 100% !important; margin: 0 !important; }
+/* The shared navbar's mobile panel used to be redefined here, in hard-coded
+   greys and with !important. It now lives with the rest of the navbar in
+   src/styles/site-nav.css, driven by the brand tokens — this file loads after
+   it, so keeping a second copy here would have silently won. */
 
+@media (max-width: 768px) {
   /* Footer right column: left-align the link rows + social once stacked. */
   .r-foot-right > div { justify-content: flex-start !important; }
 
