@@ -119,7 +119,7 @@ function AccountChip({ onOpenAuth }) {
   if (loading) return null;
 
   const colorFor = (t) =>
-    t === "enterprise" ? "#F5B800" :
+    t === "enterprise" ? "#FCBD00" :
     t === "admin"   ? "#9D7BEC" :
     t === "free"    ? "#4FC3D7" :
                       "#A8A8A8";
@@ -134,9 +134,9 @@ function AccountChip({ onOpenAuth }) {
       <button onClick={onOpenAuth}
         style={{
           padding: "6px 14px",
-          background: "#F5B800", color: "#1A1A1A",
+          background: "#FCBD00", color: "#1A1A1A",
           fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.12em",
-          border: "1px solid #F5B800", borderRadius: 0,
+          border: "1px solid #FCBD00", borderRadius: 0,
           cursor: "pointer", textTransform: "uppercase", fontWeight: 700,
         }}>
         Sign in
@@ -198,16 +198,16 @@ function AccountChip({ onOpenAuth }) {
             {tier === "free" && (
               <>
                 <div style={{
-                  padding: "10px 10px", margin: "0 0 4px", background: "rgba(245,184,0,0.08)",
-                  borderRadius: 0, fontSize: 11, color: "#F5B800", lineHeight: 1.45,
+                  padding: "10px 10px", margin: "0 0 4px", background: "rgba(252,189,0,0.08)",
+                  borderRadius: 0, fontSize: 11, color: "#FCBD00", lineHeight: 1.45,
                                   }}>
                   You're on the free tier. <b>Subscribe</b> to unlock named blast radius, GUARD controls and the peer watchlist.
                 </div>
                 <button onClick={() => { setMenuOpen(false); openSubscribeModal(); }}
                   style={{
                     width: "100%", padding: "8px 10px", marginBottom: 4,
-                    background: "#F5B800", color: "#1A1A1A",
-                    border: "1px solid #F5B800", borderRadius: 0,
+                    background: "#FCBD00", color: "#1A1A1A",
+                    border: "1px solid #FCBD00", borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 10,
                     letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                     fontWeight: 600,
@@ -239,9 +239,9 @@ function AccountChip({ onOpenAuth }) {
                 style={{
                   display: "block", width: "100%", padding: "9px 10px",
                   marginBottom: 4, marginTop: 4,
-                  background: "rgba(245,184,0,0.07)",
-                  color: "#F5B800",
-                  border: "1px solid rgba(245,184,0,0.35)", borderRadius: 0,
+                  background: "rgba(252,189,0,0.07)",
+                  color: "#FCBD00",
+                  border: "1px solid rgba(252,189,0,0.35)", borderRadius: 0,
                   fontFamily: "Inter, sans-serif", fontSize: 11,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   fontWeight: 700, textAlign: "center", textDecoration: "none",
@@ -265,8 +265,8 @@ function AccountChip({ onOpenAuth }) {
               }}
               style={{
                 width: "100%", padding: "10px 10px", marginBottom: 4, marginTop: 4,
-                background: "#F5B800", color: "#1A1A1A",
-                border: "1px solid #F5B800", borderRadius: 0,
+                background: "#FCBD00", color: "#1A1A1A",
+                border: "1px solid #FCBD00", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 11.5,
                 letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
                 fontWeight: 700,
@@ -340,8 +340,8 @@ function AccountChip({ onOpenAuth }) {
               onClick={() => setMenuOpen(false)}
               style={{
                 display: "block", width: "100%", padding: "9px 10px", marginTop: 4,
-                background: "rgba(245,184,0,0.06)", color: "#F5B800",
-                border: "1px solid rgba(245,184,0,0.3)", borderRadius: 0,
+                background: "rgba(252,189,0,0.06)", color: "#FCBD00",
+                border: "1px solid rgba(252,189,0,0.3)", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
                 textAlign: "center", textDecoration: "none", boxSizing: "border-box",
@@ -432,14 +432,14 @@ function AccountChip({ onOpenAuth }) {
 // ============================================================================
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BRAND TOKENS (Attacked.ai — gold #F5B800, NEVER Replaceable.ai crimson)
+// BRAND TOKENS (Attacked.ai — gold #FCBD00, NEVER Replaceable.ai crimson)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // 5-tier risk scale (Attacked.ai standard, NOT the 3-tier RPI scale)
 
 // 13 GUARD categories — short labels + colours
 const CATEGORIES = {
-  CYB: { label: "Cyber",        color: "#F5B800" },
+  CYB: { label: "Cyber",        color: "#FCBD00" },
   DAT: { label: "Data",         color: "#FFD166" },
   TEC: { label: "Technology",   color: "#FFE99A" },
   GEO: { label: "Geopolitical", color: "#FF8C5A" },
@@ -456,7 +456,7 @@ const CATEGORIES = {
 
 // Reporter desks (matches v14.21 newsroom assignment)
 const DEFAULT_REPORTERS = {
-  cyber_bob:        { name: "Cyber Bob",        desk: "Digital Defence",        cats: ["CYB","DAT","TEC"], color: "#F5B800" },
+  cyber_bob:        { name: "Cyber Bob",        desk: "Digital Defence",        cats: ["CYB","DAT","TEC"], color: "#FCBD00" },
   commander_vance:  { name: "Commander Vance",  desk: "Geopolitical & Physical",cats: ["GEO","PHY"],       color: "#FF8C5A" },
   saskia_martin:    { name: "Saskia Martin",    desk: "Operations & Supply",    cats: ["OPS","TPR"],       color: "#34C759" },
   jack_whistler:    { name: "Jack Whistler",    desk: "Regulatory & Financial", cats: ["REG","FIN"],       color: "#D4A000" },
@@ -543,7 +543,7 @@ const WORLD_CITIES = [
 // `kind: primary` = directly named/affected entity (filled marker, solid arc)
 // `kind: indirect` = read-across / sectoral inference (dashed-ring marker, dashed arc)
 const BLAST_CHANNELS = {
-  internal:              { label: "Internal",      color: "#F5B800", dash: "0",      width: 1.2, opacity: 0.55, kind: "primary",  icon: "◉" },
+  internal:              { label: "Internal",      color: "#FCBD00", dash: "0",      width: 1.2, opacity: 0.55, kind: "primary",  icon: "◉" },
   supply_chain:          { label: "Supply Chain",  color: "#FF8C5A", dash: "0",      width: 1.0, opacity: 0.50, kind: "primary",  icon: "⟿" },
   customer_counterparty: { label: "Customer",      color: "#4FC3D7", dash: "0",      width: 0.9, opacity: 0.45, kind: "primary",  icon: "◊" },
   competitive_peer:      { label: "Peer",          color: "#9D7BEC", dash: "4,3",    width: 0.9, opacity: 0.45, kind: "indirect", icon: "≈" },
@@ -583,7 +583,7 @@ const TRANSMISSION_MECHANISMS = {
 // product. The icon + label render as a small chip; clicking it would (in
 // production) deep-link into the relevant product flow.
 const PRODUCT_HOOKS = {
-  wargaming_sim:         { label: "Wargaming.ai",        icon: "⚡", color: "#F5B800" },
+  wargaming_sim:         { label: "Wargaming.ai",        icon: "⚡", color: "#FCBD00" },
   apple_supply:          { label: "Supply Wargame",      icon: "◈", color: "#FF8C5A" },
   greyteaming:           { label: "Grey Teaming",        icon: "◇", color: "#9D7BEC" },
   fdri_watchlist:        { label: "FDRI Watchlist",      icon: "▲", color: "#A8A8A8" },
@@ -594,7 +594,7 @@ const PRODUCT_HOOKS = {
 // Reporter desks — icon + brand colour per reporter. Surfaces as a chip in the
 // detail panel header so the user knows which editorial desk owns the incident.
 const REPORTER_BADGES = {
-  "Cyber Bob":          { desk: "Digital Defence",          color: "#F5B800", icon: "⌬" },
+  "Cyber Bob":          { desk: "Digital Defence",          color: "#FCBD00", icon: "⌬" },
   "Commander Vance":    { desk: "Geopolitical & Physical",  color: "#FF8C5A", icon: "▼" },
   "Saskia Martin":      { desk: "Operations & Supply Chain",color: "#34C759", icon: "◐" },
   "Jack Whistler":      { desk: "Regulatory & Financial",   color: "#D4A000", icon: "§" },
@@ -4041,7 +4041,7 @@ const CASCADE_STYLES = `
     max-height: calc(100vh - 200px);
     background: rgba(22,22,24,0.94);
     backdrop-filter: blur(22px);
-    border: 1px solid rgba(245,184,0,0.20);
+    border: 1px solid rgba(252,189,0,0.20);
     border-radius:0;
     font-family: Inter, sans-serif;
     color: #FFFFFF;
@@ -4118,7 +4118,7 @@ const CASCADE_STYLES = `
     flex: 1 1 auto;
     /* Firefox: thin gold-tinted scrollbar */
     scrollbar-width: thin;
-    scrollbar-color: rgba(245,184,0,0.30) transparent;
+    scrollbar-color: rgba(252,189,0,0.30) transparent;
   }
   /* WebKit/Blink: custom thin scrollbar. The default bright white
      stripe is harsh against the dark panel — we want a quiet gold
@@ -4136,7 +4136,7 @@ const CASCADE_STYLES = `
   }
   .cascade-tag {
     font-family: 'Inter', sans-serif; font-size: 9px;
-    letter-spacing: 0.18em; color: #F5B800; text-transform: uppercase;
+    letter-spacing: 0.18em; color: #FCBD00; text-transform: uppercase;
     font-weight: 600;
     flex: 1 1 auto; min-width: 0; line-height: 1.5;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -4144,9 +4144,9 @@ const CASCADE_STYLES = `
   }
   .cascade-nav-btn {
     min-width: 34px; height: 28px;
-    background: rgba(245,184,0,0.08);
-    border: 1px solid rgba(245,184,0,0.30);
-    color: #F5B800;
+    background: rgba(252,189,0,0.08);
+    border: 1px solid rgba(252,189,0,0.30);
+    color: #FCBD00;
     border-radius:0; cursor: pointer;
     font-family: 'Inter', sans-serif; font-size: 14px;
     line-height: 1; padding: 0 8px;
@@ -4154,8 +4154,8 @@ const CASCADE_STYLES = `
     transition: all 220ms cubic-bezier(0.16,1,0.3,1);
   }
   .cascade-nav-btn:hover:not(:disabled) {
-    background: rgba(245,184,0,0.18);
-    border-color: #F5B800;
+    background: rgba(252,189,0,0.18);
+    border-color: #FCBD00;
     transform: translateY(-1px);
   }
   .cascade-nav-btn:disabled {
@@ -4168,17 +4168,17 @@ const CASCADE_STYLES = `
   .scene-close {
     width: 24px; height: 24px; flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
-    background: rgba(245,184,0,0.08);
-    border: 1px solid rgba(245,184,0,0.30);
-    color: #F5B800;
+    background: rgba(252,189,0,0.08);
+    border: 1px solid rgba(252,189,0,0.30);
+    color: #FCBD00;
     border-radius:0; cursor: pointer;
     font-family: 'Inter', sans-serif; font-size: 12px;
     line-height: 1; padding: 0;
     transition: all 220ms cubic-bezier(0.16,1,0.3,1);
   }
   .scene-close:hover {
-    background: rgba(245,184,0,0.18);
-    border-color: #F5B800;
+    background: rgba(252,189,0,0.18);
+    border-color: #FCBD00;
   }
 `;
 
@@ -4198,6 +4198,15 @@ const CASCADE_STYLES = `
 const AccessContext = React.createContext("subscriber");
 function useAccess() { return React.useContext(AccessContext); }
 
+// The real number of rows a gated relation holds, whatever this reader was
+// served. A free reader is sent ONE row plus the total (public.incident_teaser),
+// so without this the footer would read "Showing 1 of 1" instead of "1 of 6".
+function gatedTotal(incident, key, fallback) {
+  const t = incident && incident._gatedTotals;
+  const n = t && typeof t[key] === "number" ? t[key] : 0;
+  return n > fallback ? n : fallback;
+}
+
 // GateBlock — reusable locked placeholder. Carries the count (the "shape")
 // at the top so the user sees there IS something here, with the actual rows
 // blurred behind a partner-only CTA. No real data inside.
@@ -4205,12 +4214,12 @@ function GateBlock({ title, sub, count, countLabel }) {
   return (
     <div style={{
       position: "relative", borderRadius: 0, overflow: "hidden",
-      border: "1px solid rgba(245,184,0,0.3)",
+      border: "1px solid rgba(252,189,0,0.3)",
       background: "rgba(8,8,8,0.6)", padding: "16px",
     }}>
       {typeof count === "number" && (
         <div style={{ marginBottom: 12 }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, fontWeight: 700, color: "#F5B800" }}>{count}</span>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, fontWeight: 700, color: "#FCBD00" }}>{count}</span>
           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "rgba(255,255,255,0.5)", marginLeft: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>{countLabel}</span>
         </div>
       )}
@@ -4224,7 +4233,7 @@ function GateBlock({ title, sub, count, countLabel }) {
       </div>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(8,8,8,0.45)" }}>
         <div style={{ fontSize: 20 }}>🔒</div>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#F5B800", letterSpacing: "0.06em", textTransform: "uppercase", textAlign: "center", maxWidth: 250, lineHeight: 1.5 }}>{title}</div>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#FCBD00", letterSpacing: "0.06em", textTransform: "uppercase", textAlign: "center", maxWidth: 250, lineHeight: 1.5 }}>{title}</div>
         {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", textAlign: "center", maxWidth: 250, lineHeight: 1.45 }}>{sub}</div>}
 
         {/* Dual CTA: Subscribe (primary) +                                 */}
@@ -4234,14 +4243,14 @@ function GateBlock({ title, sub, count, countLabel }) {
           onClick={openSubscribeModal}
           style={{
             marginTop: 6, padding: "7px 14px",
-            background: "#F5B800", color: "#1A1A1A",
-            border: "1px solid #F5B800", borderRadius: 0,
+            background: "#FCBD00", color: "#1A1A1A",
+            border: "1px solid #FCBD00", borderRadius: 0,
             fontFamily: "'Inter', sans-serif", fontSize: 9.5,
             letterSpacing: "0.10em", textTransform: "uppercase",
             cursor: "pointer", fontWeight: 700,
             transition: "transform 160ms ease, box-shadow 160ms ease",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(245,184,0,0.3)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(252,189,0,0.3)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
         >
           Subscribe →
@@ -4269,7 +4278,7 @@ function GateBlock({ title, sub, count, countLabel }) {
             textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.25)",
             paddingBottom: 1,
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#F5B800"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#FCBD00"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.25)"; }}
         >
           Subscribe Enterprise ₹14,999/mo →
@@ -4300,7 +4309,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
       position: "relative",
       marginTop: 10,
       borderRadius: 0, overflow: "hidden",
-      border: "1px solid rgba(245,184,0,0.3)",
+      border: "1px solid rgba(252,189,0,0.3)",
       background: "rgba(8,8,8,0.6)",
       padding: "14px 12px 12px",
     }}>
@@ -4329,7 +4338,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
         <span style={{ fontSize: 14 }}>🔒</span>
         <span style={{
           fontFamily: "'Inter', sans-serif", fontSize: 10.5,
-          color: "#F5B800", letterSpacing: "0.08em",
+          color: "#FCBD00", letterSpacing: "0.08em",
           textTransform: "uppercase", fontWeight: 600,
         }}>
           Showing 1 of {total} · {remaining} more {itemLabel} for subscribers
@@ -4342,13 +4351,13 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
           onClick={openSubscribeModal}
           style={{
             padding: "7px 14px",
-            background: "#F5B800", color: "#1A1A1A",
-            border: "1px solid #F5B800", borderRadius: 0,
+            background: "#FCBD00", color: "#1A1A1A",
+            border: "1px solid #FCBD00", borderRadius: 0,
             fontFamily: "'Inter', sans-serif", fontSize: 9.5,
             letterSpacing: "0.10em", textTransform: "uppercase",
             cursor: "pointer", fontWeight: 700,
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(245,184,0,0.3)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(252,189,0,0.3)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
         >
           Subscribe →
@@ -4369,7 +4378,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
             textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.25)",
             paddingBottom: 1,
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#F5B800"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#FCBD00"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.25)"; }}
         >
           Subscribe Enterprise ₹14,999/mo →
@@ -4477,9 +4486,9 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
 
   const navBtn = (disabled) => ({
     width: 40, height: 40, borderRadius: 0, flexShrink: 0,
-    background: disabled ? "rgba(255,255,255,0.04)" : "rgba(245,184,0,0.12)",
-    border: `1px solid ${disabled ? "rgba(255,255,255,0.10)" : "rgba(245,184,0,0.4)"}`,
-    color: disabled ? "rgba(255,255,255,0.25)" : "#F5B800",
+    background: disabled ? "rgba(255,255,255,0.04)" : "rgba(252,189,0,0.12)",
+    border: `1px solid ${disabled ? "rgba(255,255,255,0.10)" : "rgba(252,189,0,0.4)"}`,
+    color: disabled ? "rgba(255,255,255,0.25)" : "#FCBD00",
     fontSize: 20, lineHeight: 1, cursor: disabled ? "default" : "pointer",
   });
 
@@ -4512,7 +4521,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
         borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 9.5, letterSpacing: "0.14em", color: "#F5B800", textTransform: "uppercase", fontWeight: 700 }}>
+          <div style={{ fontSize: 9.5, letterSpacing: "0.14em", color: "#FCBD00", textTransform: "uppercase", fontWeight: 700 }}>
             {auto ? "◆ Guided preview" : (cards[idx]?.sceneLabel || "Incident")}
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>
@@ -4523,14 +4532,14 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
           <>
             <button onClick={() => setAuto(a => !a)} aria-label={auto ? "Pause" : "Play"} title={auto ? "Pause" : "Play"} style={{
               width: 34, height: 34, borderRadius: 0, flexShrink: 0,
-              background: "rgba(245,184,0,0.12)", border: "1px solid rgba(245,184,0,0.4)",
-              color: "#F5B800", fontSize: 13, cursor: "pointer",
+              background: "rgba(252,189,0,0.12)", border: "1px solid rgba(252,189,0,0.4)",
+              color: "#FCBD00", fontSize: 13, cursor: "pointer",
             }}>{auto ? "⏸" : "▶"}</button>
             <button onClick={() => { setVoiceOn(v => !v); }} aria-label={voiceOn ? "Sound off" : "Sound on"} title={voiceOn ? "Sound off" : "Sound on"} style={{
               width: 34, height: 34, borderRadius: 0, flexShrink: 0,
-              background: voiceOn ? "rgba(245,184,0,0.12)" : "rgba(255,255,255,0.06)",
-              border: `1px solid ${voiceOn ? "rgba(245,184,0,0.4)" : "rgba(255,255,255,0.14)"}`,
-              color: voiceOn ? "#F5B800" : "#fff", fontSize: 13, cursor: "pointer",
+              background: voiceOn ? "rgba(252,189,0,0.12)" : "rgba(255,255,255,0.06)",
+              border: `1px solid ${voiceOn ? "rgba(252,189,0,0.4)" : "rgba(255,255,255,0.14)"}`,
+              color: voiceOn ? "#FCBD00" : "#fff", fontSize: 13, cursor: "pointer",
             }}>{voiceOn ? "🔊" : "🔇"}</button>
           </>
         )}
@@ -4569,10 +4578,10 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
         <div style={{
           position: "absolute", left: 12, right: 12, bottom: 66, zIndex: 2,
           background: "rgba(16,16,18,0.94)", backdropFilter: "blur(10px)",
-          border: "1px solid rgba(245,184,0,0.30)", borderRadius: 0,
+          border: "1px solid rgba(252,189,0,0.30)", borderRadius: 0,
           padding: "12px 14px", boxShadow: "0 12px 34px rgba(0,0,0,0.5)",
         }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F5B800", marginBottom: 5 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FCBD00", marginBottom: 5 }}>
             ◆ {cards[idx]?.label || "Guided preview"}
           </div>
           <div style={{ fontSize: 13, lineHeight: 1.5, color: "#fff", fontWeight: 500 }}>
@@ -4593,7 +4602,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
           {cards.map((_, i) => (
             <span key={i} onClick={() => { stopAuto(); goto(i); }} style={{
               width: i === idx ? 22 : 7, height: 7, borderRadius: 0, cursor: "pointer",
-              background: i === idx ? "#F5B800" : "rgba(255,255,255,0.25)", transition: "all 180ms ease",
+              background: i === idx ? "#FCBD00" : "rgba(255,255,255,0.25)", transition: "all 180ms ease",
             }} />
           ))}
         </div>
@@ -4660,7 +4669,8 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
     if (hasControls) {
       scene1Slots.push({
         slot: "slot-bl", label: "ADAPTIVE CONTROLS",
-        render: () => <AdaptiveControlsBody incident={incident} objs={objs} masters={masters} acts={acts} bps={bps} />,
+        render: () => <AdaptiveControlsBody incident={incident} objs={objs} masters={masters} acts={acts} bps={bps}
+          total={gatedTotal(incident, "adaptive_controls", acts.length)} />,
       });
     }
     if (scene1Slots.length > 0) all.push({ id: "scene1", label: "Incident & Response", slots: scene1Slots });
@@ -4699,7 +4709,7 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
     if (peers.length > 0) {
       scene2Slots.push({
         slot: "slot-br", label: "PEER WATCHLIST · READ-ACROSS",
-        render: () => <PeerWatchlistBody peers={peers} />,
+        render: () => <PeerWatchlistBody peers={peers} total={gatedTotal(incident, "peer_watchlist", peers.length)} />,
       });
     }
     if (scene2Slots.length > 0) all.push({ id: "scene2", label: "Exposure & Engagement", slots: scene2Slots });
@@ -4711,7 +4721,7 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
     if (history.length > 0) {
       scene3Slots.push({
         slot: "slot-tr", label: "HISTORICAL ANALOGUES",
-        render: () => <HistoricalBody items={history} />,
+        render: () => <HistoricalBody items={history} total={gatedTotal(incident, "historical_analogues", history.length)} />,
       });
     }
     const vendorIntel = incident.vendor_intelligence || null;
@@ -4821,16 +4831,24 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
     return <MobileIncidentCards incident={incident} cards={cards} onClose={onClose} autoPlay={autoPlay} onSkip={onSkip} />;
   }
 
-  const currentScene = scenes[sceneIndex];
-  const canPrev = sceneIndex > 0;
-  const canNext = sceneIndex < scenes.length - 1;
+  // The teaser arrives a moment after the incident and brings its scenes with
+  // it, so for one render sceneIndex can point past the end. The sibling read
+  // below already used ?. — this one did not, and took the whole map down.
+  // The teaser arrives a moment after the incident and brings its scenes with
+  // it, and selecting another incident can shorten the list again, so for one
+  // render sceneIndex can point past the end. Clamp it here rather than read
+  // .slots off undefined — that took the whole map down.
+  const safeIndex = Math.min(sceneIndex, scenes.length - 1);
+  const currentScene = scenes[safeIndex] || { slots: [] };
+  const canPrev = safeIndex > 0;
+  const canNext = safeIndex < scenes.length - 1;
 
   // Filter out the slots the user has individually dismissed from
   // the current scene. The remaining (visible) slots are what we
   // actually render. The footer (arrows + counter) attaches to
   // whichever visible slot is rendered last so the navigation
   // controls are always present somewhere on screen.
-  const visibleSlots = currentScene.slots.filter(s => !dismissedSlots.has(s.slot));
+  const visibleSlots = (currentScene.slots || []).filter(s => !dismissedSlots.has(s.slot));
 
   // If somehow every slot got dismissed but auto-advance hasn't
   // fired yet (mid-animation window), render nothing — avoids a
@@ -4868,7 +4886,7 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
 
             {/* Body — re-mounts on scene change so the row-stagger
                 animations replay cleanly */}
-            <div className="scene-panel-body" key={sceneIndex}>
+            <div className="scene-panel-body" key={safeIndex}>
               {slot.render()}
             </div>
 
@@ -4880,7 +4898,7 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
                   className="cascade-nav-btn"
                   onClick={() => advance(-1)}
                   disabled={!canPrev}
-                  title={canPrev ? `Previous: ${(scenes[sceneIndex - 1] || {}).label || "—"}` : "Previous scene (←)"}
+                  title={canPrev ? `Previous: ${(scenes[safeIndex - 1] || {}).label || "—"}` : "Previous scene (←)"}
                   aria-label="Previous scene"
                 >‹</button>
                 {/* Counter — shows the CURRENT scene's meaningful label
@@ -4891,23 +4909,23 @@ function IncidentCascade({ incident, viewMode, onClose, autoPlay, onSkip }) {
                 <span className="cascade-counter" style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.1, gap: 2 }}>
                   <span style={{
                     fontFamily: "'Inter', sans-serif", fontSize: 10,
-                    color: "#F5B800", letterSpacing: "0.14em",
+                    color: "#FCBD00", letterSpacing: "0.14em",
                     textTransform: "uppercase", fontWeight: 600,
                   }}>
-                    {(scenes[sceneIndex] || {}).label || `Scene ${sceneIndex + 1}`}
+                    {(scenes[safeIndex] || {}).label || `Scene ${safeIndex + 1}`}
                   </span>
                   <span style={{
                     fontFamily: "'Inter', sans-serif", fontSize: 8,
                     color: "rgba(255,255,255,0.35)", letterSpacing: "0.10em",
                   }}>
-                    {String(sceneIndex + 1).padStart(2, "0")} / {String(scenes.length).padStart(2, "0")}
+                    {String(safeIndex + 1).padStart(2, "0")} / {String(scenes.length).padStart(2, "0")}
                   </span>
                 </span>
                 <button
                   className="cascade-nav-btn"
                   onClick={() => advance(1)}
                   disabled={!canNext}
-                  title={canNext ? `Next: ${(scenes[sceneIndex + 1] || {}).label || "—"}` : "Next scene (→)"}
+                  title={canNext ? `Next: ${(scenes[safeIndex + 1] || {}).label || "—"}` : "Next scene (→)"}
                   aria-label="Next scene"
                 >›</button>
               </div>
@@ -4971,7 +4989,7 @@ function MapIncidentImage({ incident, height = 150 }) {
           letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", borderRadius: 0,
           display: "inline-flex", alignItems: "center", gap: 5,
         }}>
-          <span style={{ width: 5, height: 5, borderRadius: 0, background: "#F5B800" }} />
+          <span style={{ width: 5, height: 5, borderRadius: 0, background: "#FCBD00" }} />
           News video
         </span>
       </div>
@@ -5039,7 +5057,7 @@ function MapIncidentImage({ incident, height = 150 }) {
         borderRadius: 0,
         marginBottom: 14,
       }}>
-        <span style={{ width: 6, height: 6, borderRadius: 0, background: "#F5B800" }} />
+        <span style={{ width: 6, height: 6, borderRadius: 0, background: "#FCBD00" }} />
         <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase" }}>
           {incident.primary_category || "Incident"}
         </span>
@@ -5147,9 +5165,9 @@ function ClassificationBody({ incident, sev, cat }) {
         {cat && (
           <span style={{
             padding: "3px 9px", borderRadius: 0,
-            border: "1px solid rgba(245,184,0,0.30)",
+            border: "1px solid rgba(252,189,0,0.30)",
             fontFamily: "'Inter', sans-serif", fontSize: 10,
-            color: "#F5B800", letterSpacing: "0.06em",
+            color: "#FCBD00", letterSpacing: "0.06em",
           }}>
             {incident._cat}
           </span>
@@ -5157,9 +5175,9 @@ function ClassificationBody({ incident, sev, cat }) {
         {secondaryCats.map((sc, i) => (
           <span key={i} style={{
             padding: "3px 9px", borderRadius: 0,
-            border: "1px solid rgba(245,184,0,0.18)",
+            border: "1px solid rgba(252,189,0,0.18)",
             fontFamily: "'Inter', sans-serif", fontSize: 10,
-            color: "rgba(245,184,0,0.7)", letterSpacing: "0.06em",
+            color: "rgba(252,189,0,0.7)", letterSpacing: "0.06em",
           }}>
             {toText(sc)}
           </span>
@@ -5210,7 +5228,7 @@ function ClassificationBody({ incident, sev, cat }) {
             <div key={i}>
               <div style={{
                 fontFamily: "'Inter', sans-serif", fontSize: 18,
-                color: "#F5B800", fontWeight: 600, lineHeight: 1.1,
+                color: "#FCBD00", fontWeight: 600, lineHeight: 1.1,
               }}>{toText(s.num)}</div>
               <div style={{
                 fontSize: 8, fontWeight: 600, letterSpacing: "0.16em",
@@ -5312,7 +5330,7 @@ function BlastRadiusBody({ incident, channels }) {
           surface as "+N" on the right edge. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {channels.map(([channelKey, entities], chIdx) => {
-          const ch = BLAST_CHANNELS[channelKey] || { label: channelKey.replace(/_/g, " "), color: "#F5B800" };
+          const ch = BLAST_CHANNELS[channelKey] || { label: channelKey.replace(/_/g, " "), color: "#FCBD00" };
           // Take the first 3 org names for the inline list — keeps the
           // row to roughly one line per ring. Anything beyond surfaces
           // as the +N count on the right.
@@ -5344,7 +5362,7 @@ function BlastRadiusBody({ incident, channels }) {
                   borderTop: chIdx === 0 ? "none" : "1px solid rgba(255,255,255,0.04)",
                   cursor: (tier === "public" && chIdx > 0) ? "not-allowed" : "pointer",
                   borderRadius: 0,
-                  background: isExpanded ? "rgba(245,184,0,0.05)" : "transparent",
+                  background: isExpanded ? "rgba(252,189,0,0.05)" : "transparent",
                   transition: "background 180ms cubic-bezier(0.16,1,0.3,1)",
                   opacity: 0,
                   animation: `rowInLeft 500ms cubic-bezier(0.16,1,0.3,1) ${rowDelay}ms forwards`,
@@ -5355,7 +5373,7 @@ function BlastRadiusBody({ incident, channels }) {
                 {/* Disclosure chevron — rotates 90° when row is open */}
                 <span style={{
                   fontFamily: "'Inter', sans-serif", fontSize: 9,
-                  color: isExpanded ? "#F5B800" : "rgba(255,255,255,0.4)",
+                  color: isExpanded ? "#FCBD00" : "rgba(255,255,255,0.4)",
                   transform: isExpanded ? "rotate(90deg)" : "rotate(0)",
                   transition: "transform 220ms cubic-bezier(0.16,1,0.3,1), color 220ms",
                   display: "inline-block", textAlign: "center",
@@ -5363,7 +5381,7 @@ function BlastRadiusBody({ incident, channels }) {
                 {/* Number — small gold mono, 01–06 padded */}
                 <span style={{
                   fontFamily: "'Inter', sans-serif", fontSize: 11,
-                  color: "#F5B800", fontWeight: 600,
+                  color: "#FCBD00", fontWeight: 600,
                 }}>
                   {String(chIdx + 1).padStart(2, "0")}
                 </span>
@@ -5398,7 +5416,7 @@ function BlastRadiusBody({ incident, channels }) {
                     preview; this count is the truth. */}
                 <span style={{
                   fontFamily: "'Inter', sans-serif", fontSize: 11,
-                  color: "#F5B800", fontWeight: 600, textAlign: "right",
+                  color: "#FCBD00", fontWeight: 600, textAlign: "right",
                 }}>
                   +{entities.length}
                 </span>
@@ -5506,9 +5524,9 @@ function BlastRadiusBody({ incident, channels }) {
                             {horizon && (
                               <span style={{
                                 padding: "2px 6px", borderRadius: 0,
-                                border: "1px solid rgba(245,184,0,0.30)",
+                                border: "1px solid rgba(252,189,0,0.30)",
                                 fontFamily: "'Inter', sans-serif", fontSize: 7.5,
-                                color: "#F5B800", letterSpacing: "0.10em",
+                                color: "#FCBD00", letterSpacing: "0.10em",
                                 textTransform: "uppercase",
                               }}>
                                 ⏱ {horizon.label}
@@ -5520,13 +5538,13 @@ function BlastRadiusBody({ incident, channels }) {
                         {showAction && (
                           <div style={{
                             padding: "6px 9px",
-                            background: "rgba(245,184,0,0.06)",
+                            background: "rgba(252,189,0,0.06)",
                                                         borderRadius: 0,
                             fontSize: 10.5, lineHeight: 1.5,
                           }}>
                             <div style={{
                               fontFamily: "'Inter', sans-serif", fontSize: 7.5,
-                              color: "#F5B800", letterSpacing: "0.14em",
+                              color: "#FCBD00", letterSpacing: "0.14em",
                               textTransform: "uppercase", fontWeight: 600,
                               marginBottom: 2,
                             }}>Recommended</div>
@@ -5556,7 +5574,7 @@ function Stat({ n, l }) {
     <div>
       <div style={{
         fontFamily: "'Inter', sans-serif", fontSize: 22,
-        color: "#F5B800", fontWeight: 600, lineHeight: 1.1,
+        color: "#FCBD00", fontWeight: 600, lineHeight: 1.1,
       }}>{n}</div>
       <div style={{
         fontSize: 8, fontWeight: 600, letterSpacing: "0.14em",
@@ -5573,7 +5591,7 @@ function Stat({ n, l }) {
 // this incident's blast radius, but show similar trajectory / pattern in
 // their own data. The WHY is the most important content here, so the
 // rationale gets prominent placement (not buried as italic footer text).
-function PeerWatchlistBody({ peers }) {
+function PeerWatchlistBody({ peers, total }) {
   const tier = useAccess();
   // TEASER MODEL — public/free viewers see ONE peer fully rendered (real
   // name, why they share the risk, etc.) and a TeaserFooter showing
@@ -5649,7 +5667,7 @@ function PeerWatchlistBody({ peers }) {
             switch (conf) {
               case "CONFIRMED": return { color: "#FF6B6B", bg: "#FF3B3022", bd: "#FF6B6B55" };
               case "HIGH":      return { color: "#FF8C5A", bg: "#FF8C5A22", bd: "#FF8C5A55" };
-              case "MEDIUM":    return { color: "#F5B800", bg: "#F5B80022", bd: "#F5B80055" };
+              case "MEDIUM":    return { color: "#FCBD00", bg: "#FCBD0022", bd: "#FCBD0055" };
               case "DIRECTIONAL": return { color: "#34C759", bg: "#34C75922", bd: "#34C75955" };
               default:          return conf ? { color: "#9D7BEC", bg: "#9D7BEC22", bd: "#9D7BEC55" } : null;
             }
@@ -5660,7 +5678,7 @@ function PeerWatchlistBody({ peers }) {
           // is simply omitted there. impact_score 5 → 100%, 2 → 40%.
           const score = !isStr && typeof p.impact_score === "number" ? p.impact_score : null;
           const pct = score != null ? Math.min(100, Math.max(0, Math.round((score / 5) * 100))) : null;
-          const barColor = pct == null ? "#F5B800"
+          const barColor = pct == null ? "#FCBD00"
             : pct >= 80 ? "#FF6B6B" : pct >= 60 ? "#FF8C5A" : "#34C759";
 
           // Source citation — surfaced as a small line, with the url linked.
@@ -5727,7 +5745,7 @@ function PeerWatchlistBody({ peers }) {
                                   }}>
                   <div style={{
                     fontFamily: "'Inter', sans-serif", fontSize: 8,
-                    color: "#F5B800", letterSpacing: "0.10em",
+                    color: "#FCBD00", letterSpacing: "0.10em",
                     textTransform: "uppercase", marginBottom: 3,
                   }}>▸ Recommended action</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.78)", lineHeight: 1.4 }}>
@@ -5743,9 +5761,9 @@ function PeerWatchlistBody({ peers }) {
                   {mechanism && (
                     <span style={{
                       padding: "2px 7px", borderRadius: 0,
-                      border: "1px solid rgba(245,184,0,0.30)",
+                      border: "1px solid rgba(252,189,0,0.30)",
                       fontFamily: "'Inter', sans-serif", fontSize: 8,
-                      color: "#F5B800", letterSpacing: "0.06em",
+                      color: "#FCBD00", letterSpacing: "0.06em",
                       textTransform: "uppercase",
                     }}>
                       ◇ {toText(mechanism).replace(/_/g, " ")}
@@ -5811,11 +5829,11 @@ function PeerWatchlistBody({ peers }) {
                 <div style={{
                   marginTop: 8,
                   padding: "5px 9px",
-                  background: "rgba(245,184,0,0.08)",
-                  border: "1px solid rgba(245,184,0,0.25)",
+                  background: "rgba(252,189,0,0.08)",
+                  border: "1px solid rgba(252,189,0,0.25)",
                   borderRadius: 0,
                   fontFamily: "'Inter', sans-serif", fontSize: 9,
-                  color: "#F5B800", letterSpacing: "0.04em",
+                  color: "#FCBD00", letterSpacing: "0.04em",
                 }}>
                   ▸ {toText(hookCta)}
                 </div>
@@ -5831,7 +5849,7 @@ function PeerWatchlistBody({ peers }) {
                 }}>
                   {srcUrl ? (
                     <a href={srcUrl} target="_blank" rel="noopener noreferrer"
-                      style={{ color: "rgba(245,184,0,0.7)", textDecoration: "none" }}>
+                      style={{ color: "rgba(252,189,0,0.7)", textDecoration: "none" }}>
                       ⌖ {toText(srcCitation)}
                     </a>
                   ) : (
@@ -5850,7 +5868,7 @@ function PeerWatchlistBody({ peers }) {
           }}>+ {peers.length - 6} more in audit</div>
         )}
         {isPublic && (
-          <TeaserFooter shown={visiblePeers.length} total={peers.length} itemLabel="companies" />
+          <TeaserFooter shown={visiblePeers.length} total={total || peers.length} itemLabel="companies" />
         )}
       </div>
     </>
@@ -5864,7 +5882,7 @@ function PeerWatchlistBody({ peers }) {
 // section the row came from (objectives vs masters/acts vs best practices)
 // so the user always sees whether a control is direct or indirect, even
 // when the JSON's `fit` field isn't populated.
-function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
+function AdaptiveControlsBody({ incident, objs, masters, acts, bps, total }) {
   const rows = useMemo(() => {
     const out = [];
     // OBJ = Adaptive Objective — desired-outcome goal (not a control per se)
@@ -5943,8 +5961,8 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
       color: "#1A1A1A",  // demo uses dark text on solid pill
       whiteSpace: "nowrap",
     };
-    if (tone === "direct")   return { ...base, background: "#F5B800" };
-    if (tone === "indirect") return { ...base, background: "rgba(245,184,0,0.55)" };
+    if (tone === "direct")   return { ...base, background: "#FCBD00" };
+    if (tone === "indirect") return { ...base, background: "rgba(252,189,0,0.55)" };
     // Opaque, NOT translucent: rgba(255,255,255,0.35) composited against
     // the dark panel behind this pill and left the dark label at 1.04:1 —
     // effectively invisible. An opaque ground makes the chip self-contained.
@@ -5971,8 +5989,8 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
       {incident.if_you_operate_x_then_y && (
         <div style={{
           padding: "10px 12px",
-          background: "rgba(245,184,0,0.06)",
-          border: "1px solid rgba(245,184,0,0.18)",
+          background: "rgba(252,189,0,0.06)",
+          border: "1px solid rgba(252,189,0,0.18)",
           borderRadius: 0, marginBottom: 14,
           fontSize: 11, lineHeight: 1.5,
           fontStyle: "italic", color: "#FFFFFF",
@@ -6001,7 +6019,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
                   longest line of the statement */}
               <span style={{
                 fontFamily: "'Inter', sans-serif", fontSize: 14,
-                fontWeight: 600, color: "#F5B800", lineHeight: 1.4,
+                fontWeight: 600, color: "#FCBD00", lineHeight: 1.4,
                 alignSelf: "center",
               }}>{String(i + 1).padStart(2, "0")}</span>
               {/* Control ID — vertically centred */}
@@ -6042,7 +6060,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
           );
         })}
         {isPublic && (
-          <TeaserFooter shown={visibleRows.length} total={rows.length} itemLabel="controls" />
+          <TeaserFooter shown={visibleRows.length} total={total || rows.length} itemLabel="controls" />
         )}
       </div>
     </>
@@ -6050,7 +6068,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps }) {
 }
 
 // ───── 5. HISTORICAL ANALOGUES ─────
-function HistoricalBody({ items }) {
+function HistoricalBody({ items, total }) {
   return (
     <>
       <div style={{
@@ -6089,7 +6107,7 @@ function HistoricalBody({ items }) {
                 {h.year && (
                   <span style={{
                     fontFamily: "'Inter', sans-serif", fontSize: 10,
-                    color: "#F5B800", flexShrink: 0, fontWeight: 600,
+                    color: "#FCBD00", flexShrink: 0, fontWeight: 600,
                   }}>{toText(h.year)}</span>
                 )}
               </div>
@@ -6114,7 +6132,7 @@ function HistoricalBody({ items }) {
                 }}>
                   <span style={{
                     fontFamily: "'Inter', sans-serif", fontSize: 8,
-                    color: "#F5B800", letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: "#FCBD00", letterSpacing: "0.12em", textTransform: "uppercase",
                     marginRight: 6, fontWeight: 600,
                   }}>Outcome</span>
                   {toText(h.outcome)}
@@ -6128,6 +6146,9 @@ function HistoricalBody({ items }) {
             fontFamily: "'Inter', sans-serif", fontSize: 10,
             color: "rgba(255,255,255,0.4)", textAlign: "center", fontStyle: "italic",
           }}>+ {items.length - 4} more analogues</div>
+        )}
+        {total > items.length && (
+          <TeaserFooter shown={items.length} total={total} itemLabel="analogues" />
         )}
       </div>
     </>
@@ -6148,7 +6169,7 @@ function VendorSectionLabel({ children }) {
   return (
     <div style={{
       fontFamily: "'Inter', sans-serif", fontSize: 9,
-      color: "#F5B800", letterSpacing: "0.14em", textTransform: "uppercase",
+      color: "#FCBD00", letterSpacing: "0.14em", textTransform: "uppercase",
       fontWeight: 600, marginBottom: 6,
     }}>{children}</div>
   );
@@ -6161,11 +6182,11 @@ function ControlChip({ id }) {
       padding: "2px 8px",
       fontFamily: "'Inter', sans-serif", fontSize: 9.5,
       color: "rgba(255,255,255,0.92)",
-      background: "rgba(245,184,0,0.06)",
-      border: "1px solid rgba(245,184,0,0.28)",
+      background: "rgba(252,189,0,0.06)",
+      border: "1px solid rgba(252,189,0,0.28)",
       borderRadius: 0, letterSpacing: "0.04em",
     }}>
-      <span style={{ color: "#F5B800", fontSize: 8 }}>◇</span>
+      <span style={{ color: "#FCBD00", fontSize: 8 }}>◇</span>
       {toText(id)}
     </span>
   );
@@ -6176,7 +6197,7 @@ function SourceLink({ url }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" style={{
       fontFamily: "'Inter', sans-serif", fontSize: 9.5,
-      color: "#F5B800", textDecoration: "none", letterSpacing: "0.04em",
+      color: "#FCBD00", textDecoration: "none", letterSpacing: "0.04em",
       marginLeft: 6, whiteSpace: "nowrap",
     }}>↗ source</a>
   );
@@ -6198,7 +6219,7 @@ function VendorRichCard({ v, idx, badge }) {
     <div style={{
       padding: "14px 16px",
       background: "rgba(20,20,20,0.85)",
-      border: "1px solid rgba(245,184,0,0.22)",
+      border: "1px solid rgba(252,189,0,0.22)",
             borderRadius: 0,
       opacity: 0,
       animation: `rowIn 400ms cubic-bezier(0.4,0,0.2,1) ${rowDelay}ms forwards`,
@@ -6216,7 +6237,7 @@ function VendorRichCard({ v, idx, badge }) {
               <span style={{
                 padding: "2px 8px",
                 fontFamily: "'Inter', sans-serif", fontSize: 9,
-                color: "#1A1A1A", background: "#F5B800",
+                color: "#1A1A1A", background: "#FCBD00",
                 borderRadius: 0, letterSpacing: "0.08em", fontWeight: 700,
                 textTransform: "uppercase", whiteSpace: "nowrap",
               }}>+ {badge}</span>
@@ -6226,11 +6247,11 @@ function VendorRichCard({ v, idx, badge }) {
             v.product_url
               ? <a href={v.product_url} target="_blank" rel="noopener noreferrer" style={{
                   fontFamily: "'Inter', sans-serif", fontSize: 11,
-                  color: "#F5B800", textDecoration: "none", letterSpacing: "0.02em",
+                  color: "#FCBD00", textDecoration: "none", letterSpacing: "0.02em",
                 }}>{toText(v.product_name)} ↗</a>
               : <div style={{
                   fontFamily: "'Inter', sans-serif", fontSize: 11,
-                  color: "rgba(245,184,0,0.85)", letterSpacing: "0.02em",
+                  color: "rgba(252,189,0,0.85)", letterSpacing: "0.02em",
                 }}>{toText(v.product_name)}</div>
           )}
         </div>
@@ -6238,9 +6259,9 @@ function VendorRichCard({ v, idx, badge }) {
           <div style={{ textAlign: "right", lineHeight: 1, whiteSpace: "nowrap" }}>
             <div style={{
               fontFamily: "'Inter', sans-serif", fontSize: 22,
-              color: "#F5B800", fontWeight: 700, letterSpacing: "-0.01em",
+              color: "#FCBD00", fontWeight: 700, letterSpacing: "-0.01em",
             }}>{score}<span style={{
-              fontSize: 11, color: "rgba(245,184,0,0.55)", fontWeight: 400, marginLeft: 2,
+              fontSize: 11, color: "rgba(252,189,0,0.55)", fontWeight: 400, marginLeft: 2,
             }}>/100</span></div>
             <div style={{
               fontFamily: "'Inter', sans-serif", fontSize: 8,
@@ -6254,10 +6275,10 @@ function VendorRichCard({ v, idx, badge }) {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 5,
               padding: "3px 9px", borderRadius: 0,
-              background: "rgba(245,184,0,0.10)", border: "1px solid rgba(245,184,0,0.4)",
+              background: "rgba(252,189,0,0.10)", border: "1px solid rgba(252,189,0,0.4)",
             }}>
               <span style={{ fontSize: 11 }}>🔒</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 600, color: "#F5B800", letterSpacing: "0.06em" }}>RATING</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 600, color: "#FCBD00", letterSpacing: "0.06em" }}>RATING</span>
             </div>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 7, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginTop: 2 }}>SUBSCRIBER</div>
           </div>
@@ -6309,7 +6330,7 @@ function VendorRichCard({ v, idx, badge }) {
                   display: "flex", flexDirection: "column", gap: 4,
                 }}>
                   <div>
-                    <span style={{ color: "#F5B800", marginRight: 6 }}>•</span>
+                    <span style={{ color: "#FCBD00", marginRight: 6 }}>•</span>
                     {toText(text)}
                   </div>
                   {(addr || src) && (
@@ -6430,7 +6451,7 @@ function VendorBody({ vendors, vendorIntel }) {
               fontSize: 10,
               background: "rgba(36,36,36,0.7)",
               color: "rgba(255,255,255,0.85)",
-              border: "1px solid rgba(245,184,0,0.18)",
+              border: "1px solid rgba(252,189,0,0.18)",
               borderRadius: 0,
               fontFamily: "'Inter', sans-serif",
               letterSpacing: "0.04em",
@@ -6667,7 +6688,7 @@ function OutreachBody({ channels }) {
                 }}>{h.sub ? toText(h.sub) : ""}</span>
                 <span style={{
                   fontFamily: "'Inter', sans-serif", fontSize: 8,
-                  color: "#F5B800", letterSpacing: "0.10em",
+                  color: "#FCBD00", letterSpacing: "0.10em",
                   textAlign: "right", fontWeight: 600,
                 }}>
                   RING {String(h.ringIdx).padStart(1, "0")} · {h.ringLabel}
@@ -6683,7 +6704,7 @@ function OutreachBody({ channels }) {
                   borderRadius: 0, overflow: "hidden", marginBottom: 11,
                 }}>
                   <div style={{
-                    height: "100%", background: "#F5B800",
+                    height: "100%", background: "#FCBD00",
                     borderRadius: 0, width: `${pct}%`,
                     animation: `barFill 800ms cubic-bezier(0.4,0,0.2,1) ${rowDelay + 200}ms both`,
                     ["--bar-w"]: `${pct}%`,
@@ -6713,7 +6734,7 @@ function OutreachBody({ channels }) {
                   action is named. */}
               <div style={{
                 fontFamily: "'Inter', sans-serif", fontSize: 9,
-                color: "#F5B800", letterSpacing: "0.14em",
+                color: "#FCBD00", letterSpacing: "0.14em",
                 textTransform: "uppercase", fontWeight: 600,
                 paddingTop: 9,
                 borderTop: "1px solid rgba(255,255,255,0.05)",
@@ -6792,7 +6813,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
       width: "min(440px, 90vw)",
       background: "rgba(26,26,26,0.95)",
       backdropFilter: "blur(20px)",
-      border: `1px solid rgba(245,184,0,0.20)`,
+      border: `1px solid rgba(252,189,0,0.20)`,
       borderRadius: 0,
       boxShadow: "0 22px 60px rgba(0,0,0,0.6)",
       overflowY: "auto",
@@ -6834,7 +6855,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
           title="Close detail panel"
           style={{
             flexShrink: 0,
-            background: "rgba(245,184,0,0.08)",
+            background: "rgba(252,189,0,0.08)",
             border: `1px solid ${BRAND.borderGold}`,
             color: BRAND.gold,
             width: 32, height: 32,
@@ -7097,8 +7118,8 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                       display: "inline-block",
                       marginLeft: 8, padding: "1px 7px",
                       borderRadius: 0,
-                      background: "rgba(245,184,0,0.10)",
-                      border: "1px solid rgba(245,184,0,0.30)",
+                      background: "rgba(252,189,0,0.10)",
+                      border: "1px solid rgba(252,189,0,0.30)",
                       fontFamily: "'Inter', sans-serif",
                       fontSize: 9, color: BRAND.gold,
                       letterSpacing: "0.06em",
@@ -7413,7 +7434,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         )}
                         {/* Recommended action — italic */}
                         {ent.recommended_action_for_them && (
-                          <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(245,184,0,0.05)", borderRadius: 0 }}>
+                          <div style={{ marginTop: 6, padding: "6px 8px", background: "rgba(252,189,0,0.05)", borderRadius: 0 }}>
                             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 8, color: BRAND.gold, letterSpacing: "0.10em", textTransform: "uppercase", marginRight: 6 }}>ACTION</span>
                             <span style={{ color: BRAND.white, fontSize: 11, fontStyle: "italic", lineHeight: 1.45 }}>
                               {ent.recommended_action_for_them}
@@ -8384,7 +8405,7 @@ function IncidentListPanel({ visibleIncidents, selectedId, onSelect, onHover, ho
     <div style={{
       background: "rgba(26,26,26,0.95)",
       backdropFilter: "blur(20px)",
-      border: `1px solid rgba(245,184,0,0.20)`,
+      border: `1px solid rgba(252,189,0,0.20)`,
       borderRadius: 0,
       overflow: "hidden",
       display: "flex",
@@ -8826,14 +8847,14 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
 // first "Sound on" tap (required by browser autoplay policy).
 // ─────────────────────────────────────────────────────────────────────────────
 const _tourTiny = (active, light) => ({
-  background: active ? (light ? "rgba(245,184,0,0.14)" : "rgba(245,184,0,0.16)") : (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.06)"),
-  color: active ? (light ? "#8A6D00" : "#F5B800") : (light ? "#52525B" : "rgba(255,255,255,0.7)"),
+  background: active ? (light ? "rgba(252,189,0,0.14)" : "rgba(252,189,0,0.16)") : (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.06)"),
+  color: active ? (light ? "#8A6D00" : "#FCBD00") : (light ? "#52525B" : "rgba(255,255,255,0.7)"),
   border: light ? "1px solid #E7E7E9" : "1px solid rgba(255,255,255,0.12)", borderRadius: 0, padding: "4px 9px",
   fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer",
   fontFamily: "Inter, sans-serif", textTransform: "uppercase", whiteSpace: "nowrap",
 });
 const _tourNav = (disabled, light) => ({
-  background: disabled ? (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.04)") : "#F5B800",
+  background: disabled ? (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.04)") : "#FCBD00",
   color: disabled ? (light ? "rgba(10,10,10,0.3)" : "rgba(255,255,255,0.3)") : "#1A1A1A",
   border: "none", borderRadius: 0, padding: "8px 16px", fontSize: 12, fontWeight: 700,
   letterSpacing: "0.04em", cursor: disabled ? "default" : "pointer", fontFamily: "Inter, sans-serif",
@@ -8934,13 +8955,13 @@ function GuidedTour({ incident, onFeature, onClose, light }) {
 
   return (
     <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 200, display: "flex", justifyContent: "center", padding: "0 16px 96px", pointerEvents: "none" }}>
-      <div style={{ pointerEvents: "auto", width: "min(760px, 96vw)", background: light ? "rgba(255,255,255,0.98)" : "rgba(16,16,18,0.94)", backdropFilter: "blur(18px)", border: light ? "1px solid #E7E7E9" : "1px solid rgba(245,184,0,0.30)", borderRadius: 0, boxShadow: light ? "0 24px 70px rgba(10,10,10,0.18)" : "0 24px 70px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
+      <div style={{ pointerEvents: "auto", width: "min(760px, 96vw)", background: light ? "rgba(255,255,255,0.98)" : "rgba(16,16,18,0.94)", backdropFilter: "blur(18px)", border: light ? "1px solid #E7E7E9" : "1px solid rgba(252,189,0,0.30)", borderRadius: 0, boxShadow: light ? "0 24px 70px rgba(10,10,10,0.18)" : "0 24px 70px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
         <div style={{ height: 3, background: light ? "rgba(10,10,10,0.08)" : "rgba(255,255,255,0.08)" }}>
-          <div style={{ height: "100%", width: pct + "%", background: "linear-gradient(90deg,#F5B800,#D4A000)", transition: "width 300ms ease" }} />
+          <div style={{ height: "100%", width: pct + "%", background: "linear-gradient(90deg,#FCBD00,#D4A000)", transition: "width 300ms ease" }} />
         </div>
         <div style={{ padding: "15px 20px 17px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: light ? "#8A6D00" : "#F5B800" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: light ? "#8A6D00" : "#FCBD00" }}>
               ◆ Guided tour · {s.label} <span style={{ color: light ? "rgba(10,10,10,0.4)" : "rgba(255,255,255,0.4)" }}>· {step + 1}/{STEPS.length}</span>
             </span>
             <div style={{ display: "flex", gap: 8 }}>
@@ -8988,10 +9009,17 @@ export default function GlobalAttackMap() {
   const { tier: chromeTier } = useAuth();
   // Forward the reader's session token to every PostgREST read the map makes
   // (see setReaderToken). Kept in step with sign-in / sign-out.
+  // Mirrored into state as well as the module variable: the session resolves
+  // AFTER the first render, and the child-record effect had no dependency to
+  // re-run on. An incident opened in that window kept the free-tier teaser for
+  // the life of the page, so a subscriber who clicked early saw one peer and
+  // one control until a full reload.
+  const [readerToken, setReaderTokenState] = useState(null);
   useEffect(() => {
     let sub = null;
-    supabase.auth.getSession().then(({ data }) => setReaderToken(data?.session?.access_token)).catch(() => {});
-    try { sub = supabase.auth.onAuthStateChange((_e, s) => setReaderToken(s?.access_token))?.data?.subscription || null; } catch { /* noop */ }
+    const take = (tok) => { setReaderToken(tok); setReaderTokenState(tok || null); };
+    supabase.auth.getSession().then(({ data }) => take(data?.session?.access_token)).catch(() => {});
+    try { sub = supabase.auth.onAuthStateChange((_e, s) => take(s?.access_token))?.data?.subscription || null; } catch { /* noop */ }
     return () => { try { sub?.unsubscribe?.(); } catch { /* noop */ } };
   }, []);
   const isUserMode = useMemo(() => {
@@ -9420,7 +9448,11 @@ export default function GlobalAttackMap() {
   useEffect(() => {
     if (!selectedId) return;
     const inc = visibleIncidents.find(i => String(i._id) === String(selectedId));
-    if (!inc || inc._childrenLoaded) return;
+    // Keyed by the token the rows were fetched with, not a plain boolean: the
+    // free teaser and a subscriber's full set are different answers, so signing
+    // in has to re-hydrate rather than keep whatever landed first.
+    const authKey = readerToken || "anon";
+    if (!inc || inc._hydratedWith === authKey) return;
     const dbId = inc.id;
     if (dbId == null || dbId === "") return;
     let cancelled = false;
@@ -9439,6 +9471,7 @@ export default function GlobalAttackMap() {
         ["historical_analogues", "historical_analogues", "select=*"],
       ];
       const eq = `incident_id=eq.${encodeURIComponent(dbId)}`;
+      let teaser = null;   // filled by the RPC below, applied after the reads
       await Promise.all([
         ...CHILD_RELATIONS.map(async ([rel, prop, sel]) => {
           try {
@@ -9467,6 +9500,26 @@ export default function GlobalAttackMap() {
             }
           } catch (_) { /* leave the empty array in place */ }
         }),
+        // The free-tier teaser. The relations above are RLS'd to subscribers
+        // and answer a blocked read with 200 + zero rows, which is how the
+        // panels came to vanish: no first entry meant no panel, and no panel
+        // meant no scene. public.incident_teaser returns the one row a free
+        // reader may see plus the true total, so "Showing 1 of 6" works again
+        // and the other five never leave the database. A subscriber's own reads
+        // succeed above and these values are simply not used.
+        (async () => {
+          try {
+            const res = await fetch(`${url}/rest/v1/rpc/incident_teaser`, {
+              method: "POST",
+              headers: { apikey: key, Authorization: `Bearer ${_readerToken || key}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ p_incident_id: Number(dbId) }),
+            });
+            if (!res.ok) return;
+            const body = await res.json();
+            if (cancelled || !body || typeof body !== "object") return;
+            teaser = body;
+          } catch (_) { /* no teaser → the panels stay as they are */ }
+        })(),
         // Secondary categories (2026-08-01) and vendors (same day) were merged
         // onto the incident row as jsonb, so they come from the incident itself
         // rather than child tables — note the key is `id`, not incident_id.
@@ -9490,11 +9543,51 @@ export default function GlobalAttackMap() {
         })(),
       ]);
       if (cancelled) return;
+
+      // Now that the subscriber-only reads have settled we can see what this
+      // reader was actually denied, and stand the teaser in for exactly that.
+      if (teaser) {
+        const totals = {};
+        for (const k of ["peer_watchlist", "adaptive_controls", "historical_analogues", "sources", "blast_radius"]) {
+          const part = teaser[k];
+          if (!part) continue;
+          totals[k] = Number(part.total) || 0;
+          if (k === "blast_radius") continue;
+          const served = Array.isArray(inc[k]) && inc[k].length > 0;
+          if (served || !Array.isArray(part.rows) || !part.rows.length) continue;
+          inc[k] = part.rows;
+          if (k === "adaptive_controls") {
+            inc.adaptive_controls = part.rows.map(c => ({
+              id: c.control_id || c.id, statement: c.statement, rationale: c.rationale,
+              parent_mc_id: c.parent_mc_id, layer: c.layer, control_kind: c.kind,
+            }));
+          }
+        }
+        const chans = teaser.blast_radius && teaser.blast_radius.channels;
+        const haveBlast = inc.blast_radius && Object.keys(inc.blast_radius).length > 0;
+        if (Array.isArray(chans) && chans.length && !haveBlast) {
+          // Every channel keeps its real name and size — the panel lists them
+          // all and masks the entity names beyond the first, so the withheld
+          // ones stand in as empty placeholders carrying no data.
+          const grouped = {};
+          for (const ch of chans) {
+            const g = ch && ch.group ? ch.group : "internal";
+            const rows = Array.isArray(ch.rows) && ch.rows.length
+              ? ch.rows
+              : Array.from({ length: Math.max(0, Number(ch.count) || 0) }, () => ({ exposure_group: g, _withheld: true }));
+            grouped[g] = rows;
+          }
+          inc.blast_radius = grouped;
+        }
+        inc._gatedTotals = totals;
+      }
+
       inc._childrenLoaded = true;
+      inc._hydratedWith = authKey;
       setChildVersion(v => v + 1);   // force selectedIncident to recompute
     })();
     return () => { cancelled = true; };
-  }, [selectedId, visibleIncidents]);
+  }, [selectedId, visibleIncidents, readerToken]);
 
   const selectedIncident = useMemo(() => {
     // The deep-linked card must not blink out while the enriched sweep replaces
@@ -10117,7 +10210,7 @@ export default function GlobalAttackMap() {
           borderBottom: "1px solid #222",
         }}>
           <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 0, background: BRAND.gold, boxShadow: "0 0 8px rgba(245,184,0,0.6)", flexShrink: 0 }} />
+            <span style={{ width: 7, height: 7, borderRadius: 0, background: BRAND.gold, boxShadow: "0 0 8px rgba(252,189,0,0.6)", flexShrink: 0 }} />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {visibleIncidents.length} live{currentDate ? ` · ${currentDate}` : ""}
             </span>
@@ -10129,7 +10222,7 @@ export default function GlobalAttackMap() {
           ].map(b => (
             <button key={b.k} onClick={b.on} style={{
               flexShrink: 0, padding: "7px 12px", borderRadius: 0, cursor: "pointer",
-              background: b.active ? BRAND.gold : "rgba(245,184,0,0.10)",
+              background: b.active ? BRAND.gold : "rgba(252,189,0,0.10)",
               border: `1px solid ${BRAND.borderGold}`,
               color: b.active ? BRAND.obsidian : BRAND.gold,
               fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700,
@@ -10195,7 +10288,7 @@ export default function GlobalAttackMap() {
                     ].map(b => (
                       <button key={b.id} onClick={b.on} style={{
                         flex: 1, padding: "11px 8px", borderRadius: 0, cursor: "pointer",
-                        background: b.active ? "rgba(245,184,0,0.14)" : "transparent",
+                        background: b.active ? "rgba(252,189,0,0.14)" : "transparent",
                         // Inactive toggles used BRAND.textMuted (#585858), which on the
                     // #080808 map chrome is 2.82:1 — an off state should read as quiet,
                     // not unreadable. #8C8C8C keeps it clearly secondary at ~4.7:1.
@@ -10310,7 +10403,7 @@ export default function GlobalAttackMap() {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "10px 18px", borderRadius: 0,
-              background: "rgba(245,184,0,0.08)", border: `1px solid ${BRAND.borderGold}`,
+              background: "rgba(252,189,0,0.08)", border: `1px solid ${BRAND.borderGold}`,
               fontFamily: "Inter, sans-serif", fontSize: 11,
               letterSpacing: "0.16em", color: BRAND.gold, textTransform: "uppercase",
             }}>
@@ -10396,7 +10489,7 @@ export default function GlobalAttackMap() {
                 display: "inline-flex", alignItems: "center", gap: 5,
                 padding: "4px 9px", borderRadius: 0, fontFamily: "Inter, sans-serif",
                 fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
-                background: "rgba(245,184,0,0.12)", color: BRAND.gold,
+                background: "rgba(252,189,0,0.12)", color: BRAND.gold,
                 border: `1px solid ${BRAND.borderGold}`, whiteSpace: "nowrap",
               };
               const xs = { cursor: "pointer", opacity: 0.7, fontSize: 12, lineHeight: 1 };
@@ -10405,7 +10498,7 @@ export default function GlobalAttackMap() {
                   <button onClick={() => setFiltersOpen(o => !o)} title="Filter the map"
                     style={{
                       padding: "6px 14px", borderRadius: 0,
-                      background: (filtersOpen || fCount > 0) ? "rgba(245,184,0,0.14)" : "rgba(36,36,36,0.85)",
+                      background: (filtersOpen || fCount > 0) ? "rgba(252,189,0,0.14)" : "rgba(36,36,36,0.85)",
                       backdropFilter: "blur(12px)",
                       border: `1px solid ${(filtersOpen || fCount > 0) ? BRAND.borderGold : BRAND.borderSubtle}`,
                       fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.10em",
@@ -10481,7 +10574,7 @@ export default function GlobalAttackMap() {
                 }}
                   style={{
                     padding: "5px 12px", borderRadius: 0,
-                    background: isActive ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
+                    background: isActive ? "rgba(252,189,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${isActive ? BRAND.borderGold : BRAND.borderSubtle}`,
                     fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
@@ -10516,7 +10609,7 @@ export default function GlobalAttackMap() {
                   title={`${cat.label} · ${count} incident${count === 1 ? "" : "s"}${deskName ? ` · ${deskName}` : ""}`}
                   style={{
                     padding: "5px 12px", borderRadius: 0,
-                    background: isActive ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
+                    background: isActive ? "rgba(252,189,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${isActive ? BRAND.borderGold : BRAND.borderSubtle}`,
                     fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
@@ -10549,7 +10642,7 @@ export default function GlobalAttackMap() {
                 <button onClick={() => { setIndustryPanelOpen(s => !s); setRegionPanelOpen(false); setShowFilterPopover(false); }}
                   style={{
                     padding: "5px 12px", borderRadius: 0,
-                    background: (industryPanelOpen || activeIndustries.size > 0) ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
+                    background: (industryPanelOpen || activeIndustries.size > 0) ? "rgba(252,189,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${(industryPanelOpen || activeIndustries.size > 0) ? BRAND.borderGold : BRAND.borderSubtle}`,
                     fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
@@ -10575,7 +10668,7 @@ export default function GlobalAttackMap() {
                 <button onClick={() => { setRegionPanelOpen(s => !s); setIndustryPanelOpen(false); setShowFilterPopover(false); }}
                   style={{
                     padding: "5px 12px", borderRadius: 0,
-                    background: (regionPanelOpen || activeCountries.size > 0) ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
+                    background: (regionPanelOpen || activeCountries.size > 0) ? "rgba(252,189,0,0.12)" : "rgba(36,36,36,0.85)",
                     backdropFilter: "blur(12px)",
                     border: `1px solid ${(regionPanelOpen || activeCountries.size > 0) ? BRAND.borderGold : BRAND.borderSubtle}`,
                     fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
@@ -10592,7 +10685,7 @@ export default function GlobalAttackMap() {
             <button onClick={() => { setShowFilterPopover(s => !s); setIndustryPanelOpen(false); setRegionPanelOpen(false); }}
               style={{
                 padding: "5px 12px", borderRadius: 0,
-                background: showFilterPopover ? "rgba(245,184,0,0.12)" : "rgba(36,36,36,0.85)",
+                background: showFilterPopover ? "rgba(252,189,0,0.12)" : "rgba(36,36,36,0.85)",
                 backdropFilter: "blur(12px)",
                 border: `1px solid ${showFilterPopover ? BRAND.borderGold : BRAND.borderSubtle}`,
                 fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
@@ -10674,7 +10767,7 @@ export default function GlobalAttackMap() {
                         style={{
                           display: "flex", justifyContent: "space-between", alignItems: "center",
                           padding: "8px 12px",
-                          background: on ? "rgba(245,184,0,0.18)" : "rgba(8,8,8,0.4)",
+                          background: on ? "rgba(252,189,0,0.18)" : "rgba(8,8,8,0.4)",
                           border: `1px solid ${on ? BRAND.gold : BRAND.borderSubtle}`,
                           borderRadius: 0,
                           fontFamily: "Inter, sans-serif", fontSize: 12,
@@ -10772,7 +10865,7 @@ export default function GlobalAttackMap() {
                         style={{
                           display: "flex", justifyContent: "space-between", alignItems: "center",
                           padding: "8px 12px",
-                          background: on ? "rgba(245,184,0,0.18)" : "rgba(8,8,8,0.4)",
+                          background: on ? "rgba(252,189,0,0.18)" : "rgba(8,8,8,0.4)",
                           border: `1px solid ${on ? BRAND.gold : BRAND.borderSubtle}`,
                           borderRadius: 0,
                           fontFamily: "Inter, sans-serif", fontSize: 12,
@@ -10802,7 +10895,7 @@ export default function GlobalAttackMap() {
               position: "absolute", top: 64, left: 24, width: 360,
               padding: 18,
               background: "rgba(26,26,26,0.95)", backdropFilter: "blur(20px)",
-              border: `1px solid rgba(245,184,0,0.20)`, borderRadius: 0,
+              border: `1px solid rgba(252,189,0,0.20)`, borderRadius: 0,
               boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
               zIndex: 30,
             }}>
@@ -10916,7 +11009,7 @@ export default function GlobalAttackMap() {
                 <button onClick={() => setShowListPanel(s => !s)}
                   style={{
                     padding: "5px 10px",
-                    background: showListPanel ? "rgba(245,184,0,0.12)" : "transparent",
+                    background: showListPanel ? "rgba(252,189,0,0.12)" : "transparent",
                     color: showListPanel ? BRAND.gold : BRAND.textSecondary,
                     border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
                     fontFamily: "Inter, sans-serif", fontSize: 10, letterSpacing: "0.08em",
@@ -11034,7 +11127,7 @@ export default function GlobalAttackMap() {
                 <button key={b.id} onClick={b.toggle}
                   style={{
                     padding: "5px 10px",
-                    background: b.active ? "rgba(245,184,0,0.12)" : "transparent",
+                    background: b.active ? "rgba(252,189,0,0.12)" : "transparent",
                     color: b.active ? BRAND.gold : "#8C8C8C",   // was BRAND.textMuted (#585858) = 2.82:1 on the #080808 chrome
 
                     border: `1px solid ${b.active ? BRAND.borderGold : BRAND.borderSubtle}`,
