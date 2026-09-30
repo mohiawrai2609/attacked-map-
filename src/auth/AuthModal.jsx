@@ -18,7 +18,7 @@
 // reference; real bot protection needs Supabase Auth captcha config.
 // ─────────────────────────────────────────────────────────────────────────
 import React, { useState } from "react";
-import { useAuth } from "./AuthProvider";
+import { useAuth, DIRECT_SIGNIN } from "./AuthProvider";
 import { supabase } from "../lib/supabaseClient";
 import { SECTORS, ROLES } from "../lib/taxonomy";
 
@@ -48,6 +48,13 @@ const C = {
 // "can't type in the password box" bug).
 const Field = ({ children }) => <div style={{ marginBottom: 10 }}>{children}</div>;
 
+// Shown under the submit button while testing mode is on (local dev server only).
+const TestingNote = () => (
+  <div style={{ marginTop: 8, fontSize: 11, color: C.ink3, fontFamily: "Inter, sans-serif", textAlign: "center" }}>
+    Testing mode on localhost: no email code, you go straight in.
+  </div>
+);
+
 // Supabase provider id, label, brand mark. Which of these are SHOWN comes from
 // VITE_AUTH_PROVIDERS (comma-separated ids, e.g. "google,linkedin_oidc"); unset
 // shows all four. A provider that is not switched on in Supabase
@@ -66,7 +73,7 @@ const PROVIDERS = ENABLED.length ? ALL_PROVIDERS.filter(([id]) => ENABLED.includ
 // session exists we send them back to the subscription page with
 // ?activate=subscriber, which finishes the switch for them.
 export function AuthModal({ open, onClose, intent = null }) {
-  const { signInWithPassword, signIn, signInWithProvider, verifyCode, saveProfileBasics } = useAuth();
+  const { signInWithPassword, signIn, directSignIn, signInWithProvider, verifyCode, saveProfileBasics } = useAuth();
 
   const [view, setView] = useState("signup"); // "signup" | "signin" | "code"
   const [from, setFrom] = useState("signup");  // which screen sent the code
@@ -128,10 +135,17 @@ export function AuthModal({ open, onClose, intent = null }) {
     setBusy(true);
     try {
       const full_name = `${firstName.trim()} ${lastName.trim()}`.trim();
-      await signIn(cleanEmail, {
+      const meta = {
         first_name: firstName.trim(), last_name: lastName.trim(), full_name,
         job_title: jobTitle, company: company.trim(), industry, marketing_opt_in: consent,
-      });
+      };
+      // Testing mode (localhost): no code; straight in, same profile stamp as submitCode.
+      if (DIRECT_SIGNIN) {
+        await directSignIn(cleanEmail, meta);
+        await saveProfileBasics({ ...profileFields(), onboarded_at: new Date().toISOString() });
+        close(true); return;
+      }
+      await signIn(cleanEmail, meta);
       setFrom("signup"); setCode(""); setResent(false); setSentAt(new Date()); setView("code");
     } catch (err) {
       setError(err?.message || "Could not send the code.");
@@ -144,6 +158,7 @@ export function AuthModal({ open, onClose, intent = null }) {
     setError(null); setBusy(true);
     try {
       if (usePw) { await signInWithPassword(cleanEmail, password); close(true); return; }
+      if (DIRECT_SIGNIN) { await directSignIn(cleanEmail); close(true); return; } // testing mode (localhost)
       await signIn(cleanEmail); setFrom("signin"); setCode(""); setResent(false); setSentAt(new Date()); setView("code");
     }
     catch (err) { setError(err?.message || (usePw ? "Wrong email or password." : "Could not email a code.")); }
@@ -321,7 +336,8 @@ export function AuthModal({ open, onClose, intent = null }) {
               </label>
 
               {error && <div style={{ marginBottom: 12, fontSize: 12, color: C.err }}>{error}</div>}
-              <button type="submit" disabled={busy} style={goldBtn(busy)}>{busy ? "Sending your code…" : "Create your account →"}</button>
+              <button type="submit" disabled={busy} style={goldBtn(busy)}>{busy ? (DIRECT_SIGNIN ? "Signing you in…" : "Sending your code…") : "Create your account →"}</button>
+              {DIRECT_SIGNIN && <TestingNote />}
             </form>
             <Social />
           </>
@@ -348,7 +364,8 @@ export function AuthModal({ open, onClose, intent = null }) {
                 </div>
               </Field>}
               {error && <div style={{ marginBottom: 12, fontSize: 12, color: C.err }}>{error}</div>}
-              <button type="submit" disabled={busy} style={goldBtn(busy)}>{busy ? (usePw ? "Signing in…" : "Sending your code…") : (usePw ? "Sign in" : "Email me a code →")}</button>
+              <button type="submit" disabled={busy} style={goldBtn(busy)}>{busy ? (usePw || DIRECT_SIGNIN ? "Signing in…" : "Sending your code…") : (usePw ? "Sign in" : DIRECT_SIGNIN ? "Sign in →" : "Email me a code →")}</button>
+              {DIRECT_SIGNIN && !usePw && <TestingNote />}
             </form>
             <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, textAlign: "center" }}>
               <button type="button" onClick={() => { setUsePw(v => !v); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: C.ink3 }}>

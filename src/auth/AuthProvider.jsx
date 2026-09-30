@@ -20,6 +20,11 @@ import { supabase } from "../lib/supabaseClient";
 import { SUBSCRIBER_TIER, isSubscriber } from "../lib/taxonomy";
 import { sendCode, setSubscription } from "../lib/api";
 
+// Testing mode: on `npm run dev` sign-in skips the email code (owner,
+// 2026-09-30). Set VITE_DIRECT_SIGNIN=0 in .env.local to test the real code flow
+// locally. Always false in `npm run build`, so the live site keeps the code.
+export const DIRECT_SIGNIN = import.meta.env.DEV && import.meta.env.VITE_DIRECT_SIGNIN !== "0";
+
 const AuthContext = createContext({
   user: null,
   tier: "public",
@@ -125,6 +130,22 @@ export function AuthProvider({ children }) {
         ...(typeof window !== "undefined" ? { emailRedirectTo: `${window.location.origin}/?dashboard` } : {}),
       },
     });
+    if (error) throw error;
+  }, []);
+
+  // TESTING MODE (localhost only): sign in with just the email, no code. The
+  // dev server mints a one-time token (scripts/dev-direct-signin.mjs) and it is
+  // exchanged here, so the session is the same as after a code. DIRECT_SIGNIN is
+  // false in every production build, which drops this path from the bundle.
+  const directSignIn = useCallback(async (email, meta = null) => {
+    if (!DIRECT_SIGNIN) throw new Error("Direct sign-in is only available on the local dev server.");
+    const r = await fetch("/__dev/direct-signin", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: String(email || "").trim().toLowerCase(), meta }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.token_hash) throw new Error(j.error || `Direct sign-in failed (${r.status}).`);
+    const { error } = await supabase.auth.verifyOtp({ token_hash: j.token_hash, type: j.type || "magiclink" });
     if (error) throw error;
   }, []);
 
@@ -318,7 +339,7 @@ export function AuthProvider({ children }) {
   else if (user) tier = profile?.tier || "free";
 
   return (
-    <AuthContext.Provider value={{ user, tier, subscriber: isSubscriber(tier), loading, signIn, signInWithProvider, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, setSubscribed, refreshProfile }}>
+    <AuthContext.Provider value={{ user, tier, subscriber: isSubscriber(tier), loading, signIn, directSignIn, signInWithProvider, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, setSubscribed, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
