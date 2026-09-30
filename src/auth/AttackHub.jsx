@@ -24,7 +24,7 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 import { SEVERITY_INK, SEVERITY_CHIP } from "../brand.js";
 
-const GOLD = "#FCBD00", GOLD_D = "#8A6D00", OB = "#1A1A1A";  // GOLD_D = the reference's --gold-text; 4.92:1 on white  // GOLD_D darkened from #8A6D00: on the cream ground (#F5F3ED) it measured 4.43:1, just under the 4.5 minimum for the 10px kicker labels.
+const GOLD = "#FCBD00", GOLD_D = "#8A6D00", OB = "#1A1A1A";  // GOLD_D = the reference's --gold-text; 4.92:1 on white  // GOLD_D darkened from #8A6D00: on the cream ground (#F5F2E9) it measured 4.43:1, just under the 4.5 minimum for the 10px kicker labels.
 const SEV_C = { 5: "#FF3B30", 4: "#FF6B35", 3: GOLD, 2: "#34C759", 1: "#8E8E93" };
 const SEV_L = { 5: "CRITICAL", 4: "HIGH", 3: "MEDIUM", 2: "LOW", 1: "MINIMAL" };
 const CAT_NAME = {
@@ -83,14 +83,14 @@ const fmtShort = (iso) => { try { return new Date(iso + "T00:00:00Z").toUTCStrin
 // the rest of the app. Injected once. Hover/zoom/responsive live here; data and
 // layout are React. A single Inter typeface throughout.
 const HUB_CSS = `
-.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#0A0A0A;--sub:#3F3F46;--mut:#71717A;--line:#E7E7E9;--rule:#D6D6DA;--ob:${OB};--paper:#FFFFFF;--paper-2:#FAFAFA;--paper-3:#F4F4F5;--paper-warm:#FAFAFA;--gold-tint:#FEF8E3;--gold-edge:#EBCB5B;background:#FFFFFF;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hubft{--gold:${GOLD};--gold-d:${GOLD_D};--ink:#0E1116;--sub:#1A1A1A;--mut:#5B5F66;--line:#E7E7E9;--rule:#D6D6DA;--ob:${OB};--paper:#FFFFFF;--paper-2:#F5F2E9;--paper-3:#EDE8DB;--paper-warm:#F5F2E9;--gold-tint:#FEF8E3;--gold-edge:#EBCB5B;background:var(--canvas);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .hubft button,.hubft select,.hubft input,.hubft textarea,.hubft optgroup{font-family:Inter,system-ui,sans-serif}
 .hubft .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,44px)}
-.hubft .kick{font-size:10px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-d)}
-.hubft .sev{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:0;border:1px solid;white-space:nowrap}
+.hubft .kick{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-d)}
+.hubft .sev{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:0;border:1px solid;white-space:nowrap}
 .hubft .by{font-size:11px;color:var(--mut)}
 .hubft img{display:block}
-.hubft .mast{text-align:center;padding:34px 0 22px;border-bottom:1px solid var(--line);background:radial-gradient(ellipse 60% 100% at 50% 0%,rgba(252,189,0,.07),transparent 70%)}
+.hubft .mast{text-align:center;padding:34px 0 22px;border-bottom:1px solid var(--line)}
 .hubft .mast .bar{width:54px;height:3px;background:var(--gold);margin:0 auto 18px}
 .hubft .mast h1{font-size:clamp(44px,6.6vw,78px);font-weight:600;line-height:.95;letter-spacing:-.055em;text-wrap:balance}
 .hubft .mast h1 i{color:var(--gold-d);font-style:italic}
@@ -175,7 +175,7 @@ const HUB_CSS = `
 .hubft .moreitem:first-of-type{border-top:none}
 .hubft .moreitem h4{font-size:18px;font-weight:600;line-height:1.18;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .moreitem:hover h4{color:var(--gold-d)}
-.hubft .analysis{background:#FAF8F3;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.hubft .analysis{background:#F5F2E9;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .hubft .an3{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
 .hubft .opc{cursor:pointer}
 .hubft .opc .q{font-size:34px;line-height:0;color:var(--gold-d);height:18px}
@@ -192,16 +192,16 @@ const HUB_CSS = `
 .hubft .decon:hover .img img{transform:scale(1.05)}
 .hubft .decon .tag{position:absolute;left:16px;bottom:16px;background:var(--gold);color:#1A1A1A;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px}
 .hubft .decon h2{font-size:clamp(28px,3vw,40px);font-weight:700;line-height:1.08}
-.hubft .decon p{margin-top:14px;font-size:14px;color:#bdbdbd;line-height:1.66}
+.hubft .decon p{margin-top:14px;font-size:14px;color:#A6A8AD;line-height:1.66}
 .hubft .decon .steps{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
-.hubft .decon .step{font-size:10px;color:#A8A8A8;border:1px solid #333;border-radius:0;padding:5px 9px}
+.hubft .decon .step{font-size:10px;color:#A6A8AD;border:1px solid #383838;border-radius:0;padding:5px 9px}
 .hubft .decon .step b{color:var(--gold)}
 .hubft .btn{display:inline-block;background:var(--gold);color:#1A1A1A;border:none;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:12px 24px;border-radius:0;transition:transform .15s}
 .hubft .btn:hover{transform:translateY(-2px)}
-.hubft .btn.gh{background:transparent;color:#fff;border:1px solid #444}
+.hubft .btn.gh{background:transparent;color:#fff;border:1px solid #383838}
 .hubft .crit{display:grid;grid-template-columns:1fr 1fr;gap:0 48px}
 .hubft .latest{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:26px}
-.hubft .goldband{background:var(--gold);color:#14130F;margin:34px 0 10px}.hubft .goldband .in{display:grid;grid-template-columns:1.5fr repeat(3,1fr)}.hubft .goldband .c{padding:26px 26px;border-left:1px solid rgba(20,19,15,.18)}.hubft .goldband .c:first-child{border-left:none}.hubft .goldband .lede{font-size:18px;font-weight:600;line-height:1.28;letter-spacing:-.03em;max-width:30ch}.hubft .goldband strong{display:block;font-size:36px;line-height:1;font-weight:600;letter-spacing:-.05em}.hubft .goldband em{font-style:normal;display:block;margin-top:9px;font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;font-weight:700;opacity:.72;line-height:1.35}@media(max-width:860px){.hubft .goldband .in{grid-template-columns:1fr 1fr}.hubft .goldband .c:nth-child(3){border-left:none}}.hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
+.hubft .goldband{background:var(--gold);color:#1A1A1A;margin:34px 0 10px}.hubft .goldband .in{display:grid;grid-template-columns:1.5fr repeat(3,1fr)}.hubft .goldband .c{padding:26px 26px;border-left:1px solid rgba(20,19,15,.18)}.hubft .goldband .c:first-child{border-left:none}.hubft .goldband .lede{font-size:18px;font-weight:600;line-height:1.28;letter-spacing:-.03em;max-width:30ch}.hubft .goldband strong{display:block;font-size:36px;line-height:1;font-weight:600;letter-spacing:-.05em}.hubft .goldband em{font-style:normal;display:block;margin-top:9px;font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;font-weight:700;opacity:.72;line-height:1.35}@media(max-width:860px){.hubft .goldband .in{grid-template-columns:1fr 1fr}.hubft .goldband .c:nth-child(3){border-left:none}}.hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
 .hubft .metric{background:var(--paper-3);border:1px solid var(--line);padding:18px}
 .hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
 .hubft .card{border:1px solid var(--line);border-radius:0;overflow:hidden;background:var(--paper-2);box-shadow:none;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
@@ -218,10 +218,10 @@ const HUB_CSS = `
 .hubft .pager{margin-top:44px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
 .hubft .pager button{min-width:38px;padding:8px 12px;border-radius:0;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;color:var(--ink);border:1px solid var(--line)}
 .hubft .pager button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.hubft .pager button:disabled{color:#767061;cursor:default}
+.hubft .pager button:disabled{color:#7A7E86;cursor:default}
 .hubft .cta{margin-top:54px;text-align:center;padding:42px 24px;background:var(--ob);border-radius:0}
 .hubft .cta h3{font-size:30px;font-weight:700;color:#fff}
-.hubft .cta p{max-width:470px;margin:10px auto 0;font-size:13.5px;color:#A8A8A8;line-height:1.6}
+.hubft .cta p{max-width:470px;margin:10px auto 0;font-size:13.5px;color:#A6A8AD;line-height:1.6}
 .hubft .empty{padding:90px 0;text-align:center;color:var(--mut);font-size:13px}
 @media(max-width:980px){.hubft .hero{grid-template-columns:1fr;gap:28px}.hubft .band{grid-template-columns:1fr;gap:24px}.hubft .spot{grid-template-columns:1fr;gap:24px}.hubft .an3{grid-template-columns:1fr 1fr}.hubft .decon .in{grid-template-columns:1fr;gap:22px}}
 @media(max-width:680px){.hubft .g4{grid-template-columns:1fr 1fr}.hubft .an3{grid-template-columns:1fr}.hubft .crit{grid-template-columns:1fr}.hubft .sh.l{flex-wrap:wrap}.hubft .sh.l .more{margin-left:auto}.hubft .sh h2{white-space:normal}}
@@ -246,11 +246,11 @@ function NewsImage({ a, height, lead }) {
   const [catFailed, setCatFailed] = useState(false);
   const sev = SEV_C[a.severity] || GOLD;
 
-  // AI-generated image based on the exact incident headline
-  const aiPrompt = encodeURIComponent(`${a.headline}, realistic news photography, editorial`);
-  const generatedImg = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1000&height=600&nologo=true`;
-
-  let primary = a.image_url || generatedImg;
+  // The stored picture (incidents.image_url) first, else the category photo.
+  // The browser no longer asks the image generator live: since 2026-09-30 its
+  // free tier refuses anonymous requests with the options we used (402), so a
+  // live URL was a broken image. Pictures are made once, in the backend.
+  let primary = a.image_url || CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
 
   // Specific overrides for the images we generated via Gemini
   if (a.headline) {
@@ -298,7 +298,7 @@ function NewsImage({ a, height, lead }) {
     return (
       <div style={{
         height, width: "100%",
-        background: `radial-gradient(ellipse 120% 100% at 30% 0%, ${sev}22, transparent 60%), linear-gradient(135deg, #141417, ${OB} 70%)`,
+        background: OB, borderTop: `2px solid ${sev}`,
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
         border: "1px solid rgba(255,255,255,0.05)",
       }}>
@@ -386,25 +386,25 @@ function ArticleView({ article, onBack, onMap, user }) {
   const Block = ({ label, children }) => !children ? null : (
     <section style={{ marginTop: 30 }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: GOLD_D, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 10 }}>{label}</div>
-      <div style={{ fontSize: 15.5, lineHeight: 1.72, color: "#3D3A33" }}>{children}</div>
+      <div style={{ fontSize: 15.5, lineHeight: 1.72, color: "#1A1A1A" }}>{children}</div>
     </section>
   );
   return (
-    <main className="r-pad" style={{ padding: "28px 36px 56px", background: "#FFFFFF", color: "#0A0A0A", fontFamily: "Inter, sans-serif" }}>
+    <main className="r-pad" style={{ padding: "28px 36px 56px", background: "#FFFFFF", color: "#0E1116", fontFamily: "Inter, sans-serif" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 0", color: "#6E6A60", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>← Back to the feed</button>
+        <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 0", color: "#7A7E86", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>← Back to the feed</button>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
           <SevChip a={a} />
           <span className="kick" style={{ color: GOLD_D }}>{a.primary_subcategory_name || catName(a)}</span>
-          <span style={{ fontSize: 11.5, color: "#6E6A60", fontWeight: 600 }}>{fmtDay(a.incident_day)}</span>
+          <span style={{ fontSize: 11.5, color: "#7A7E86", fontWeight: 600 }}>{fmtDay(a.incident_day)}</span>
         </div>
         <h1 style={{ margin: "14px 0 0", fontSize: "clamp(32px, 4.4vw, 52px)", fontWeight: 600, lineHeight: 1.02, letterSpacing: "-0.045em", textWrap: "balance" }}>{a.headline}</h1>
-        {meta && <div style={{ marginTop: 14, fontSize: 12.5, color: "#6E6A60", fontWeight: 600 }}>{meta}</div>}
-        <div style={{ margin: "24px 0 0", overflow: "hidden", border: "1px solid #E6E3DB" }}>
+        {meta && <div style={{ marginTop: 14, fontSize: 12.5, color: "#7A7E86", fontWeight: 600 }}>{meta}</div>}
+        <div style={{ margin: "24px 0 0", overflow: "hidden", border: "1px solid #EDEDED" }}>
           <div style={{ width: "100%", overflow: "hidden" }}><NewsImage a={a} height={340} lead /></div>
         </div>
         {body && (
-          <p style={{ margin: "26px 0 0", fontSize: 16.5, lineHeight: 1.78, color: "#14130F", whiteSpace: "pre-line",
+          <p style={{ margin: "26px 0 0", fontSize: 16.5, lineHeight: 1.78, color: "#1A1A1A", whiteSpace: "pre-line",
             ...(longBody && !expanded ? { display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" } : {}) }}>{body}</p>
         )}
         {(longBody || a.severity_rationale || a.threat_actor || a.if_you_operate_x_then_y || a.financial_impact_disclosed) && (
@@ -420,7 +420,7 @@ function ArticleView({ article, onBack, onMap, user }) {
         )}
         <div style={{ marginTop: 44, padding: "32px 26px", textAlign: "center", background: OB, borderRadius: 0 }}>
           <div style={{ fontSize: 26, fontWeight: 600, color: "#fff", letterSpacing: "-0.035em" }}>See the blast radius on the map.</div>
-          <p style={{ margin: "10px auto 0", maxWidth: 440, fontSize: 13, color: "#A8A8A8", lineHeight: 1.6 }}>Blast radius, adaptive controls and vendor Defence Ratings for this incident — live on the Attack Map.</p>
+          <p style={{ margin: "10px auto 0", maxWidth: 440, fontSize: 13, color: "#A6A8AD", lineHeight: 1.6 }}>Blast radius, adaptive controls and vendor Defence Ratings for this incident — live on the Attack Map.</p>
           <button onClick={onMap} style={{ marginTop: 18, padding: "12px 26px", background: GOLD, color: OB, border: "none", borderRadius: 0, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{user ? "Open on the map →" : "Sign up to open the map →"}</button>
         </div>
       </div>
@@ -471,7 +471,7 @@ function ReportFrame({ article, onBack, onMap, user, subscriber }) {
         display: "inline-flex", alignItems: "center", gap: 6,
         background: "rgba(255,255,255,0.9)", backdropFilter: "saturate(1.4) blur(6px)",
         border: "1px solid #D9D6CE", borderRadius: 0, padding: "7px 13px",
-        color: "#3A362E", cursor: "pointer", fontFamily: "Inter, sans-serif",
+        color: "#1A1A1A", cursor: "pointer", fontFamily: "Inter, sans-serif",
         fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
       }}>← Back to the feed</button>
       {doc === undefined ? null : <iframe
@@ -820,9 +820,9 @@ export function AttackHub() {
   const Pager = () => pageCount <= 1 ? null : (
     <div className="pager">
       <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 0}>← Prev</button>
-      {pageWindow[0] > 0 && <><button onClick={() => goToPage(0)}>1</button><span style={{ color: "#9A9A98" }}>…</span></>}
+      {pageWindow[0] > 0 && <><button onClick={() => goToPage(0)}>1</button><span style={{ color: "#7A7E86" }}>…</span></>}
       {pageWindow.map(p => <button key={p} className={p === safePage ? "on" : ""} onClick={() => goToPage(p)}>{p + 1}</button>)}
-      {pageWindow[pageWindow.length - 1] < pageCount - 1 && <><span style={{ color: "#9A9A98" }}>…</span><button onClick={() => goToPage(pageCount - 1)}>{pageCount}</button></>}
+      {pageWindow[pageWindow.length - 1] < pageCount - 1 && <><span style={{ color: "#7A7E86" }}>…</span><button onClick={() => goToPage(pageCount - 1)}>{pageCount}</button></>}
       <button onClick={() => goToPage(safePage + 1)} disabled={safePage >= pageCount - 1}>Next →</button>
     </div>
   );
@@ -843,7 +843,7 @@ export function AttackHub() {
           {/* LIVE TICKER — breaking-news strip of the latest incidents */}
           {articles.length > 0 && (
             <div className="hub-ticker" role="region" aria-label="Live incidents ticker" style={{
-              display: "flex", alignItems: "center", background: "#0c0c0c",
+              display: "flex", alignItems: "center", background: "#0E1116",
               borderBottom: "1px solid var(--line)", color: "#fff", height: 40, overflow: "hidden",
             }}>
               <style>{`
@@ -876,9 +876,9 @@ export function AttackHub() {
                           colour here. SEVERITY_INK is for light grounds only;
                           using it here made these labels less legible, not more. */}
                       <span style={{ color: SEV_C[a.severity] || GOLD, fontWeight: 700, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase" }}>{CAT_SHORT[a.primary_category] || a.primary_category || ""}</span>
-                      <span className="hti-h" style={{ color: "#eaeaea", fontWeight: 500, transition: "color 120ms" }}>{a.headline}</span>
-                      <span style={{ color: "#666" }}>·</span>
-                      <span style={{ color: "#888", fontSize: 11 }}>{fmtShort(a.incident_day)}</span>
+                      <span className="hti-h" style={{ color: "#EDEDED", fontWeight: 500, transition: "color 120ms" }}>{a.headline}</span>
+                      <span style={{ color: "#7A7E86" }}>·</span>
+                      <span style={{ color: "#8E9198", fontSize: 11 }}>{fmtShort(a.incident_day)}</span>
                     </span>
                   ))}
                 </div>
@@ -916,7 +916,7 @@ export function AttackHub() {
           <main className="wrap r-pad" style={{ paddingBottom: 64 }}>
             {/* Secondary filters */}
             <div className="filterbar">
-              <span className="cnt" style={{ fontSize: 18, fontWeight: 700, color: "#666", marginRight: 16 }}>
+              <span className="cnt" style={{ fontSize: 18, fontWeight: 700, color: "#7A7E86", marginRight: 16 }}>
                 {visible.length} BRIEFINGS{catFilter !== "ALL" ? ` · ${CAT_NAME[catFilter] || catFilter}` : ""}
               </span>
               <select className={indFilter !== "ALL" ? "act" : ""} value={indFilter} onChange={e => setIndFilter(e.target.value)}>
@@ -1072,7 +1072,7 @@ export function AttackHub() {
 
                     {decon && (
                       <section className="decon sec" style={{ padding: "48px 0" }}>
-                        <div className="wrap"><div className="sh l" style={{ borderBottomColor: "#333" }}><span className="sq" style={{ background: GOLD }} /><h2 style={{ color: "#fff" }}>Deconstructed · one incident, traced</h2></div>
+                        <div className="wrap"><div className="sh l" style={{ borderBottomColor: "#383838" }}><span className="sq" style={{ background: GOLD }} /><h2 style={{ color: "#fff" }}>Deconstructed · one incident, traced</h2></div>
                           <div className="in">
                             <div className="img" onClick={() => openArticle(decon)}><NewsImage a={decon} height={330} lead /><span className="tag">Blast radius</span></div>
                             <div>

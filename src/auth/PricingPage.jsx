@@ -22,18 +22,18 @@ import { SiteFooter } from "./SiteFooter";
 const BRAND = {
   gold: "#FCBD00",
   obsidian: "#1A1A1A",
-  obsidianDeep: "#080808",
+  obsidianDeep: "#0E1116",
   obsidianCard: "#242424",
   obsidianElevated: "#2E2E2E",
   white: "#FFFFFF",
-  textSecondary: "#A8A8A8",
-  textMuted: "#585858",
-  borderSubtle: "#333333",
+  textSecondary: "#A6A8AD",
+  textMuted: "#8E9198",
+  borderSubtle: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
   cyan: "#4FC3D7",
   violet: "#9D7BEC",
-  orange: "#FF8C5A",
+  orange: "#FF6B35",
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -238,26 +238,26 @@ export function PricingPage() {
   const priceNode = (plan, big) => {
     const sz = big ? 34 : 22;
     if (plan.price.amount === null) {
-      return <span style={{ fontSize: big ? 26 : 20, color: "#101010", fontWeight: 700 }}>{plan.price.period}</span>;
+      return <span style={{ fontSize: big ? 26 : 20, color: "#0E1116", fontWeight: 700 }}>{plan.price.period}</span>;
     }
     if (plan.price.amount === 0) {
       return (
-        <span style={{ fontSize: sz, color: "#101010", fontWeight: 800, letterSpacing: "-0.02em" }}>
-          Free<span style={{ fontSize: 13, color: "#52525B", fontWeight: 500, marginLeft: 7 }}>{plan.price.period}</span>
+        <span style={{ fontSize: sz, color: "#0E1116", fontWeight: 800, letterSpacing: "-0.02em" }}>
+          Free<span style={{ fontSize: 13, color: "#5B5F66", fontWeight: 500, marginLeft: 7 }}>{plan.price.period}</span>
         </span>
       );
     }
     return (
-      <span style={{ fontSize: sz, color: "#101010", fontWeight: 800, letterSpacing: "-0.02em" }}>
+      <span style={{ fontSize: sz, color: "#0E1116", fontWeight: 800, letterSpacing: "-0.02em" }}>
         {plan.price.currency}{plan.price.amount.toLocaleString("en-IN")}
-        <span style={{ fontSize: 13, color: "#52525B", fontWeight: 500, marginLeft: 5 }}>/ {plan.price.period.replace(/^per\s+/, "")}</span>
+        <span style={{ fontSize: 13, color: "#5B5F66", fontWeight: 500, marginLeft: 5 }}>/ {plan.price.period.replace(/^per\s+/, "")}</span>
       </span>
     );
   };
 
   const featureRow = (f, i) => (
     <li key={i} style={{
-      fontSize: 13, color: "#3F3F46", lineHeight: 1.5,
+      fontSize: 13, color: "#1A1A1A", lineHeight: 1.5,
       padding: "7px 0 7px 26px", position: "relative",
       borderTop: i === 0 ? "none" : "1px solid rgba(0,0,0,0.06)",
     }}>
@@ -276,11 +276,11 @@ export function PricingPage() {
       style={{
         marginTop: 18, width: "100%", padding: "13px 18px",
         background: cta.tone === "current" ? "rgba(30,122,61,0.10)"
-          : filled ? BRAND.gold : "#101010",
+          : filled ? BRAND.gold : "#0E1116",
         color: cta.tone === "current" ? "#1E7A3D"
           : filled ? BRAND.obsidian : "#FFFFFF",
         border: cta.tone === "current" ? `1px solid #1E7A3D55`
-          : filled ? "none" : `1px solid #101010`,
+          : filled ? "none" : `1px solid #0E1116`,
         borderRadius: 0,
         fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 700,
         letterSpacing: "0.04em",
@@ -296,7 +296,7 @@ export function PricingPage() {
     <div style={{
       minHeight: "100vh",
       background: "#FFFFFF",
-      color: "#101010",
+      color: "#0E1116",
       fontFamily: "Inter, sans-serif",
       WebkitFontSmoothing: "antialiased",
     }}>
@@ -350,7 +350,7 @@ export function PricingPage() {
             const hi = !!plan.highlight;
             return (
               <div key={plan.id} style={{
-                background: hi ? "#FFFDF5" : "#FFFFFF",
+                background: hi ? "#FFFFFF" : "#FFFFFF",
                 border: `1px solid ${hi ? BRAND.gold : "#E7E7E9"}`,
                 borderRadius: 0,
                 padding: hi ? "30px 26px" : "26px 24px",
@@ -376,11 +376,11 @@ export function PricingPage() {
 
                 <h2 style={{
                   fontFamily: "'Inter', sans-serif", fontWeight: 800,
-                  fontSize: 23, color: "#101010", lineHeight: 1.15, margin: "0 0 6px",
+                  fontSize: 23, color: "#0E1116", lineHeight: 1.15, margin: "0 0 6px",
                   letterSpacing: "-0.02em",
                 }}>{plan.name}</h2>
 
-                <p style={{ fontSize: 13, color: "#52525B", margin: "0 0 20px", lineHeight: 1.45 }}>
+                <p style={{ fontSize: 13, color: "#5B5F66", margin: "0 0 20px", lineHeight: 1.45 }}>
                   {plan.pitch}
                 </p>
 
@@ -397,12 +397,12 @@ export function PricingPage() {
                   {plan.features.map(featureRow)}
                   {plan.locked.length > 0 && (
                     <li style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid #E7E7E9` }}>
-                      <div style={{ fontSize: 9.5, color: "#9A9A98", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
+                      <div style={{ fontSize: 9.5, color: "#7A7E86", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
                         Not included
                       </div>
                       {plan.locked.map((f, i) => (
                         <div key={`l${i}`} style={{
-                          fontSize: 12, color: "#9A9A98", lineHeight: 1.5,
+                          fontSize: 12, color: "#7A7E86", lineHeight: 1.5,
                           padding: "3px 0 3px 18px", position: "relative",
                         }}>
                           <span style={{ position: "absolute", left: 0, top: 0, color: "#C4C4C0" }}>—</span>
@@ -416,8 +416,8 @@ export function PricingPage() {
                 {plan.commitment && (
                   <div style={{
                     marginTop: 16, padding: "10px 12px",
-                    background: "#FFF7DE", border: "1px solid rgba(252,189,0,0.55)",
-                    borderRadius: 0, fontSize: 11.5, color: "#3F3F46", lineHeight: 1.5,
+                    background: "#FFFFFF", border: "1px solid rgba(252,189,0,0.55)",
+                    borderRadius: 0, fontSize: 11.5, color: "#1A1A1A", lineHeight: 1.5,
                   }}>
                     <b style={{ color: "#8A6D00" }}>In return:</b> {plan.commitment}
                   </div>
@@ -433,11 +433,11 @@ export function PricingPage() {
         <div style={{ marginTop: 64 }}>
           <h3 style={{
             fontFamily: "'Inter', sans-serif", fontSize: 20, fontWeight: 800,
-            color: "#101010", letterSpacing: "-0.015em", margin: "0 0 4px",
+            color: "#0E1116", letterSpacing: "-0.015em", margin: "0 0 4px",
           }}>
             Other ways to work with us
           </h3>
-          <p style={{ fontSize: 13.5, color: "#52525B", margin: "0 0 24px" }}>
+          <p style={{ fontSize: 13.5, color: "#5B5F66", margin: "0 0 24px" }}>
             Standalone artefacts and channels — buy a report, get listed, or licence a story.
           </p>
 
@@ -450,7 +450,7 @@ export function PricingPage() {
               const cta = ctaFor(plan);
               return (
                 <div key={plan.id} style={{
-                  background: "#FAFAFA",
+                  background: "#F5F2E9",
                   border: `1px solid #E7E7E9`,
                   borderRadius: 0,
                   padding: "22px 22px",
@@ -465,12 +465,12 @@ export function PricingPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
                     <h2 style={{
                       fontFamily: "'Inter', sans-serif", fontWeight: 800,
-                      fontSize: 18, color: "#101010", lineHeight: 1.2, margin: 0, letterSpacing: "-0.015em",
+                      fontSize: 18, color: "#0E1116", lineHeight: 1.2, margin: 0, letterSpacing: "-0.015em",
                     }}>{plan.name}</h2>
                     <div style={{ whiteSpace: "nowrap" }}>{priceNode(plan, false)}</div>
                   </div>
 
-                  <p style={{ fontSize: 12.5, color: "#52525B", margin: "8px 0 14px", lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 12.5, color: "#5B5F66", margin: "8px 0 14px", lineHeight: 1.5 }}>
                     {plan.pitch}
                   </p>
 
@@ -489,17 +489,17 @@ export function PricingPage() {
         <div style={{
           marginTop: 64, paddingTop: 40, borderTop: `1px solid #E7E7E9`,
         }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 32, fontSize: 13.5, color: "#52525B", lineHeight: 1.65 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 32, fontSize: 13.5, color: "#5B5F66", lineHeight: 1.65 }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#101010", marginBottom: 6 }}>Charge for depth, never the shape</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0E1116", marginBottom: 6 }}>Charge for depth, never the shape</div>
               The public map stays free. We charge for the answer — names, controls, vendor analysis, source articles.
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#101010", marginBottom: 6 }}>Switch it on, switch it off</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0E1116", marginBottom: 6 }}>Switch it on, switch it off</div>
               Subscribe from your dashboard in one click and cancel the same way. No application, no approval queue.
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#101010", marginBottom: 6 }}>Four revenue lines, not one bundle</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0E1116", marginBottom: 6 }}>Four revenue lines, not one bundle</div>
               Enterprises pay for daily access. Reports are premium artefacts. Vendors pay for visibility. Media licence the causal slice.
             </div>
           </div>
@@ -509,7 +509,7 @@ export function PricingPage() {
           <div style={{
             marginTop: 28, padding: "12px 16px", maxWidth: 700, margin: "28px auto 0",
             background: "rgba(255,107,107,0.10)", border: "1px solid rgba(255,107,107,0.3)",
-            borderRadius: 0, color: "#FF6B6B", fontSize: 13, lineHeight: 1.5,
+            borderRadius: 0, color: "#FF3B30", fontSize: 13, lineHeight: 1.5,
           }}>
             {checkoutError}
           </div>

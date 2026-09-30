@@ -23,53 +23,53 @@
 // in a stylesheet over importing BRAND into a new component.
 // ─────────────────────────────────────────────────────────────────────────
 
+// Every value below is a brand token from src/styles/tokens.css, named in the
+// trailing comment (2026-09-30 alignment: this object had drifted — its
+// greys, creams and near-blacks were all a shade off the tokens, so pages
+// styled from here never quite matched the dashboard, which reads the tokens).
 export const BRAND = {
-  // ── Accent — official Attacked.ai gold ──────────────────────────────────
-  gold:       "#FCBD00",
-  goldSoft:   "#FFD75A",   // hover lift / luminous edge
-  goldDim:    "#D4A000",   // pressed state
-  goldDeep:   "#8A6D00",   // on-paper accent text (passes contrast on cream)
+  // ── Accent — Signal Gold ────────────────────────────────────────────────
+  gold:       "#FCBD00",   // --gold
+  goldSoft:   "#FFD75A",   // hover lift (not a token; hover only)
+  goldDim:    "#E0A800",   // --gold-press
+  goldDeep:   "#8A6D00",   // --gold-text — gold for TEXT on white / canvas
   goldTint:   "rgba(252,189,0,0.12)",
 
-  // ── Dark surfaces ───────────────────────────────────────────────────────
-  // Blue-black, not neutral black: the reference's #0E1116 reads colder and
-  // more cinematic than the old #1A1A1A, and makes gold sit forward.
-  black:      "#0E1116",   // page ground
-  black2:     "#13171D",   // raised band
-  black3:     "#1A1A1A",   // legacy obsidian value, kept for continuity
-  card:       "#242424",
-  elevated:   "#2E2E2E",
-  deep:       "#080808",
+  // ── Dark surfaces, layered (brand: do not flood every surface with black)
+  black:      "#0E1116",   // --ink        Command Ink — page ground
+  black2:     "#1A1A1A",   // --ink-2      Operational Black — raised band, hero panels
+  black3:     "#1A1A1A",   // --ink-2
+  card:       "#242424",   // --charcoal   Card Charcoal
+  elevated:   "#2E2E2E",   // --raised     Raised Grey — inputs, chips
+  deep:       "#0E1116",   // --ink (the old #080808 is not a brand value)
 
   // Legacy aliases → same values, so existing call sites keep working.
-  obsidian:         "#0E1116",
-  obsidianDeep:     "#080808",
-  obsidianCard:     "#242424",
-  obsidianElevated: "#2E2E2E",
+  obsidian:         "#0E1116",   // --ink
+  obsidianDeep:     "#0E1116",   // --ink
+  obsidianCard:     "#242424",   // --charcoal
+  obsidianElevated: "#2E2E2E",   // --raised
 
-  // ── Paper (light editorial bands) ───────────────────────────────────────
-  // The signature move of the reference: long-form sections drop to warm
-  // cream so reading passages feel like print, then back to black.
-  paper:      "#F5F3ED",
-  paper2:     "#ECE9E1",
-  paperWarm:  "#F4F1EA",
-  ink:        "#17191D",   // body text on paper
-  inkSoft:    "#24272B",   // lead paragraph on paper
+  // ── Canvas (light editorial bands, warm off-white) ──────────────────────
+  paper:      "#F5F2E9",   // --canvas
+  paper2:     "#EDE8DB",   // --canvas-2
+  paperWarm:  "#F5F2E9",   // --canvas
+  ink:        "#1A1A1A",   // --body-text  copy on canvas
+  inkSoft:    "#1A1A1A",   // --body-text
 
   // ── Text on dark ────────────────────────────────────────────────────────
-  white:      "#FFFFFF",
-  text:       "#EDEFF1",
-  muted:      "#9EA3A9",
-  t2:         "#A8A8A8",
-  tmuted:     "#8A8A8A",
-  textSecondary: "#A8A8A8",
-  textMuted:     "#8A8A8A",
+  white:      "#FFFFFF",   // --white
+  text:       "#EDEDED",   // --mist
+  muted:      "#A6A8AD",   // --muted
+  t2:         "#A6A8AD",   // --muted
+  tmuted:     "#8E9198",   // --muted-2
+  textSecondary: "#A6A8AD",   // --muted
+  textMuted:     "#8E9198",   // --muted-2
 
   // ── Lines ───────────────────────────────────────────────────────────────
-  line:         "rgba(255,255,255,.13)",
-  lineDark:     "rgba(14,17,22,.14)",
-  border:       "#333333",
-  borderSubtle: "#333333",
+  line:         "rgba(255,255,255,.16)",   // --line-2
+  lineDark:     "rgba(14,17,22,.12)",      // --line-l
+  border:       "#383838",   // --raised-2 (solid, because some call sites use it as a fill)
+  borderSubtle: "#383838",   // --raised-2
   borderGold:   "rgba(252,189,0,0.3)",
 
   // ── Semantic (NOT decorative — never reuse these as accents) ────────────
@@ -78,14 +78,14 @@ export const BRAND = {
   // why it is exempt from the gold-only accent rule. It must never appear on
   // a button, heading, border or anything that is not a liveness indicator.
   live: "#E0091C",
-  ok:   "#34C759",   // success / confirmed states
-  blue: "#2D5BFF",   // footer link accent (legacy)
+  ok:   "#34C759",   // --s2 — success / confirmed states
 
-  // Warm neutrals used by the Attacked Hub's newspaper layout.
-  newsprint:     "#14130F",
-  newsprintEdge: "#3D3A33",
-  newsprintText: "#E6E3DB",
-  newsprintMute: "#6E6A60",
+  // The Attacked Hub's dark newspaper bands, on the same tokens as every
+  // other dark surface (they used to be a warm brown-black of their own).
+  newsprint:     "#1A1A1A",   // --ink-2
+  newsprintEdge: "#383838",   // --raised-2
+  newsprintText: "#EDEDED",   // --mist
+  newsprintMute: "#8E9198",   // --muted-2
 };
 
 // ── 5-tier risk scale (Attacked.ai standard — NOT the 3-tier RPI scale) ────
@@ -110,12 +110,14 @@ export const SEVERITY = {
 // worse, not better. Light grounds only.
 // Taken from the impact-assessment reference's light-mode ramp
 // (--crit / --hi / --gold-text / --lo / --min) rather than hand-derived.
+// Now the tokens' own AA-deepened ramp (--s5-tx … --s1-tx), so a severity
+// label on paper reads the same on the Hub as on the dashboard.
 export const SEVERITY_INK = {
-  5: "#C0341D",
-  4: "#C2410C",
-  3: "#8A6D00",
+  5: "#B21F31",
+  4: "#A94B0F",
+  3: "#7A6000",
   2: "#1E7A3D",
-  1: "#6B6B70",
+  1: "#55565A",
 };
 
 // Opaque pale grounds for severity chips. A chip that uses a TRANSLUCENT tint
@@ -143,7 +145,9 @@ export const LAYOUT = {
 // used them 1× and 2× respectively across the whole app — the product has
 // always effectively been Inter, and the reference confirms that direction.
 export const FONT = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-export const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
+// Brand: JetBrains Mono is reserved for time, scores, identifiers, evidence
+// codes and system metadata (self-hosted since 2026-09-29, see fonts.css).
+export const MONO = "'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace";
 
 // Editorial type scale. Display sizes are fluid and deliberately tight:
 // negative tracking + sub-1 line-height is what makes the reference read as
@@ -225,7 +229,7 @@ export const btn = {
   },
   primary: {
     background: BRAND.gold,
-    color: "#111",
+    color: "#0E1116",   // --on-gold
     borderColor: BRAND.gold,
   },
   ghost: {
@@ -249,7 +253,7 @@ export const pill = {
   padding: "9px 12px",
   fontFamily: FONT,
   fontSize: 11,
-  color: "#C8CCD0",
+  color: "#A6A8AD",   // --muted
   background: "rgba(14,17,22,.64)",
   border: "1px solid rgba(255,255,255,.18)",
   borderRadius: 0,

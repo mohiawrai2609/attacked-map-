@@ -33,7 +33,7 @@ import { Dashboard } from "./dashboard/Dashboard.jsx";
 function LoadingScreen() {
   return (
     <div style={{
-      minHeight: "100vh", background: "#080808", color: "#A8A8A8",
+      minHeight: "100vh", background: "#0E1116", color: "#A6A8AD",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.12em",
       textTransform: "uppercase", fontWeight: 600,
@@ -170,7 +170,7 @@ function AppShell() {
     if (tier !== "admin") {
       return (
         <div style={{
-          minHeight: "100vh", background: "#080808", color: "#A8A8A8",
+          minHeight: "100vh", background: "#0E1116", color: "#A6A8AD",
           display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
           fontFamily: "Inter, sans-serif", padding: 32, textAlign: "center",
         }}>

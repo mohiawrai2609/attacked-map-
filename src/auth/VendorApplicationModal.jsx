@@ -21,15 +21,15 @@ import { useAuth } from "./AuthProvider";
 const BRAND = {
   gold: "#FCBD00",
   obsidian: "#1A1A1A",
-  obsidianDeep: "#080808",
+  obsidianDeep: "#0E1116",
   obsidianCard: "#242424",
   obsidianElevated: "#2E2E2E",
   white: "#FFFFFF",
-  textSecondary: "#A8A8A8",
-  textMuted: "#585858",
-  borderSubtle: "#333333",
+  textSecondary: "#A6A8AD",
+  textMuted: "#8E9198",
+  borderSubtle: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
-  red: "#FF6B6B",
+  red: "#FF3B30",
   green: "#34C759",
   vendorGreen: "#34C759",
 };
@@ -209,7 +209,7 @@ export function VendorApplicationModal({ open, onClose, defaultEmail }) {
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
-        background: "rgba(8,8,8,0.82)",
+        background: "rgba(14,17,22,0.82)",
         backdropFilter: "blur(8px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 24, overflowY: "auto",
@@ -221,7 +221,7 @@ export function VendorApplicationModal({ open, onClose, defaultEmail }) {
           width: "min(620px, 100%)",
           background: BRAND.obsidianCard,
           border: `1px solid ${BRAND.vendorGreen}55`,
-          borderRadius: 8,
+          borderRadius: 6,
           padding: "32px 32px 24px",
           boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
           maxHeight: "calc(100vh - 48px)",
@@ -304,7 +304,7 @@ export function VendorApplicationModal({ open, onClose, defaultEmail }) {
             <div style={{
               marginTop: 18,
               padding: "16px 18px",
-              background: `linear-gradient(180deg, rgba(52,199,89,0.08), rgba(52,199,89,0.02) 90%)`,
+              background: "rgba(52,199,89,0.08)",
               border: `1px solid ${BRAND.vendorGreen}55`,
               borderRadius: 6,
               position: "relative",
@@ -331,7 +331,7 @@ export function VendorApplicationModal({ open, onClose, defaultEmail }) {
                 ].map((t) => (
                   <div key={t.name} style={{
                     padding: 10,
-                    background: "rgba(8,8,8,0.4)",
+                    background: "rgba(14,17,22,0.4)",
                     border: `1px solid rgba(52,199,89,0.25)`,
                     borderRadius: 4,
                   }}>

@@ -84,8 +84,8 @@ export function SiteFooter() {
           <div className="r-foot-left" style={{ flex: "1 1 360px", maxWidth: 440 }}>
             {/* Colour MUST be explicit. This heading used to inherit, which is
                 invisible on the Attacked Hub: that page wraps its content in
-                .hubft, which sets color:#14130F for the light newspaper layout,
-                and the footer's own ground is #080808 — near-black on black, a
+                .hubft, which sets color:#1A1A1A for the light newspaper layout,
+                and the footer's own ground is #0E1116 — near-black on black, a
                 1.08:1 contrast ratio. It only looked correct on the landing
                 page, where the inherited colour happens to be white. */}
             <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.03em", color: BRAND.white }}>Subscribe</div>
@@ -105,11 +105,11 @@ export function SiteFooter() {
                   style={{
                     flex: "1 1 auto", minWidth: 0, padding: "13px 16px", borderRadius: 0,
                     background: "transparent", color: BRAND.white,
-                    border: `1px solid ${state === "error" ? "#FF3B30" : "#4B5563"}`,
+                    border: `1px solid ${state === "error" ? "#FF3B30" : "#383838"}`,
                     fontFamily: "Inter, sans-serif", fontSize: 14, outline: "none",
                   }}
-                  onFocus={e => { if (state !== "error") e.currentTarget.style.borderColor = "#9CA3AF"; }}
-                  onBlur={e => { if (state !== "error") e.currentTarget.style.borderColor = "#4B5563"; }}
+                  onFocus={e => { if (state !== "error") e.currentTarget.style.borderColor = "#A6A8AD"; }}
+                  onBlur={e => { if (state !== "error") e.currentTarget.style.borderColor = "#383838"; }}
                 />
                 <button type="submit" style={{
                   padding: "13px 32px", background: BRAND.gold, color: BRAND.obsidian,
@@ -118,7 +118,7 @@ export function SiteFooter() {
                   letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
                   transition: "background 160ms ease",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#D4A000"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#E0A800"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = BRAND.gold; }}
                 >Submit</button>
               </form>
@@ -155,7 +155,7 @@ export function SiteFooter() {
               >
                 <span style={{
                   width: 40, height: 22, borderRadius: 0, position: "relative",
-                  background: privacyOn ? BRAND.gold : "#3a3a3a",
+                  background: privacyOn ? BRAND.gold : "#383838",
                   transition: "background 160ms ease", flexShrink: 0,
                 }}>
                   <span style={{

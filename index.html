@@ -18,8 +18,11 @@
     <script>window.CESIUM_BASE_URL = "https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/";</script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js"></script>
     <style>
-      html, body, #root { height: 100%; margin: 0; background: #1A1A1A; color: #FFFFFF; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+      html, body, #root { height: 100%; margin: 0; background: #0E1116; color: #FFFFFF; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
       *, *::before, *::after { box-sizing: border-box; }
+      /* Form controls do not inherit the page font by default; without this the
+         navbar buttons rendered in Arial. Brand: Inter everywhere. */
+      button, input, select, textarea, optgroup { font-family: inherit; }
     </style>
   </head>
   <body>

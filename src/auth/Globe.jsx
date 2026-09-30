@@ -27,14 +27,21 @@ const INC_RAW = [
       {lon:121.47,lat:31.23,s:'high'},
       {lon:3.39, lat:6.52, s:'low'}
     ];
-const ARCS = [[2,0],[2,5],[1,3],[15,7],[0,14]];
+const ARCS_REF = [[2,0],[2,5],[1,3],[15,7],[0,14]];
 const CITY = [[-74,40.7],[-118.2,34],[-87.6,41.9],[-99.1,19.4],[-74.1,4.7],[-77,-12],[-70.6,-33.4],
       [-58.4,-34.6],[-43.2,-22.9],[-0.1,51.5],[2.35,48.85],[-3.7,40.4],[3.4,6.5],[31.2,30],[28,-26.2],
       [36.8,-1.3],[37.6,55.75],[29,41],[55.3,25.2],[72.9,19],[77.2,28.6],[100.5,13.75],[103.8,1.35],
       [106.8,-6.2],[114.2,22.3],[121.5,31.2],[116.4,39.9],[127,37.5],[139.7,35.7],[151.2,-33.9],
       [174.8,-36.85],[13.4,52.5],[-79.4,43.7],[18.4,-33.9],[39.3,21.5]];
 
-export function Globe({ size = 380 }) {
+// `incidents` (optional): real rows with latitude/longitude/severity. When
+// given, they replace the reference markers above — the most severe one gets
+// the reticle and the arcs run from it to the next four. `dateLabel` replaces
+// the header date. Both were hard-coded ("Live incidents · 18 Jun 2026" over
+// 17 fixed dots) until 2026-09-30. The component reads them once on mount, so
+// the caller remounts it (key) when real data arrives.
+const SEV_WORD = (s) => (s >= 5 ? "critical" : s === 4 ? "high" : s === 3 ? "medium" : "low");
+export function Globe({ size = 380, incidents = null, dateLabel = null }) {
   const canvasRef = useRef(null);
   const coordRef = useRef(null);
 
@@ -48,8 +55,15 @@ export function Globe({ size = 380 }) {
     const TILT = 16*DEG;
     const sinP0 = Math.sin(TILT), cosP0 = Math.cos(TILT);
     const HOTGOLD = '#FFD24F';
-    const SEV = {critical:'#FF453A',high:'#FF6B35',medium:'#FCBD00',low:'#34C759'};
-    const INC = INC_RAW.map(function(d){ return Object.assign({}, d); });
+    const SEV = {critical:'#FF3B30',high:'#FF6B35',medium:'#FCBD00',low:'#34C759'};
+    const real = Array.isArray(incidents)
+      ? incidents.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude)))
+          .slice().sort((a, b) => (b.severity || 0) - (a.severity || 0)).slice(0, 24)
+      : [];
+    const INC = real.length
+      ? real.map((r, i) => ({ lon: Number(r.longitude), lat: Number(r.latitude), s: SEV_WORD(Number(r.severity) || 1), f: i === 0 ? 1 : 0 }))
+      : INC_RAW.map(function(d){ return Object.assign({}, d); });
+    const ARCS = real.length ? [[0, 1], [0, 2], [0, 3], [0, 4]].filter(([, b]) => b < INC.length) : ARCS_REF;
 
     function trig(lon,lat){const la=lat*DEG,lo=lon*DEG;return{sp:Math.sin(la),cp:Math.cos(la),sl:Math.sin(lo),cl:Math.cos(lo)};}
     function vec(lon,lat){const la=lat*DEG,lo=lon*DEG,cp=Math.cos(la);return[cp*Math.cos(lo),cp*Math.sin(lo),Math.sin(la)];}
@@ -151,18 +165,18 @@ export function Globe({ size = 380 }) {
   return (
     <div style={{ position:'relative', width:'100%', maxWidth:size, margin:'0 auto', aspectRatio:'1 / 1', background:'transparent', overflow:'visible' }}>
       <div className="globe-ovl" style={{ position:'absolute', top:14, left:16, right:16, display:'flex', justifyContent:'space-between', zIndex:4, pointerEvents:'none' }}>
-        <span style={{ display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter, sans-serif', fontSize:10.5, letterSpacing:'0.14em', textTransform:'uppercase', color:'#A8A8A8' }}>
-          <span style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00', boxShadow:'0 0 8px rgba(252,189,0,0.6)' }} />Live incidents · 18 Jun 2026
+        <span style={{ display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter, sans-serif', fontSize:10.5, letterSpacing:'0.14em', textTransform:'uppercase', color:'#A6A8AD' }}>
+          <span style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00' }} />{dateLabel ? `Latest incidents · ${dateLabel}` : 'Incident network'}
         </span>
       </div>
       <canvas ref={canvasRef} style={{ display:'block', width:'100%', height:'100%', cursor:'grab' }} aria-label="Live rotating globe of classified incidents — drag to rotate, scroll to zoom" />
-      <div className="globe-ovl" style={{ position:'absolute', left:16, bottom:14, display:'flex', gap:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6a6a6a', flexWrap:'wrap', pointerEvents:'none' }}>
-        <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF453A', display:'inline-block' }} />Critical</span>
+      <div className="globe-ovl" style={{ position:'absolute', left:16, bottom:14, display:'flex', gap:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', flexWrap:'wrap', pointerEvents:'none' }}>
+        <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF3B30', display:'inline-block' }} />Critical</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF6B35', display:'inline-block' }} />High</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00', display:'inline-block' }} />Medium</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#34C759', display:'inline-block' }} />Low</span>
       </div>
-      <div ref={coordRef} className="globe-ovl" style={{ position:'absolute', right:16, bottom:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6a6a6a', textAlign:'right', lineHeight:1.5, pointerEvents:'none' }}>TRACKING<br/>11 COUNTRIES · 17 SECTORS</div>
+      <div ref={coordRef} className="globe-ovl" style={{ position:'absolute', right:16, bottom:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', textAlign:'right', lineHeight:1.5, pointerEvents:'none' }}>TRACKING<br/>11 COUNTRIES · 17 SECTORS</div>
     </div>
   );
 }

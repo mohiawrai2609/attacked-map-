@@ -1131,15 +1131,15 @@ function resolveCoords(inc) {
 
     const channelDefs = {
       internal:              { color: "#FCBD00", width: 3, opacity: 0.75 },
-      supply_chain:          { color: "#FF8C5A", width: 3, opacity: 0.75 },
+      supply_chain:          { color: "#FF6B35", width: 3, opacity: 0.75 },
       customer_counterparty: { color: "#4FC3D7", width: 3, opacity: 0.75 },
       competitive_peer:      { color: "#9D7BEC", width: 2.5, opacity: 0.65 },
-      regulatory:            { color: "#A8A8A8", width: 2.5, opacity: 0.65 },
+      regulatory:            { color: "#A6A8AD", width: 2.5, opacity: 0.65 },
       financial_market:      { color: "#7BD693", width: 2.5, opacity: 0.65 },
     };
 
     Object.entries(radius).forEach(([channel, entities]) => {
-      const def = channelDefs[channel] || { color: "#888888", width: 2, opacity: 0.55 };
+      const def = channelDefs[channel] || { color: "#8E9198", width: 2, opacity: 0.55 };
       if (!Array.isArray(entities)) return;
       entities.forEach(ent => {
         if (typeof ent.latitude !== "number" || typeof ent.longitude !== "number") return;
@@ -1205,7 +1205,7 @@ function resolveCoords(inc) {
             // incident first, related entities second.
             pixelSize: 9,
             color: Cesium.Color.fromCssColorString(def.color).withAlpha(0.9),
-            outlineColor: Cesium.Color.fromCssColorString("#0D0D0D").withAlpha(0.8),
+            outlineColor: Cesium.Color.fromCssColorString("#0E1116").withAlpha(0.8),
             outlineWidth: 1,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
           },
@@ -1328,7 +1328,7 @@ function resolveCoords(inc) {
   const zBtn = {
     width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
     background: "rgba(26,26,26,0.85)", backdropFilter: "blur(10px)",
-    border: "1px solid #333", color: "#FCBD00", fontSize: 20, fontWeight: 700,
+    border: "1px solid #383838", color: "#FCBD00", fontSize: 20, fontWeight: 700,
     cursor: "pointer", lineHeight: 1, userSelect: "none",
   };
 
@@ -1341,7 +1341,7 @@ function resolveCoords(inc) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(20, 20, 20, 0.85);
+          background: rgba(26, 26, 26, 0.88);
           backdrop-filter: blur(12px);
           border: 1px solid rgba(252,189,0, 0.15);
           color: #FCBD00;
@@ -1402,7 +1402,7 @@ function resolveCoords(inc) {
                 {tooltip.name}
               </div>
               {tooltip.locationName && (
-                <div style={{ fontSize: 11, color: "#C0C0C8", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 11, color: "#A6A8AD", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ fontSize: 12 }}>📍</span> {tooltip.locationName}
                 </div>
               )}
@@ -1417,12 +1417,12 @@ function resolveCoords(inc) {
                 {tooltip.name}
               </div>
               {tooltip.country && (
-                <div style={{ fontSize: 11, color: "#C0C0C8", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 11, color: "#A6A8AD", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ fontSize: 12 }}>📍</span> {tooltip.country}
                 </div>
               )}
               {tooltip.incidentName && (
-                <div style={{ fontSize: 10, color: "#808088", lineHeight: 1.4, borderTop: "1px solid #2a2a30", paddingTop: 5, marginTop: 5 }}>
+                <div style={{ fontSize: 10, color: "#8E9198", lineHeight: 1.4, borderTop: "1px solid #2E2E2E", paddingTop: 5, marginTop: 5 }}>
                   ↳ {tooltip.incidentName}
                 </div>
               )}
@@ -1459,7 +1459,7 @@ function resolveCoords(inc) {
         </div>
       )}
       {failed && !fallback && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#A8A8A8", fontFamily: "Inter, sans-serif", fontSize: 13, textAlign: "center", padding: 24 }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#A6A8AD", fontFamily: "Inter, sans-serif", fontSize: 13, textAlign: "center", padding: 24 }}>
           Couldn’t load the satellite map engine.<br />Check your connection and reload.
         </div>
       )}

@@ -16,7 +16,7 @@ import { DEFAULT_BRAND, REPORT_FONTS, REPORT_SECTIONS, applyBrandToHtml, renderR
 import { CATEGORIES, INDUSTRIES } from "../lib/taxonomy";
 import { ReportPageEditor } from "./ReportPageEditor";
 
-const BRAND = { gold: "#FCBD00", obsidian: "#1A1A1A", card: "#242424", deep: "#080808", white: "#FFFFFF", muted: "#A8A8A8", dim: "#585858", border: "#333333" };
+const BRAND = { gold: "#FCBD00", obsidian: "#1A1A1A", card: "#242424", deep: "#0E1116", white: "#FFFFFF", muted: "#A6A8AD", dim: "#8E9198", border: "#383838" };
 const SEVS = [[5, "Critical"], [4, "High"], [3, "Medium"], [2, "Low"], [1, "Minimal"]];
 
 const inp = { width: "100%", boxSizing: "border-box", background: BRAND.deep, color: BRAND.white, border: `1px solid ${BRAND.border}`, borderRadius: 4, padding: "9px 11px", fontFamily: "Inter, sans-serif", fontSize: 13, outline: "none" };
@@ -184,11 +184,11 @@ export function AdminReports() {
         <button style={btn(true)} onClick={startNew}>+ New report</button>
       </div>
       {msg && <div style={{ background: `${BRAND.gold}22`, border: `1px solid ${BRAND.gold}`, color: BRAND.white, padding: "10px 14px", borderRadius: 4, marginBottom: 14, fontSize: 13 }}>{msg}</div>}
-      {err && <div style={{ background: "#3a1a1a", border: "1px solid #FF3B30", padding: "10px 14px", borderRadius: 4, marginBottom: 14, fontSize: 13 }}>{err}</div>}
+      {err && <div style={{ background: "rgba(255,59,48,0.14)", border: "1px solid #FF3B30", padding: "10px 14px", borderRadius: 4, marginBottom: 14, fontSize: 13 }}>{err}</div>}
 
       <div style={{ display: "grid", gridTemplateColumns: editing ? "300px 1fr" : "1fr", gap: 18, alignItems: "start" }}>
         {/* LIST */}
-        <div style={{ background: BRAND.obsidian, border: `1px solid ${BRAND.border}`, borderRadius: 8, overflow: "hidden" }}>
+        <div style={{ background: BRAND.obsidian, border: `1px solid ${BRAND.border}`, borderRadius: 6, overflow: "hidden" }}>
           {loading ? <div style={{ padding: 40, textAlign: "center", color: BRAND.dim }}>Loading…</div>
             : list.length === 0 ? <div style={{ padding: 40, textAlign: "center", color: BRAND.dim }}>No reports yet. Create the first one.</div>
             : list.map((r) => (
@@ -206,7 +206,7 @@ export function AdminReports() {
         {/* EDITOR */}
         {editing && (
           <div style={{ display: "grid", gridTemplateColumns: preview ? "minmax(380px, 1fr) minmax(420px, 1.2fr)" : "1fr", gap: 18, alignItems: "start" }}>
-            <div style={{ background: BRAND.obsidian, border: `1px solid ${BRAND.border}`, borderRadius: 8, padding: 18 }}>
+            <div style={{ background: BRAND.obsidian, border: `1px solid ${BRAND.border}`, borderRadius: 6, padding: 18 }}>
               <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
                 {[["content", "Content"], ["design", "Design & brand"], ["upload", "Upload HTML"]].map(([id, t]) => (
                   <button key={id} onClick={() => setTab(id)} style={btn(tab === id, { padding: "7px 12px" })}>{t}</button>
@@ -312,7 +312,7 @@ export function AdminReports() {
                 ) : (
                   <>
                     <div style={{ ...lbl, marginBottom: 8 }}>Live preview · exactly what readers see</div>
-                    <iframe title="Report preview" srcDoc={previewHtml} style={{ width: "100%", height: "78vh", border: `1px solid ${BRAND.border}`, borderRadius: 8, background: "#fff" }} />
+                    <iframe title="Report preview" srcDoc={previewHtml} style={{ width: "100%", height: "78vh", border: `1px solid ${BRAND.border}`, borderRadius: 6, background: "#fff" }} />
                   </>
                 )}
               </div>

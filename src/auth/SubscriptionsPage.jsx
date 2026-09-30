@@ -60,7 +60,7 @@ export function SubscriptionsPage() {
   if (loading || !user) {
     return (
       <div style={{
-        minHeight: "100vh", background: "#FFFFFF", color: "#707070",
+        minHeight: "100vh", background: "#FFFFFF", color: "#7A7E86",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.12em",
         textTransform: "uppercase", fontWeight: 600,
@@ -72,7 +72,7 @@ export function SubscriptionsPage() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#FFFFFF" }}>
-      <div style={{ background: "#080808" }}>
+      <div style={{ background: "#0E1116" }}>
         <SiteNav active="subscriptions" />
       </div>
 

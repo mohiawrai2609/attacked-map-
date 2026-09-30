@@ -19,9 +19,9 @@ const BRAND = {
   obsidian: "#1A1A1A",
   card: "#242424",
   white: "#FFFFFF",
-  t2: "#A8A8A8",
-  tmuted: "#585858",
-  border: "#333333",
+  t2: "#A6A8AD",
+  tmuted: "#8E9198",
+  border: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
   danger: "#FF3B30",
   ok: "#34C759",
@@ -193,12 +193,12 @@ export function AdminBriefings() {
         {!sel ? (
           <div style={{
             padding: 50, textAlign: "center", color: BRAND.tmuted, fontSize: 13,
-            border: `1px dashed ${BRAND.border}`, borderRadius: 10,
+            border: `1px dashed ${BRAND.border}`, borderRadius: 6,
           }}>
             Pick an incident on the left to add a news image and article.
           </div>
         ) : (
-          <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: 22 }}>
+          <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 6, padding: 22 }}>
             <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>{sel.headline}</div>
             <div style={{ fontSize: 11.5, color: BRAND.tmuted, marginBottom: 22 }}>
               {[sel.entity, sel.country, sel._day].filter(Boolean).join(" · ")}
@@ -233,7 +233,7 @@ export function AdminBriefings() {
               )}
             </div>
             {imageUrl && (
-              <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden", border: `1px solid ${BRAND.border}`, maxWidth: 360 }}>
+              <div style={{ marginTop: 12, borderRadius: 6, overflow: "hidden", border: `1px solid ${BRAND.border}`, maxWidth: 360 }}>
                 <img src={imageUrl} alt="" style={{ width: "100%", height: 180, objectFit: "cover", display: "block" }}
                   onError={e => { e.currentTarget.style.opacity = "0.3"; }} />
               </div>

@@ -15,15 +15,15 @@ import { supabase } from "../lib/supabaseClient";
 const BRAND = {
   gold: "#FCBD00",
   obsidian: "#1A1A1A",
-  obsidianDeep: "#080808",
+  obsidianDeep: "#0E1116",
   obsidianCard: "#242424",
   white: "#FFFFFF",
-  textSecondary: "#A8A8A8",
-  textMuted: "#585858",
-  borderSubtle: "#333333",
+  textSecondary: "#A6A8AD",
+  textMuted: "#8E9198",
+  borderSubtle: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
-  red: "#FF6B6B",
+  red: "#FF3B30",
 };
 
 const QUESTIONS = [
@@ -105,7 +105,7 @@ export function PartnerFeedbackModal({ open, onClose }) {
         position: "fixed",
         top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 2147483647,
-        background: "rgba(8,8,8,0.85)",
+        background: "rgba(14,17,22,0.85)",
         display: "flex", alignItems: "flex-start", justifyContent: "center",
         padding: 24, overflowY: "auto",
       }}
@@ -116,7 +116,7 @@ export function PartnerFeedbackModal({ open, onClose }) {
           width: "min(680px, 100%)",
           background: BRAND.obsidianCard,
           border: `1px solid ${BRAND.borderGold}`,
-          borderRadius: 8,
+          borderRadius: 6,
           padding: "32px 32px 28px",
           boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
           margin: "32px auto",

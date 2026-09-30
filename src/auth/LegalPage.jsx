@@ -13,8 +13,8 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 
 const BRAND = {
-  gold: "#FCBD00", obsidian: "#1A1A1A", deep: "#080808",
-  white: "#FFFFFF", t2: "#A8A8A8", tmuted: "#585858", border: "#333333",
+  gold: "#FCBD00", obsidian: "#1A1A1A", deep: "#0E1116",
+  white: "#FFFFFF", t2: "#A6A8AD", tmuted: "#8E9198", border: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
 };
 const CONTACT_EMAIL = "hello@attacked.ai";
@@ -79,7 +79,7 @@ export function LegalPage({ pageKey }) {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#FFFFFF", color: "#101010",
+      minHeight: "100vh", background: "#FFFFFF", color: "#0E1116",
       fontFamily: "Inter, sans-serif", WebkitFontSmoothing: "antialiased",
     }}>
       <SiteNav />
@@ -106,8 +106,8 @@ export function LegalPage({ pageKey }) {
         <div style={{ marginTop: 0 }}>
           {page.body.map(([h, p], i) => (
             <section key={i} style={{ marginTop: i === 0 ? 0 : 30 }}>
-              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#101010" }}>{h}</h2>
-              <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.72, color: "#52525B" }}>{p}</p>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0E1116" }}>{h}</h2>
+              <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.72, color: "#5B5F66" }}>{p}</p>
             </section>
           ))}
         </div>

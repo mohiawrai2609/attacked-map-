@@ -5,6 +5,7 @@ import { AuthModal } from "./auth/AuthModal.jsx";
 import { PartnerFeedbackModal } from "./auth/PartnerFeedbackModal.jsx";
 import { SubscribeModal } from "./auth/SubscribeModal.jsx";
 import { isSubscriber } from "./lib/taxonomy";
+import { incidentImage } from "./lib/images";
 import { supabase } from "./lib/supabaseClient";
 import { Logo } from "./auth/Logo.jsx";
 import { SiteNav } from "./auth/SiteNav.jsx";
@@ -122,7 +123,7 @@ function AccountChip({ onOpenAuth }) {
     t === "enterprise" ? "#FCBD00" :
     t === "admin"   ? "#9D7BEC" :
     t === "free"    ? "#4FC3D7" :
-                      "#A8A8A8";
+                      "#A6A8AD";
   const labelFor = (t) =>
     t === "enterprise" ? "◆ SUBSCRIBER" :
     t === "admin"   ? "✦ ADMIN" :
@@ -158,7 +159,7 @@ function AccountChip({ onOpenAuth }) {
           textTransform: "uppercase", fontWeight: 600,
         }}>
         <span style={{ fontWeight: 700 }}>{labelFor(tier)}</span>
-        <span style={{ color: "#A8A8A8", fontSize: 10.5, letterSpacing: "0.02em", textTransform: "none", fontWeight: 500 }}>
+        <span style={{ color: "#A6A8AD", fontSize: 10.5, letterSpacing: "0.02em", textTransform: "none", fontWeight: 500 }}>
           {user.email?.length > 22 ? user.email.slice(0, 20) + "…" : user.email}
         </span>
       </button>
@@ -168,12 +169,12 @@ function AccountChip({ onOpenAuth }) {
                style={{ position: "fixed", inset: 0, zIndex: 99 }} />
           <div style={{
             position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 100,
-            background: "#242424", border: "1px solid #333", borderRadius: 0,
+            background: "#242424", border: "1px solid #383838", borderRadius: 0,
             minWidth: 200, padding: 6, boxShadow: "0 12px 28px rgba(0,0,0,0.5)",
           }}>
             <div style={{
               padding: "8px 10px", fontFamily: "Inter, sans-serif",
-              fontSize: 9, color: "#585858", letterSpacing: "0.12em", textTransform: "uppercase",
+              fontSize: 9, color: "#8E9198", letterSpacing: "0.12em", textTransform: "uppercase",
             }}>
               Signed in as
             </div>
@@ -183,12 +184,12 @@ function AccountChip({ onOpenAuth }) {
             {/* Show company / role for partners + admins so they see what
                 we have on file (came from their application). */}
             {isSubscriber(tier) && (profile?.company || profile?.role) && (
-              <div style={{ padding: "0 10px 10px", fontSize: 11, color: "#A8A8A8", lineHeight: 1.45 }}>
+              <div style={{ padding: "0 10px 10px", fontSize: 11, color: "#A6A8AD", lineHeight: 1.45 }}>
                 {profile.role}{profile.company ? ` · ${profile.company}` : ""}
                 {profile.approved_at && (
                   <div style={{
                     fontFamily: "Inter, sans-serif", fontSize: 9,
-                    color: "#585858", letterSpacing: "0.08em", marginTop: 2,
+                    color: "#8E9198", letterSpacing: "0.08em", marginTop: 2,
                   }}>
                     Subscriber since {new Date(profile.approved_at).toUTCString().slice(5, 16)}
                   </div>
@@ -221,8 +222,8 @@ function AccountChip({ onOpenAuth }) {
             <a href="/?pricing"
               style={{
                 display: "block", width: "100%", padding: "8px 10px", marginBottom: 4, marginTop: 4,
-                background: "transparent", color: "#A8A8A8",
-                border: "1px solid #333", borderRadius: 0,
+                background: "transparent", color: "#A6A8AD",
+                border: "1px solid #383838", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 10,
                 letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                 textAlign: "center", textDecoration: "none", boxSizing: "border-box",
@@ -279,7 +280,7 @@ function AccountChip({ onOpenAuth }) {
                 AuthProvider's setEmailSubscribed (RLS allows self-update). */}
             <div style={{
               marginTop: 8, padding: "10px 10px",
-              background: "rgba(255,255,255,0.02)", border: "1px solid #2a2a2a",
+              background: "rgba(255,255,255,0.02)", border: "1px solid #2E2E2E",
               borderRadius: 0,
             }}>
               <div style={{
@@ -288,7 +289,7 @@ function AccountChip({ onOpenAuth }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontFamily: "Inter, sans-serif", fontSize: 9,
-                    color: "#585858", letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: "#8E9198", letterSpacing: "0.12em", textTransform: "uppercase",
                     marginBottom: 4,
                   }}>
                     Daily digest
@@ -313,7 +314,7 @@ function AccountChip({ onOpenAuth }) {
                     flexShrink: 0,
                     width: 36, height: 20,
                     borderRadius: 0,
-                    background: subscribed ? "#34C759" : "#333",
+                    background: subscribed ? "#34C759" : "#383838",
                     border: "none",
                     cursor: prefBusy ? "wait" : "pointer",
                     position: "relative",
@@ -354,8 +355,8 @@ function AccountChip({ onOpenAuth }) {
               onClick={() => setMenuOpen(false)}
               style={{
                 display: "block", width: "100%", padding: "8px 10px",
-                background: "transparent", color: "#A8A8A8",
-                border: "1px solid #333", borderRadius: 0,
+                background: "transparent", color: "#A6A8AD",
+                border: "1px solid #383838", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 10,
                 letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                 marginTop: 4, textDecoration: "none", textAlign: "center",
@@ -366,8 +367,8 @@ function AccountChip({ onOpenAuth }) {
             <button onClick={async () => { setMenuOpen(false); await signOut(); }}
               style={{
                 width: "100%", padding: "8px 10px",
-                background: "transparent", color: "#A8A8A8",
-                border: "1px solid #333", borderRadius: 0,
+                background: "transparent", color: "#A6A8AD",
+                border: "1px solid #383838", borderRadius: 0,
                 fontFamily: "Inter, sans-serif", fontSize: 10,
                 letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
                 marginTop: 4,
@@ -438,28 +439,32 @@ function AccountChip({ onOpenAuth }) {
 // 5-tier risk scale (Attacked.ai standard, NOT the 3-tier RPI scale)
 
 // 13 GUARD categories — short labels + colours
+// Colours are the brand's GUARD scale (src/styles/tokens.css --g-XXX), so a
+// category reads the same on the map, the dashboard and the Hub. Several are
+// deep hues meant for markers and edges, so on this dark map they are never
+// used as TEXT colour: chips carry light text with the category on the edge.
 const CATEGORIES = {
-  CYB: { label: "Cyber",        color: "#FCBD00" },
-  DAT: { label: "Data",         color: "#FFD166" },
-  TEC: { label: "Technology",   color: "#FFE99A" },
-  GEO: { label: "Geopolitical", color: "#FF8C5A" },
-  PHY: { label: "Physical",     color: "#FF6B35" },
-  OPS: { label: "Operations",   color: "#34C759" },
-  TPR: { label: "Third Party",  color: "#7BD693" },
-  REG: { label: "Regulatory",   color: "#D4A000" },
-  FIN: { label: "Financial",    color: "#B89A00" },
-  STR: { label: "Strategic",    color: "#9D7BEC" },
-  REP: { label: "Reputation",   color: "#BFA2F0" },
-  PPL: { label: "People",       color: "#4FC3D7" },
-  ENV: { label: "Environment",  color: "#7DDAEA" },
+  CYB: { label: "Cyber",        color: "#0057D9" },
+  DAT: { label: "Data",         color: "#B8008A" },
+  TEC: { label: "Technology",   color: "#0087B8" },
+  GEO: { label: "Geopolitical", color: "#70513A" },
+  PHY: { label: "Physical",     color: "#3D4A5C" },
+  OPS: { label: "Operations",   color: "#00A39A" },
+  TPR: { label: "Third Party",  color: "#D69A00" },
+  REG: { label: "Regulatory",   color: "#E45700" },
+  FIN: { label: "Financial",    color: "#007A3D" },
+  STR: { label: "Strategic",    color: "#6E2F8F" },
+  REP: { label: "Reputation",   color: "#B80F2A" },
+  PPL: { label: "People",       color: "#E65A9B" },
+  ENV: { label: "Environment",  color: "#6C9F16" },
 };
 
 // Reporter desks (matches v14.21 newsroom assignment)
 const DEFAULT_REPORTERS = {
   cyber_bob:        { name: "Cyber Bob",        desk: "Digital Defence",        cats: ["CYB","DAT","TEC"], color: "#FCBD00" },
-  commander_vance:  { name: "Commander Vance",  desk: "Geopolitical & Physical",cats: ["GEO","PHY"],       color: "#FF8C5A" },
+  commander_vance:  { name: "Commander Vance",  desk: "Geopolitical & Physical",cats: ["GEO","PHY"],       color: "#FF6B35" },
   saskia_martin:    { name: "Saskia Martin",    desk: "Operations & Supply",    cats: ["OPS","TPR"],       color: "#34C759" },
-  jack_whistler:    { name: "Jack Whistler",    desk: "Regulatory & Financial", cats: ["REG","FIN"],       color: "#D4A000" },
+  jack_whistler:    { name: "Jack Whistler",    desk: "Regulatory & Financial", cats: ["REG","FIN"],       color: "#E0A800" },
   lulu_kim:         { name: "Lulu Kim",         desk: "Strategic & Reputation", cats: ["STR","REP"],       color: "#9D7BEC" },
   priya_banerjee:   { name: "Priya Banerjee",   desk: "People & Environment",   cats: ["PPL","ENV"],       color: "#4FC3D7" },
 };
@@ -544,10 +549,10 @@ const WORLD_CITIES = [
 // `kind: indirect` = read-across / sectoral inference (dashed-ring marker, dashed arc)
 const BLAST_CHANNELS = {
   internal:              { label: "Internal",      color: "#FCBD00", dash: "0",      width: 1.2, opacity: 0.55, kind: "primary",  icon: "◉" },
-  supply_chain:          { label: "Supply Chain",  color: "#FF8C5A", dash: "0",      width: 1.0, opacity: 0.50, kind: "primary",  icon: "⟿" },
+  supply_chain:          { label: "Supply Chain",  color: "#FF6B35", dash: "0",      width: 1.0, opacity: 0.50, kind: "primary",  icon: "⟿" },
   customer_counterparty: { label: "Customer",      color: "#4FC3D7", dash: "0",      width: 0.9, opacity: 0.45, kind: "primary",  icon: "◊" },
   competitive_peer:      { label: "Peer",          color: "#9D7BEC", dash: "4,3",    width: 0.9, opacity: 0.45, kind: "indirect", icon: "≈" },
-  regulatory:            { label: "Regulator",     color: "#A8A8A8", dash: "2,3",    width: 0.9, opacity: 0.45, kind: "indirect", icon: "§" },
+  regulatory:            { label: "Regulator",     color: "#A6A8AD", dash: "2,3",    width: 0.9, opacity: 0.45, kind: "indirect", icon: "§" },
   financial_market:      { label: "Capital",       color: "#7BD693", dash: "6,3",    width: 0.9, opacity: 0.40, kind: "indirect", icon: "$" },
 };
 
@@ -584,9 +589,9 @@ const TRANSMISSION_MECHANISMS = {
 // production) deep-link into the relevant product flow.
 const PRODUCT_HOOKS = {
   wargaming_sim:         { label: "Wargaming.ai",        icon: "⚡", color: "#FCBD00" },
-  apple_supply:          { label: "Supply Wargame",      icon: "◈", color: "#FF8C5A" },
+  apple_supply:          { label: "Supply Wargame",      icon: "◈", color: "#FF6B35" },
   greyteaming:           { label: "Grey Teaming",        icon: "◇", color: "#9D7BEC" },
-  fdri_watchlist:        { label: "FDRI Watchlist",      icon: "▲", color: "#A8A8A8" },
+  fdri_watchlist:        { label: "FDRI Watchlist",      icon: "▲", color: "#A6A8AD" },
   attacked_brief:        { label: "Attacked Brief",      icon: "✦", color: "#4FC3D7" },
   replaceable_workforce: { label: "Replaceable.ai",      icon: "⊕", color: "#7BD693" },
 };
@@ -595,9 +600,9 @@ const PRODUCT_HOOKS = {
 // detail panel header so the user knows which editorial desk owns the incident.
 const REPORTER_BADGES = {
   "Cyber Bob":          { desk: "Digital Defence",          color: "#FCBD00", icon: "⌬" },
-  "Commander Vance":    { desk: "Geopolitical & Physical",  color: "#FF8C5A", icon: "▼" },
+  "Commander Vance":    { desk: "Geopolitical & Physical",  color: "#FF6B35", icon: "▼" },
   "Saskia Martin":      { desk: "Operations & Supply Chain",color: "#34C759", icon: "◐" },
-  "Jack Whistler":      { desk: "Regulatory & Financial",   color: "#D4A000", icon: "§" },
+  "Jack Whistler":      { desk: "Regulatory & Financial",   color: "#E0A800", icon: "§" },
   "Lulu Kim":           { desk: "Strategic & Reputation",   color: "#9D7BEC", icon: "✦" },
   "Priya Banerjee":     { desk: "People & Environment",     color: "#4FC3D7", icon: "❋" },
 };
@@ -2113,7 +2118,7 @@ function MapCanvas({ world, visibleIncidents, viewMode, hoveredId, selectedId, o
     // blue next to the ocean. Black matches the globe, whose Cesium
     // backgroundColor is BLACK with a starfield — so both views now sit in the
     // same void and only the planet differs.
-    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", background: "#050505", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
+    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", background: "#0E1116", borderRadius: 0, overflow: "hidden", border: `1px solid ${BRAND.borderSubtle}` }}>
       {/* Deep space starfield behind the map */}
       <canvas style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }}
         ref={el => {
@@ -2894,7 +2899,7 @@ class GlobeErrorBoundary extends React.Component {
           padding: 40,
         }}>
           <div style={{ textAlign: "center", maxWidth: 560 }}>
-            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: "#FF6B6B", letterSpacing: "0.16em", marginBottom: 12 }}>
+            <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: "#FF3B30", letterSpacing: "0.16em", marginBottom: 12 }}>
               ◇ GLOBE VIEW · RUNTIME ERROR
             </div>
             <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 24, color: BRAND.white, lineHeight: 1.25, marginBottom: 16 }}>
@@ -2912,7 +2917,7 @@ class GlobeErrorBoundary extends React.Component {
               lineHeight: 1.5,
               wordBreak: "break-word",
             }}>
-              <div style={{ color: "#FF6B6B", marginBottom: 4 }}>// error</div>
+              <div style={{ color: "#FF3B30", marginBottom: 4 }}>// error</div>
               <div>{errStr}</div>
             </div>
             <div style={{ marginTop: 16, fontFamily: "Inter, sans-serif", fontSize: 12, color: BRAND.textMuted }}>
@@ -4215,7 +4220,7 @@ function GateBlock({ title, sub, count, countLabel }) {
     <div style={{
       position: "relative", borderRadius: 0, overflow: "hidden",
       border: "1px solid rgba(252,189,0,0.3)",
-      background: "rgba(8,8,8,0.6)", padding: "16px",
+      background: "rgba(14,17,22,0.6)", padding: "16px",
     }}>
       {typeof count === "number" && (
         <div style={{ marginBottom: 12 }}>
@@ -4231,7 +4236,7 @@ function GateBlock({ title, sub, count, countLabel }) {
           </div>
         ))}
       </div>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(8,8,8,0.45)" }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(14,17,22,0.45)" }}>
         <div style={{ fontSize: 20 }}>🔒</div>
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#FCBD00", letterSpacing: "0.06em", textTransform: "uppercase", textAlign: "center", maxWidth: 250, lineHeight: 1.5 }}>{title}</div>
         {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", textAlign: "center", maxWidth: 250, lineHeight: 1.45 }}>{sub}</div>}
@@ -4310,7 +4315,7 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
       marginTop: 10,
       borderRadius: 0, overflow: "hidden",
       border: "1px solid rgba(252,189,0,0.3)",
-      background: "rgba(8,8,8,0.6)",
+      background: "rgba(14,17,22,0.6)",
       padding: "14px 12px 12px",
     }}>
       {/* Blurred ghost rows — shape of locked content */}
@@ -4494,7 +4499,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
 
   return (
     <div className="mobi-incident-overlay" style={{
-      position: "fixed", inset: 0, zIndex: 300, background: "#0b0b0c",
+      position: "fixed", inset: 0, zIndex: 300, background: "#0E1116",
       display: "flex", flexDirection: "column", fontFamily: "Inter, sans-serif",
     }}>
       {/* Cascade keyframes (rowIn, rowInLeft, …) — the body components animate
@@ -4544,7 +4549,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
           </>
         )}
         {!autoPlay && (
-          <div style={{ fontSize: 11, color: "#A8A8A8", fontWeight: 600, whiteSpace: "nowrap" }}>{idx + 1} / {N}</div>
+          <div style={{ fontSize: 11, color: "#A6A8AD", fontWeight: 600, whiteSpace: "nowrap" }}>{idx + 1} / {N}</div>
         )}
         <button onClick={() => (onSkip || onClose)()} aria-label={autoPlay ? "Skip" : "Close"} title={autoPlay ? "Skip" : "Close"} style={{
           width: 34, height: 34, borderRadius: 0, flexShrink: 0,
@@ -4595,7 +4600,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
         position: "absolute", bottom: 0, left: 0, right: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "12px 16px calc(12px + env(safe-area-inset-bottom))",
-        background: "linear-gradient(0deg, #0b0b0c 55%, transparent)", flexShrink: 0,
+        background: "linear-gradient(0deg, #0E1116 55%, transparent)", flexShrink: 0,
       }}>
         <button onClick={() => { stopAuto(); goto(Math.max(0, idx - 1)); }} disabled={idx === 0} style={navBtn(idx === 0)}>‹</button>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -4996,9 +5001,9 @@ function MapIncidentImage({ incident, height = 150 }) {
     );
   }
 
-  // AI-generated image based on the exact incident headline
-  const aiPrompt = encodeURIComponent(`${incident.headline || ""}, realistic news photography, editorial`);
-  const generatedImg = `https://image.pollinations.ai/prompt/${aiPrompt}?width=800&height=500&nologo=true`;
+  // No live generator in the browser (its free tier now refuses these requests
+  // with 402): the stored picture, a hand-made one, else the category photo.
+  const generatedImg = incidentImage({ id: incident.id, primary_category: incident._cat || incident.primary_category });
 
   // The stored picture (incidents.image_url, written once per incident by the
   // incident-images function or an admin) wins; the local overrides and the
@@ -5051,7 +5056,7 @@ function MapIncidentImage({ incident, height = 150 }) {
     return (
       <div style={{
         height, width: "100%",
-        background: "linear-gradient(135deg, #141417, #1A1A1A 70%)",
+        background: "#1A1A1A",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
         border: "1px solid rgba(255,255,255,0.05)",
         borderRadius: 0,
@@ -5074,7 +5079,7 @@ function MapIncidentImage({ incident, height = 150 }) {
         onError={() => setFailed(true)}
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
       />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(8,8,8,0), rgba(8,8,8,0.5))" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(14,17,22,0), rgba(14,17,22,0.5))" }} />
     </div>
   );
 }
@@ -5279,8 +5284,8 @@ function BlastRadiusBody({ incident, channels }) {
   // entity reads identically across surfaces.
   function impactColors(score) {
     if (typeof score !== "number") return null;
-    if (score >= 4) return { bg: "#FF3B3022", fg: "#FF6B6B", bd: "#FF6B6B55" };
-    if (score >= 3) return { bg: "#FF8C5A22", fg: "#FF8C5A", bd: "#FF8C5A55" };
+    if (score >= 4) return { bg: "#FF3B3022", fg: "#FF3B30", bd: "#FF6B6B55" };
+    if (score >= 3) return { bg: "#FF8C5A22", fg: "#FF6B35", bd: "#FF8C5A55" };
     return { bg: "#34C75922", fg: "#34C759", bd: "#34C75955" };
   }
 
@@ -5665,8 +5670,8 @@ function PeerWatchlistBody({ peers, total }) {
           const conf = !isStr && p.confidence ? String(p.confidence).toUpperCase() : null;
           const confStyle = (() => {
             switch (conf) {
-              case "CONFIRMED": return { color: "#FF6B6B", bg: "#FF3B3022", bd: "#FF6B6B55" };
-              case "HIGH":      return { color: "#FF8C5A", bg: "#FF8C5A22", bd: "#FF8C5A55" };
+              case "CONFIRMED": return { color: "#FF3B30", bg: "#FF3B3022", bd: "#FF6B6B55" };
+              case "HIGH":      return { color: "#FF6B35", bg: "#FF8C5A22", bd: "#FF8C5A55" };
               case "MEDIUM":    return { color: "#FCBD00", bg: "#FCBD0022", bd: "#FCBD0055" };
               case "DIRECTIONAL": return { color: "#34C759", bg: "#34C75922", bd: "#34C75955" };
               default:          return conf ? { color: "#9D7BEC", bg: "#9D7BEC22", bd: "#9D7BEC55" } : null;
@@ -5679,7 +5684,7 @@ function PeerWatchlistBody({ peers, total }) {
           const score = !isStr && typeof p.impact_score === "number" ? p.impact_score : null;
           const pct = score != null ? Math.min(100, Math.max(0, Math.round((score / 5) * 100))) : null;
           const barColor = pct == null ? "#FCBD00"
-            : pct >= 80 ? "#FF6B6B" : pct >= 60 ? "#FF8C5A" : "#34C759";
+            : pct >= 80 ? "#FF3B30" : pct >= 60 ? "#FF6B35" : "#34C759";
 
           // Source citation — surfaced as a small line, with the url linked.
           const src = !isStr && p.source_anchor && typeof p.source_anchor === "object" ? p.source_anchor : null;
@@ -5943,9 +5948,9 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps, total }) {
   const fitColor = (f) => {
     const fu = (f || "").toUpperCase();
     if (fu === "FULL" || fu === "OK")     return "#34C759";     // green = full coverage
-    if (fu === "STRONG")                  return "#FF8C5A";     // orange = strong fit (demo)
-    if (fu === "PARTIAL")                 return "#9A9A9A";     // grey = partial (demo)
-    if (fu === "GAP" || fu === "FAIL")    return "#FF6B6B";     // red = gap
+    if (fu === "STRONG")                  return "#FF6B35";     // orange = strong fit (demo)
+    if (fu === "PARTIAL")                 return "#A6A8AD";     // grey = partial (demo)
+    if (fu === "GAP" || fu === "FAIL")    return "#FF3B30";     // red = gap
     return null;
   };
 
@@ -6218,7 +6223,7 @@ function VendorRichCard({ v, idx, badge }) {
   return (
     <div style={{
       padding: "14px 16px",
-      background: "rgba(20,20,20,0.85)",
+      background: "rgba(26,26,26,0.88)",
       border: "1px solid rgba(252,189,0,0.22)",
             borderRadius: 0,
       opacity: 0,
@@ -6611,8 +6616,8 @@ function OutreachBody({ channels }) {
   function sevPill(score) {
     if (typeof score !== "number") return null;
     if (score >= 5) return { label: "CRITICAL", bg: "#FF3B30" };
-    if (score >= 4) return { label: "HIGH",     bg: "#FF6B6B" };
-    if (score >= 3) return { label: "MEDIUM",   bg: "#FF8C5A" };
+    if (score >= 4) return { label: "HIGH",     bg: "#FF3B30" };
+    if (score >= 3) return { label: "MEDIUM",   bg: "#FF6B35" };
     if (score >= 2) return { label: "LOW",      bg: "#34C759" };
     return { label: "MINIMAL", bg: "rgba(255,255,255,0.30)" };
   }
@@ -6832,7 +6837,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             SEV {incident.severity} · {sev.label}
           </span>
           {cat && (
-            <span style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: cat.color + "22", color: cat.color, border: `1px solid ${cat.color}55`, borderRadius: 0 }}>
+            <span style={{ padding: "3px 8px", fontFamily: "Inter, sans-serif", fontSize: 9, letterSpacing: "0.08em", background: cat.color + "22", color: BRAND.text, borderLeft: `2px solid ${cat.color}`, border: `1px solid ${cat.color}55`, borderRadius: 0 }}>
               {incident._cat} · {cat.label.toUpperCase()}
             </span>
           )}
@@ -6911,7 +6916,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
           display: "flex", alignItems: "center", gap: 10,
           padding: "10px 14px 10px 12px",
           borderLeft: `3px solid ${sev.color}`,
-          background: `linear-gradient(90deg, ${sev.color}10 0%, transparent 60%)`,
+          background: `${sev.color}10`,
           borderBottom: `1px solid ${BRAND.borderSubtle}`,
         }}>
           <span style={{
@@ -6960,7 +6965,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                   fontFamily: "Inter, sans-serif", fontSize: 10, fontWeight: 600,
                   letterSpacing: "0.06em",
                   background: (cat?.color || BRAND.gold) + "22",
-                  color: cat?.color || BRAND.gold,
+                  color: BRAND.text, borderLeft: `2px solid ${cat?.color || BRAND.gold}`,
                   border: `1px solid ${(cat?.color || BRAND.gold)}55`,
                   borderRadius: 0,
                 }}>
@@ -6996,7 +7001,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         fontFamily: "Inter, sans-serif", fontSize: 9, fontWeight: 500,
                         letterSpacing: "0.06em",
                         background: mcColor + "15",
-                        color: mcColor,
+                        color: BRAND.text, borderLeft: `2px solid ${mcColor}`,
                         border: `1px solid ${mcColor}44`,
                         borderRadius: 0,
                       }}>
@@ -7040,7 +7045,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: m.why ? 4 : 0, flexWrap: "wrap" }}>
                           <span style={{
                             fontFamily: "Inter, sans-serif", fontSize: 9,
-                            color: mcColor, fontWeight: 600, letterSpacing: "0.06em",
+                            color: BRAND.text, fontWeight: 600, letterSpacing: "0.06em",
                           }}>
                             {m.subcategory_code || m.category}
                           </span>
@@ -7411,7 +7416,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                               padding: "2px 7px", borderRadius: 0,
                               fontFamily: "Inter, sans-serif", fontSize: 9, fontWeight: 600,
                               background: ent.impact_score >= 4 ? "#FF3B3022" : ent.impact_score >= 3 ? "#FF8C5A22" : "#34C75922",
-                              color:      ent.impact_score >= 4 ? "#FF6B6B"   : ent.impact_score >= 3 ? "#FF8C5A"   : "#34C759",
+                              color:      ent.impact_score >= 4 ? "#FF3B30"   : ent.impact_score >= 3 ? "#FF6B35"   : "#34C759",
                               border: `1px solid ${ent.impact_score >= 4 ? "#FF6B6B55" : ent.impact_score >= 3 ? "#FF8C5A55" : "#34C75955"}`,
                               letterSpacing: "0.08em",
                             }}>
@@ -7672,7 +7677,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                   )}
                   {e && (
                     <div style={{ padding: "10px 12px", background: BRAND.obsidian, borderRadius: 0 }}>
-                      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF8C5A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6 }}>
+                      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF6B35", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6 }}>
                         Emerging Risk
                       </div>
                       <div style={{ fontSize: 11, color: BRAND.white, lineHeight: 1.5 }}>
@@ -7812,7 +7817,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
                             padding: "2px 6px", borderRadius: 0,
                             fontFamily: "Inter, sans-serif", fontSize: 9,
                             fontWeight: 600, letterSpacing: "0.08em",
-                            background: catColor + "22", color: catColor,
+                            background: catColor + "22", color: BRAND.text,
                             border: `1px solid ${catColor}55`,
                           }}>
                             {m.subcategory_code || m.category}
@@ -8300,7 +8305,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
               <span style={{
                 padding: "1px 6px",
                 fontFamily: "Inter, sans-serif", fontSize: 9,
-                color: incident._verified ? "#34C759" : "#FF6B6B",
+                color: incident._verified ? "#34C759" : "#FF3B30",
                 letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600,
                 border: `1px solid ${incident._verified ? "#34C75955" : "#FF6B6B55"}`, borderRadius: 0,
               }}>
@@ -8316,7 +8321,7 @@ function IncidentPanel({ incident, reporter, viewMode, onClose }) {
             </button>
             {isOpen && (
               <div style={{ padding: "0 16px 16px 16px", fontSize: 11, color: BRAND.textSecondary }}>
-                Status: <strong style={{ color: incident._verified ? "#34C759" : "#FF6B6B" }}>{incident._verified ? "verified" : "unverified"}</strong>
+                Status: <strong style={{ color: incident._verified ? "#34C759" : "#FF3B30" }}>{incident._verified ? "verified" : "unverified"}</strong>
                 {incident._verification_confidence && <> · confidence: <strong style={{ color: BRAND.white }}>{incident._verification_confidence}</strong></>}
                 {incident._verification_flagged_claims && <> · flagged: <strong style={{ color: BRAND.white }}>{incident._verification_flagged_claims.length}</strong></>}
               </div>
@@ -8528,7 +8533,7 @@ function AuditDrawer({ incidents, onClose }) {
     <div style={{
       position: "fixed",
       inset: 0,
-      background: "rgba(8,8,8,0.92)",
+      background: "rgba(14,17,22,0.92)",
       backdropFilter: "blur(6px)",
       zIndex: 200,
       display: "flex",
@@ -8593,7 +8598,7 @@ function AuditDrawer({ incidents, onClose }) {
                       const sev = SEVERITY[inc.severity] || SEVERITY[3];
                       return (
                         <span key={j} title={inc.headline}
-                          style={{ padding: "2px 7px", fontFamily: "Inter, sans-serif", fontSize: 9, background: BRAND.obsidianElevated, color: cat?.color || BRAND.white, borderLeft: `2px solid ${sev.color}`, borderRadius: 0 }}>
+                          style={{ padding: "2px 7px", fontFamily: "Inter, sans-serif", fontSize: 9, background: BRAND.obsidianElevated, color: BRAND.white, borderLeft: `2px solid ${sev.color}`, borderRadius: 0 }}>
                           {inc._cat}·{inc._idx}
                         </span>
                       );
@@ -8701,7 +8706,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
           background: "rgba(255,107,107,0.10)",
         }}>
           <div style={{
-            fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF6B6B",
+            fontFamily: "Inter, sans-serif", fontSize: 9, color: "#FF3B30",
             letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4,
           }}>
             ⚠ Live feed unavailable
@@ -8847,15 +8852,15 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
 // first "Sound on" tap (required by browser autoplay policy).
 // ─────────────────────────────────────────────────────────────────────────────
 const _tourTiny = (active, light) => ({
-  background: active ? (light ? "rgba(252,189,0,0.14)" : "rgba(252,189,0,0.16)") : (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.06)"),
-  color: active ? (light ? "#8A6D00" : "#FCBD00") : (light ? "#52525B" : "rgba(255,255,255,0.7)"),
+  background: active ? (light ? "rgba(252,189,0,0.14)" : "rgba(252,189,0,0.16)") : (light ? "rgba(14,17,22,0.05)" : "rgba(255,255,255,0.06)"),
+  color: active ? (light ? "#8A6D00" : "#FCBD00") : (light ? "#5B5F66" : "rgba(255,255,255,0.7)"),
   border: light ? "1px solid #E7E7E9" : "1px solid rgba(255,255,255,0.12)", borderRadius: 0, padding: "4px 9px",
   fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer",
   fontFamily: "Inter, sans-serif", textTransform: "uppercase", whiteSpace: "nowrap",
 });
 const _tourNav = (disabled, light) => ({
-  background: disabled ? (light ? "rgba(10,10,10,0.05)" : "rgba(255,255,255,0.04)") : "#FCBD00",
-  color: disabled ? (light ? "rgba(10,10,10,0.3)" : "rgba(255,255,255,0.3)") : "#1A1A1A",
+  background: disabled ? (light ? "rgba(14,17,22,0.05)" : "rgba(255,255,255,0.04)") : "#FCBD00",
+  color: disabled ? (light ? "rgba(14,17,22,0.3)" : "rgba(255,255,255,0.3)") : "#1A1A1A",
   border: "none", borderRadius: 0, padding: "8px 16px", fontSize: 12, fontWeight: 700,
   letterSpacing: "0.04em", cursor: disabled ? "default" : "pointer", fontFamily: "Inter, sans-serif",
 });
@@ -8955,28 +8960,28 @@ function GuidedTour({ incident, onFeature, onClose, light }) {
 
   return (
     <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 200, display: "flex", justifyContent: "center", padding: "0 16px 96px", pointerEvents: "none" }}>
-      <div style={{ pointerEvents: "auto", width: "min(760px, 96vw)", background: light ? "rgba(255,255,255,0.98)" : "rgba(16,16,18,0.94)", backdropFilter: "blur(18px)", border: light ? "1px solid #E7E7E9" : "1px solid rgba(252,189,0,0.30)", borderRadius: 0, boxShadow: light ? "0 24px 70px rgba(10,10,10,0.18)" : "0 24px 70px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
-        <div style={{ height: 3, background: light ? "rgba(10,10,10,0.08)" : "rgba(255,255,255,0.08)" }}>
-          <div style={{ height: "100%", width: pct + "%", background: "linear-gradient(90deg,#FCBD00,#D4A000)", transition: "width 300ms ease" }} />
+      <div style={{ pointerEvents: "auto", width: "min(760px, 96vw)", background: light ? "rgba(255,255,255,0.98)" : "rgba(16,16,18,0.94)", backdropFilter: "blur(18px)", border: light ? "1px solid #E7E7E9" : "1px solid rgba(252,189,0,0.30)", borderRadius: 0, boxShadow: light ? "0 24px 70px rgba(14,17,22,0.18)" : "0 24px 70px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
+        <div style={{ height: 3, background: light ? "rgba(14,17,22,0.08)" : "rgba(255,255,255,0.08)" }}>
+          <div style={{ height: "100%", width: pct + "%", background: "#FCBD00", transition: "width 300ms ease" }} />
         </div>
         <div style={{ padding: "15px 20px 17px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: light ? "#8A6D00" : "#FCBD00" }}>
-              ◆ Guided tour · {s.label} <span style={{ color: light ? "rgba(10,10,10,0.4)" : "rgba(255,255,255,0.4)" }}>· {step + 1}/{STEPS.length}</span>
+              ◆ Guided tour · {s.label} <span style={{ color: light ? "rgba(14,17,22,0.4)" : "rgba(255,255,255,0.4)" }}>· {step + 1}/{STEPS.length}</span>
             </span>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setVoiceOn(v => !v)} style={_tourTiny(voiceOn, light)}>{voiceOn ? "🔊 Sound on" : "🔇 Tap for sound"}</button>
               <button onClick={finish} style={_tourTiny(false, light)}>Skip ✕</button>
             </div>
           </div>
-          <div style={{ fontSize: 16, lineHeight: 1.55, color: light ? "#0A0A0A" : "#FFFFFF", fontWeight: 500, minHeight: 50 }}>{s.caption}</div>
+          <div style={{ fontSize: 16, lineHeight: 1.55, color: light ? "#0E1116" : "#FFFFFF", fontWeight: 500, minHeight: 50 }}>{s.caption}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, gap: 12 }}>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} style={_tourNav(step === 0, light)}>‹ Back</button>
               <button onClick={() => { if (step < STEPS.length - 1) setStep(step + 1); else finish(); }} style={_tourNav(false, light)}>{step < STEPS.length - 1 ? "Next ›" : "Finish ✓"}</button>
               <button onClick={() => setPlaying(p => !p)} style={_tourNav(false, light)}>{playing ? "⏸ Pause" : "▶ Play"}</button>
             </div>
-            <button onClick={() => { tokenRef.current++; setStep(0); setPlaying(true); }} style={{ background: "none", border: "none", color: light ? "rgba(10,10,10,0.5)" : "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>↻ Replay</button>
+            <button onClick={() => { tokenRef.current++; setStep(0); setPlaying(true); }} style={{ background: "none", border: "none", color: light ? "rgba(14,17,22,0.5)" : "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>↻ Replay</button>
           </div>
         </div>
       </div>
@@ -10206,8 +10211,8 @@ export default function GlobalAttackMap() {
         <div style={{
           position: "relative", zIndex: 40,
           display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
-          background: "rgba(8,8,8,0.92)", backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #222",
+          background: "rgba(14,17,22,0.92)", backdropFilter: "blur(12px)",
+          borderBottom: "1px solid #2E2E2E",
         }}>
           <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 7, height: 7, borderRadius: 0, background: BRAND.gold, boxShadow: "0 0 8px rgba(252,189,0,0.6)", flexShrink: 0 }} />
@@ -10250,7 +10255,7 @@ export default function GlobalAttackMap() {
         <div onClick={() => setShowLayers(false)} style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(0,0,0,0.55)" }}>
           <div onClick={e => e.stopPropagation()} style={{
             position: "absolute", left: 0, right: 0, bottom: 0,
-            background: "#141416", borderTop: "1px solid #333", borderRadius: 0,
+            background: "#1A1A1A", borderTop: "1px solid #383838", borderRadius: 0,
             padding: "16px 16px calc(22px + env(safe-area-inset-bottom))", maxHeight: "82vh", overflowY: "auto",
             fontFamily: "Inter, sans-serif",
           }}>
@@ -10289,10 +10294,10 @@ export default function GlobalAttackMap() {
                       <button key={b.id} onClick={b.on} style={{
                         flex: 1, padding: "11px 8px", borderRadius: 0, cursor: "pointer",
                         background: b.active ? "rgba(252,189,0,0.14)" : "transparent",
-                        // Inactive toggles used BRAND.textMuted (#585858), which on the
-                    // #080808 map chrome is 2.82:1 — an off state should read as quiet,
-                    // not unreadable. #8C8C8C keeps it clearly secondary at ~4.7:1.
-                    color: b.active ? BRAND.gold : "#8C8C8C",
+                        // Inactive toggles used BRAND.textMuted (#8E9198), which on the
+                    // #0E1116 map chrome is 2.82:1 — an off state should read as quiet,
+                    // not unreadable. #8E9198 keeps it clearly secondary at ~4.7:1.
+                    color: b.active ? BRAND.gold : "#8E9198",
                         border: `1px solid ${b.active ? BRAND.borderGold : BRAND.borderSubtle}`,
                         fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, textTransform: "uppercase",
                       }}>{b.t}</button>
@@ -10373,7 +10378,7 @@ export default function GlobalAttackMap() {
             <div style={{
               padding: 12, background: "rgba(255,107,107,0.1)",
               border: "1px solid rgba(255,107,107,0.3)", borderRadius: 0,
-              color: "#FF6B6B", fontFamily: "Inter, sans-serif", fontSize: 12,
+              color: "#FF3B30", fontFamily: "Inter, sans-serif", fontSize: 12,
             }}>
               {error}
             </div>
@@ -10767,7 +10772,7 @@ export default function GlobalAttackMap() {
                         style={{
                           display: "flex", justifyContent: "space-between", alignItems: "center",
                           padding: "8px 12px",
-                          background: on ? "rgba(252,189,0,0.18)" : "rgba(8,8,8,0.4)",
+                          background: on ? "rgba(252,189,0,0.18)" : "rgba(14,17,22,0.4)",
                           border: `1px solid ${on ? BRAND.gold : BRAND.borderSubtle}`,
                           borderRadius: 0,
                           fontFamily: "Inter, sans-serif", fontSize: 12,
@@ -10865,7 +10870,7 @@ export default function GlobalAttackMap() {
                         style={{
                           display: "flex", justifyContent: "space-between", alignItems: "center",
                           padding: "8px 12px",
-                          background: on ? "rgba(252,189,0,0.18)" : "rgba(8,8,8,0.4)",
+                          background: on ? "rgba(252,189,0,0.18)" : "rgba(14,17,22,0.4)",
                           border: `1px solid ${on ? BRAND.gold : BRAND.borderSubtle}`,
                           borderRadius: 0,
                           fontFamily: "Inter, sans-serif", fontSize: 12,
@@ -10899,7 +10904,7 @@ export default function GlobalAttackMap() {
               boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
               zIndex: 30,
             }}>
-              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: `linear-gradient(90deg, ${BRAND.gold}, ${BRAND.goldDim})`, borderRadius: 0 }} />
+              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: BRAND.gold, borderRadius: 0 }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600 }}>
                   ◇ DETAILED FILTERS
@@ -11039,7 +11044,7 @@ export default function GlobalAttackMap() {
           <div className="r-hide" style={{
             position: "absolute", bottom: 24, right: 24, zIndex: 20,
             padding: "9px 12px 10px", minWidth: 120,
-            background: "rgba(26,26,28,0.92)", backdropFilter: "blur(14px)",
+            background: "rgba(26,26,26,0.92)", backdropFilter: "blur(14px)",
             border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
             boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
           }}>
@@ -11128,7 +11133,7 @@ export default function GlobalAttackMap() {
                   style={{
                     padding: "5px 10px",
                     background: b.active ? "rgba(252,189,0,0.12)" : "transparent",
-                    color: b.active ? BRAND.gold : "#8C8C8C",   // was BRAND.textMuted (#585858) = 2.82:1 on the #080808 chrome
+                    color: b.active ? BRAND.gold : "#8E9198",   // was BRAND.textMuted (#8E9198) = 2.82:1 on the #0E1116 chrome
 
                     border: `1px solid ${b.active ? BRAND.borderGold : BRAND.borderSubtle}`,
                     borderRadius: 0,
@@ -11150,7 +11155,7 @@ export default function GlobalAttackMap() {
           <div style={{
             position: "absolute", bottom: 90, left: "50%", transform: "translateX(-50%)",
             padding: "8px 18px",
-            background: "rgba(8,8,8,0.7)", backdropFilter: "blur(12px)",
+            background: "rgba(14,17,22,0.7)", backdropFilter: "blur(12px)",
             border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0,
             fontFamily: "Inter, sans-serif", fontSize: 12, color: BRAND.textSecondary,
             maxWidth: 560, textAlign: "center",
@@ -11313,7 +11318,7 @@ export default function GlobalAttackMap() {
           position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)",
           padding: "10px 18px",
           background: "rgba(46,46,46,0.95)", backdropFilter: "blur(16px)",
-          color: archiveToast.type === "warn" ? "#FF8C5A" : BRAND.gold,
+          color: archiveToast.type === "warn" ? "#FF6B35" : BRAND.gold,
           border: `1px solid ${archiveToast.type === "warn" ? "rgba(255,107,107,0.4)" : BRAND.borderGold}`,
           borderRadius: 0,
           fontFamily: "Inter, sans-serif", fontSize: 11, letterSpacing: "0.08em",
@@ -11328,7 +11333,7 @@ export default function GlobalAttackMap() {
           position: "fixed", bottom: 24, right: 24,
           padding: "8px 12px", background: "rgba(255,107,107,0.08)",
           border: "1px solid rgba(255,107,107,0.25)", borderRadius: 0,
-          color: "#FF8C5A", fontFamily: "Inter, sans-serif", fontSize: 10,
+          color: "#FF6B35", fontFamily: "Inter, sans-serif", fontSize: 10,
           zIndex: 50,
         }}>
           World atlas: {worldErr}

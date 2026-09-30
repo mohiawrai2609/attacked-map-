@@ -14,10 +14,10 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 
 const C = {
-  paper: "#FFFFFF", paper2: "#FAFAFA", ink: "#101010", ink2: "#52525B", ink3: "#6A6A6A",
-  ink4: "#9A9A98", line: "#E7E7E9", line2: "#CFCDC4",
-  gold: "#FCBD00", goldDeep: "#8A6D00", obsidian: "#1A1A1A", deep: "#080808",
-  err: "#C0341D", ok: "#1E7A3D",
+  paper: "#FFFFFF", paper2: "#F5F2E9", ink: "#0E1116", ink2: "#5B5F66", ink3: "#7A7E86",
+  ink4: "#7A7E86", line: "#E7E7E9", line2: "#CFCDC4",
+  gold: "#FCBD00", goldDeep: "#8A6D00", obsidian: "#1A1A1A", deep: "#0E1116",
+  err: "#B21F31", ok: "#1E7A3D",
 };
 const FONT = "Inter, sans-serif";
 
@@ -127,7 +127,7 @@ export function ProfilePage() {
       <div style={{ height: 3, background: C.gold }} />
 
       {/* Header — dark band */}
-      <section style={{ background: C.deep, color: "#FFFFFF", borderBottom: `1px solid #333` }}>
+      <section style={{ background: C.deep, color: "#FFFFFF", borderBottom: `1px solid #383838` }}>
         <div className="r-pad" style={{ maxWidth: 720, margin: "0 auto", padding: "40px 28px 36px", display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
           {/* Avatar — click to upload a profile picture */}
           <div style={{ position: "relative", flex: "0 0 auto" }}>
@@ -163,7 +163,7 @@ export function ProfilePage() {
             <h1 style={{ margin: "6px 0 0", fontSize: "clamp(24px,3vw,32px)", fontWeight: 800, letterSpacing: "-0.02em", color: "#FFFFFF" }}>
               {fullName || "Your account"}
             </h1>
-            <div style={{ marginTop: 6, fontSize: 13, color: "#A8A8A8", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ marginTop: 6, fontSize: 13, color: "#A6A8AD", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <span>{user.email}</span>
               <span style={{
                 padding: "3px 9px", borderRadius: 3, fontSize: 10, fontWeight: 700,
@@ -176,7 +176,7 @@ export function ProfilePage() {
               cursor: avatarBusy ? "default" : "pointer",
               color: C.gold, fontFamily: FONT, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
             }}>{avatarBusy ? "Uploading…" : (avatarUrl ? "Change photo" : "＋ Add a photo")}</button>
-            {avatarErr && <div style={{ marginTop: 6, fontSize: 11.5, color: "#FF8C5A" }}>{avatarErr}</div>}
+            {avatarErr && <div style={{ marginTop: 6, fontSize: 11.5, color: "#FF6B35" }}>{avatarErr}</div>}
           </div>
         </div>
       </section>
@@ -184,7 +184,7 @@ export function ProfilePage() {
       {/* Body — light */}
       <main className="r-pad" style={{ maxWidth: 720, margin: "0 auto", padding: "40px 28px 72px" }}>
         {/* Editable details */}
-        <form onSubmit={save} style={{ background: C.paper2, border: `1px solid ${C.line}`, borderRadius: 12, padding: "26px 24px" }}>
+        <form onSubmit={save} style={{ background: C.paper2, border: `1px solid ${C.line}`, borderRadius: 6, padding: "26px 24px" }}>
           <h2 style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 800, color: C.ink, letterSpacing: "-0.01em" }}>Your details</h2>
           <p style={{ margin: "0 0 20px", fontSize: 12.5, color: C.ink3 }}>Keep this current — it personalises your briefing.</p>
 
@@ -222,7 +222,7 @@ export function ProfilePage() {
         </form>
 
         {/* Account info (read-only) */}
-        <div style={{ marginTop: 22, background: C.paper, border: `1px solid ${C.line}`, borderRadius: 12, padding: "20px 24px" }}>
+        <div style={{ marginTop: 22, background: C.paper, border: `1px solid ${C.line}`, borderRadius: 6, padding: "20px 24px" }}>
           <h2 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 800, color: C.ink }}>Account</h2>
           <ReadRow k="Email" v={user.email} />
           <ReadRow k="Access tier" v={`${tier || "free"}`} />

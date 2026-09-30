@@ -228,7 +228,7 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
           </div>
           <section className="briefs">
             <div className="briefs-head"><div><h3>Latest long-form briefings</h3><p>Full analyst write-ups for incidents in your industry.</p></div><span className="briefs-count">{P.briefings} available</span></div>
-            <div>{P.briefs.length ? P.briefs.slice(0, 5).map((i) => <button key={i.id} className="brief-row" onClick={() => onOpen(i)}><Icon name="book" style={{ color: "#6A6A6A" }} /><span><b>{i.headline}</b><span>{i.entity || ""} · {i.catName}</span></span><span className="brief-date">{shortDay(i.day)} →</span></button>)
+            <div>{P.briefs.length ? P.briefs.slice(0, 5).map((i) => <button key={i.id} className="brief-row" onClick={() => onOpen(i)}><Icon name="book" style={{ color: "#7A7E86" }} /><span><b>{i.headline}</b><span>{i.entity || ""} · {i.catName}</span></span><span className="brief-date">{shortDay(i.day)} →</span></button>)
               : <div className="empty" style={{ textAlign: "center" }}>No long-form briefings yet for this industry. The incident cards above are live.</div>}</div>
           </section>
         </div>

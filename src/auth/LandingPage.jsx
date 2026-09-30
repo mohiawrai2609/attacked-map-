@@ -27,10 +27,10 @@ import { Globe } from "./Globe";
 // token set is a superset of the old keys, so every call site below is
 // unchanged; what shifts is the values (blue-black ground, cream paper
 // bands) and the new editorial type/component recipes imported alongside.
-import { BRAND, TYPE, btn, shell, band, LAYOUT } from "../brand.js";
+import { BRAND, TYPE, btn, shell, band, LAYOUT, MONO } from "../brand.js";
 
 const SEVERITY_LABEL = { 5: "CRITICAL", 4: "HIGH", 3: "MEDIUM", 2: "LOW", 1: "MINIMAL" };
-const SEVERITY_COLOR = { 5: "#FF3B30", 4: "#FF8C5A", 3: BRAND.gold, 2: "#34C759", 1: "#8E8E93" };
+const SEVERITY_COLOR = { 5: "#FF3B30", 4: "#FF6B35", 3: BRAND.gold, 2: "#34C759", 1: "#8E8E93" };
 
 // The 13 GUARD categories — [code, name, live?, count] — for the live stripe ticker.
 const CATS = [
@@ -70,7 +70,7 @@ function CardImage({ article, height = 130 }) {
   if (failed) {
     return (
       <div style={{
-        height, background: `linear-gradient(135deg, ${sev}33, ${BRAND.obsidian} 70%)`,
+        height, background: BRAND.obsidian, borderTop: `2px solid ${sev}`,
         display: "flex", alignItems: "center", justifyContent: "center",
         color: sev, fontWeight: 800, fontSize: 18, letterSpacing: "0.12em",
       }}>{cat}</div>
@@ -81,7 +81,7 @@ function CardImage({ article, height = 130 }) {
       <img src={article.image_url || CATEGORY_IMG[cat] || CATEGORY_IMG._default} alt="" loading="lazy"
         onError={() => setFailed(true)}
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(8,8,8,0.05), rgba(8,8,8,0.62))" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(14,17,22,0.05), rgba(14,17,22,0.62))" }} />
     </div>
   );
 }
@@ -120,7 +120,7 @@ function useLiveIntel() {
           supabase.from("incidents")
             // image_url is BACK since 2026-09-23 (migration 20260923_incident_images:
             // the stored picture written by the incident-images function).
-            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry,image_url")
+            .select("id,headline,summary,entity,country,sector,severity,primary_category,incident_day,industry,image_url,latitude,longitude")
             .not("incident_day", "is", null)
             .order("incident_day", { ascending: false, nullsFirst: false })
             .order("severity", { ascending: false })
@@ -150,7 +150,21 @@ function useLiveIntel() {
           seenEnt.add(k); rotationPool.push(r);
           if (rotationPool.length >= 8) break;
         }
-        setIntel({ totalIncidents: total ?? null, countries, industries, latestDay, heroIncident: hero, headlines, feedCards, rotationPool });
+        setIntel({ totalIncidents: total ?? null, countries, industries, latestDay, heroIncident: hero, headlines, feedCards, rotationPool, cats: null, globeRows: rows || [] });
+
+        // The GUARD ticker: real incident counts per category over the 30 days
+        // ending on the latest sweep, and which categories the latest sweep
+        // touched. Used to be a hard-coded array presented as "Live".
+        if (latestDay) {
+          const since = new Date(`${latestDay}T00:00:00Z`); since.setUTCDate(since.getUTCDate() - 29);
+          const { data: catRows } = await supabase.from("incidents").select("primary_category,incident_day")
+            .gte("incident_day", since.toISOString().slice(0, 10)).lte("incident_day", latestDay).limit(5000);
+          if (cancelled || !catRows) return;
+          const n = {}, today = new Set();
+          for (const r of catRows) { n[r.primary_category] = (n[r.primary_category] || 0) + 1; if (r.incident_day === latestDay) today.add(r.primary_category); }
+          const cats = CATS.map(([code, name]) => [code, name, today.has(code) ? 1 : 0, n[code] || 0]);
+          setIntel((s) => ({ ...s, cats }));
+        }
       } catch { /* keep nulls — page degrades gracefully */ }
     })();
     return () => { cancelled = true; };
@@ -204,7 +218,7 @@ function BlastRadiusViz() {
         ctx.strokeStyle = n.you ? "rgba(255,59,48,0.22)" : "rgba(252,189,0,0.15)"; ctx.lineWidth = 1; ctx.stroke();
         if (!reduce) {
           const prog = ((t / 2600 + i * 0.17) % 1), pt = bez(c, p, prog);
-          ctx.beginPath(); ctx.fillStyle = n.you ? "#FF6B6B" : GOLD;
+          ctx.beginPath(); ctx.fillStyle = n.you ? "#FF3B30" : GOLD;
           ctx.shadowColor = n.you ? RED : GOLD; ctx.shadowBlur = 10;
           ctx.arc(pt[0], pt[1], 2, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
         }
@@ -234,7 +248,7 @@ function BlastRadiusViz() {
         if (!n.nm) continue; const p = pos(n), you = n.you;
         ctx.fillStyle = you ? "#FF8A8A" : "#fff"; ctx.font = (you ? "700" : "600") + " 12px 'JetBrains Mono', monospace";
         ctx.fillText(n.nm, p[0], p[1] - 12);
-        ctx.fillStyle = "#6a6a6a"; ctx.font = "500 9px 'JetBrains Mono', monospace";
+        ctx.fillStyle = "#7A7E86"; ctx.font = "500 9px 'JetBrains Mono', monospace";
         ctx.fillText(n.role, p[0], p[1] + 19);
       }
       ctx.fillStyle = "#FF8A8A"; ctx.font = "700 10px 'JetBrains Mono', monospace"; ctx.fillText("INCIDENT", cx, cy - 16);
@@ -381,17 +395,20 @@ export function LandingPage() {
           fontSize: 10.5, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase",
           color: BRAND.gold, background: BRAND.deep, zIndex: 2, whiteSpace: "nowrap",
         }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: BRAND.gold, boxShadow: "0 0 10px rgba(252,189,0,0.7)" }} />
-          13 GUARD Categories · Live
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: BRAND.gold }} />
+          13 GUARD Categories · 30 days
         </div>
         <div className="attacked-tickwrap" style={{ flex: 1, overflow: "hidden", position: "relative" }}>
           <div className="attacked-tick" style={{ display: "flex", gap: 30, whiteSpace: "nowrap", width: "max-content", paddingLeft: 30 }}>
-            {[...CATS, ...CATS].map((c, i) => (
+            {/* Each category in its own GUARD colour (tokens --g-XXX), solid when
+                the latest sweep touched it; the code in white, so the strip
+                carries no gold of its own (brand: one gold emphasis per screen). */}
+            {[...(intel.cats || CATS), ...(intel.cats || CATS)].map((c, i) => (
               <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 9, height: 52, fontSize: 12, color: BRAND.t2, letterSpacing: "0.03em" }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: c[2] ? BRAND.gold : "#3a3a3a" }} />
-                <span style={{ color: BRAND.gold, fontWeight: 700 }}>{c[0]}</span>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: `var(--g-${c[0]})`, opacity: c[2] ? 1 : 0.4 }} />
+                <span style={{ color: BRAND.white, fontWeight: 700, fontFamily: MONO, fontSize: 11 }}>{c[0]}</span>
                 {c[1]}
-                <span style={{ color: BRAND.tmuted, fontSize: 11 }}>{c[3]}</span>
+                <span style={{ color: BRAND.tmuted, fontSize: 11, fontFamily: MONO }}>{intel.cats ? c[3] : "—"}</span>
               </span>
             ))}
           </div>
@@ -402,7 +419,7 @@ export function LandingPage() {
       <main id="main-content" tabIndex={-1} style={{ outline: "none" }}>
       <section aria-label="Introduction" className="r-pad r-pad-y" style={{
         position: "relative",
-        background: `radial-gradient(ellipse 80% 60% at 70% 20%, rgba(252,189,0,0.07), transparent 60%), ${BRAND.black}`,
+        background: BRAND.black,
         padding: "96px 36px 84px",
       }}>
         <div className="r-herogrid" style={{
@@ -431,7 +448,7 @@ export function LandingPage() {
             <p style={{
               ...TYPE.standfirst,
               margin: "30px 0 0", maxWidth: 600,
-              color: "#D1D5D9",
+              color: "#EDEDED",
             }}>
               Cyber, supply-chain, financial, geopolitical and physical incidents —
               classified through the GUARD framework, geolocated, with the blast
@@ -460,7 +477,8 @@ export function LandingPage() {
               of the text (per user request); its overlay labels are hidden via
               .globe-ovl so the small sphere reads cleanly. */}
           <div style={{ gridArea: "globe", width: "100%", maxWidth: 440, margin: "0 auto" }}>
-            <Globe size={380} />
+            {/* Real incidents from the latest sweeps; remounts once they arrive. */}
+            <Globe key={intel.latestDay || "reference"} size={380} incidents={intel.globeRows} dateLabel={intel.latestDay ? fmtDay(intel.latestDay) : null} />
           </div>
 
           {/* Right (bottom on desktop / full-width on mobile) — slim sample card */}
@@ -521,7 +539,7 @@ export function LandingPage() {
 
       {/* ───────────────────────── EXPLAINER VIDEO ───────────────────────── */}
       <section aria-label="How Attacked.ai works" className="r-pad" style={{
-        background: `radial-gradient(ellipse 70% 60% at 50% 0%, rgba(252,189,0,0.05), transparent 60%), ${BRAND.obsidian}`,
+        background: BRAND.obsidian,
         borderTop: `1px solid ${BRAND.border}`,
         padding: "76px 36px 84px",
       }}>
@@ -575,10 +593,10 @@ export function LandingPage() {
                 boxShadow: "0 0 10px rgba(252,189,0,0.5)",
               }} />
               Live from the latest incidents
-              <span style={{ color: "#6A6A6A" }}>· {fmtDay(intel.latestDay)}</span>
+              <span style={{ color: "#7A7E86" }}>· {fmtDay(intel.latestDay)}</span>
             </div>
             <a href="/?hub" style={{
-              fontSize: 11.5, fontWeight: 700, color: "#52525B", textDecoration: "none",
+              fontSize: 11.5, fontWeight: 700, color: "#5B5F66", textDecoration: "none",
               letterSpacing: "0.08em", textTransform: "uppercase",
             }}>Browse the hub →</a>
           </div>
@@ -631,7 +649,7 @@ export function LandingPage() {
                         padding: "2px 7px", borderRadius: 0,
                         fontSize: 9.5, fontWeight: 700, color: BRAND.white,
                         letterSpacing: "0.08em", textTransform: "uppercase",
-                        background: "rgba(8,8,8,0.5)", border: `1px solid ${BRAND.border}`,
+                        background: "rgba(14,17,22,0.5)", border: `1px solid ${BRAND.border}`,
                         backdropFilter: "blur(4px)",
                       }}>{c.primary_category || "OPS"}</span>
                     </div>
@@ -644,7 +662,7 @@ export function LandingPage() {
                       display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
                     }}>{c.headline}</h3>
                     <div style={{
-                      marginTop: 8, fontSize: 10.5, color: "#6A6A6A", fontWeight: 600,
+                      marginTop: 8, fontSize: 10.5, color: "#7A7E86", fontWeight: 600,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
                       {[c.entity, c.country, c.industry || c.sector].filter(Boolean).join("  ·  ")}
@@ -693,7 +711,7 @@ export function LandingPage() {
           </h2>
           <p style={{
             margin: "16px auto 0", maxWidth: 560, textAlign: "center",
-            fontSize: 15, lineHeight: 1.6, color: "#A8A8A8",
+            fontSize: 15, lineHeight: 1.6, color: "#A6A8AD",
           }}>
             Headlines tell you what happened. We tell you who is exposed,
             how it spreads, and what to do about it.
@@ -751,12 +769,12 @@ export function LandingPage() {
                 <div style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   width: 42, height: 42, borderRadius: 0, marginBottom: 18,
-                  background: "#FFF7DE", border: "1px solid rgba(252,189,0,0.5)",
+                  background: "#FFFFFF", border: "1px solid rgba(252,189,0,0.5)",
                 }}>{c.icon}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 10, color: "#FFFFFF" }}>
                   {c.t}
                 </div>
-                <div style={{ fontSize: 13.5, lineHeight: 1.6, color: "#A8A8A8" }}>
+                <div style={{ fontSize: 13.5, lineHeight: 1.6, color: "#A6A8AD" }}>
                   {c.d}
                 </div>
               </div>
@@ -774,7 +792,7 @@ export function LandingPage() {
           <div style={{ ...sectionLabel, color: "#8A6D00" }}>The intelligence inbox</div>
           <h2 style={{
             fontFamily: "Inter, sans-serif", margin: 0, textAlign: "center", fontWeight: 800,
-            fontSize: "clamp(26px, 3vw, 38px)", letterSpacing: "-0.02em", color: "#101010",
+            fontSize: "clamp(26px, 3vw, 38px)", letterSpacing: "-0.02em", color: "#0E1116",
           }}>
             Your briefing, <span style={{ color: BRAND.gold, fontStyle: "italic", fontFamily: "Inter, sans-serif" }}>calibrated to you.</span>
           </h2>
@@ -789,11 +807,11 @@ export function LandingPage() {
               borderRadius: 0, padding: "26px 26px 24px",
             }}>
               <div style={{
-                fontSize: 10.5, fontWeight: 700, color: "#6A6A6A",
+                fontSize: 10.5, fontWeight: 700, color: "#7A7E86",
                 letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8,
               }}>Free · daily</div>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", color: "#101010" }}>The Daily Brief</div>
-              <div style={{ marginTop: 10, fontSize: 13.5, lineHeight: 1.6, color: "#52525B" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", color: "#0E1116" }}>The Daily Brief</div>
+              <div style={{ marginTop: 10, fontSize: 13.5, lineHeight: 1.6, color: "#5B5F66" }}>
                 Every incident we catch — headline, severity, category and country.
                 The full day's breadth at a glance, in your inbox.
               </div>
@@ -807,7 +825,7 @@ export function LandingPage() {
             </div>
             {/* Subscriber Brief — featured (gold-tint) */}
             <div style={{
-              background: "#FFFDF5", border: `1px solid ${BRAND.gold}`,
+              background: "#FFFFFF", border: `1px solid ${BRAND.gold}`,
               borderRadius: 0, padding: "26px 26px 24px",
               position: "relative", boxShadow: "0 16px 40px rgba(252,189,0,0.14)",
             }}>
@@ -815,8 +833,8 @@ export function LandingPage() {
                 fontSize: 10.5, fontWeight: 700, color: "#8A6D00",
                 letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8,
               }}>Subscriber · daily</div>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", color: "#101010" }}>The Subscriber Brief</div>
-              <div style={{ marginTop: 10, fontSize: 13.5, lineHeight: 1.6, color: "#52525B" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", color: "#0E1116" }}>The Subscriber Brief</div>
+              <div style={{ marginTop: 10, fontSize: 13.5, lineHeight: 1.6, color: "#5B5F66" }}>
                 Full operational detail — named blast radius, adaptive GUARD controls, peer watchlist, historical analogues and vendor Defence Ratings.
               </div>
               <button onClick={startSubscribe} style={{
@@ -836,7 +854,7 @@ export function LandingPage() {
       {/* ───────── THE BLAST RADIUS — cinematic network (deep black, editorial) ───────── */}
       <section className="r-pad" style={{
         position: "relative", overflow: "hidden", padding: "100px 36px 92px",
-        background: "#080808",
+        background: "#0E1116",
         borderTop: `1px solid ${BRAND.border}`, borderBottom: `1px solid ${BRAND.border}`,
       }}>
         <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 2 }}>
@@ -852,7 +870,7 @@ export function LandingPage() {
           <p style={{ margin: "22px auto 0", maxWidth: 520, fontSize: 16, lineHeight: 1.65, color: BRAND.t2 }}>
             One breach, filing or strike ripples to every supplier, customer and peer downstream. We trace exactly who is exposed — and hand you the next move.
           </p>
-          <p style={{ margin: "20px auto 0", fontFamily: "'JetBrains Mono', monospace", fontSize: 11.5, letterSpacing: "0.16em", color: "#6f6f6f" }}>
+          <p style={{ margin: "20px auto 0", fontFamily: "'JetBrains Mono', monospace", fontSize: 11.5, letterSpacing: "0.16em", color: "#7A7E86" }}>
             23 COMPANIES EXPOSED · 6 EXPOSURE CHANNELS · 1 LIVE MAP
           </p>
         </div>
@@ -864,7 +882,7 @@ export function LandingPage() {
       {/* ───────────────── FINAL CTA + FOOTER ───────────────── */}
       <section className="r-pad" style={{
         padding: "84px 36px",
-        background: `radial-gradient(ellipse 70% 80% at 50% 100%, rgba(252,189,0,0.06), transparent 65%), ${BRAND.deep}`,
+        background: BRAND.deep,
         borderTop: `1px solid ${BRAND.border}`, textAlign: "center",
       }}>
         <h2 style={{
@@ -894,7 +912,7 @@ export function LandingPage() {
           onClick={dismissWelcome}
           style={{
             position: "fixed", inset: 0, zIndex: 200,
-            background: "rgba(8,8,8,0.78)", backdropFilter: "blur(6px)",
+            background: "rgba(14,17,22,0.78)", backdropFilter: "blur(6px)",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 24,
           }}>

@@ -25,7 +25,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { REPORT_FONTS, brandFontHref, brandStyleCss, injectEdits, readEdits } from "../lib/reportTemplate";
 
-const UI = { gold: "#FCBD00", obsidian: "#1A1A1A", card: "#242424", deep: "#080808", white: "#FFFFFF", muted: "#A8A8A8", border: "#333333", sel: "#3B82F6" };
+const UI = { gold: "#FCBD00", obsidian: "#1A1A1A", card: "#242424", deep: "#0E1116", white: "#FFFFFF", muted: "#A6A8AD", border: "#383838", sel: "#FCBD00" };
 
 // Fonts offered per element: the four brand faces, plus stacks every machine
 // already has, which need no network at all.
@@ -260,7 +260,7 @@ export function ReportPageEditor({ html, brand, onChange, height = "78vh" }) {
     const fam = first(inline.fontFamily || cs.fontFamily);
     const match = FONT_CHOICES.find((f) => fam && first(f.css) === fam);
     return {
-      color: toHex(inline.color || cs.color, "#141414"),
+      color: toHex(inline.color || cs.color, "#1A1A1A"),
       bg: toHex(inline.backgroundColor || cs.backgroundColor, "#ffffff"),
       size: Math.round(parseFloat(inline.fontSize || cs.fontSize) || 16),
       weight: inline.fontWeight || "",
@@ -283,7 +283,7 @@ export function ReportPageEditor({ html, brand, onChange, height = "78vh" }) {
       </div>
 
       {on && (
-        <div style={{ background: UI.card, border: `1px solid ${UI.border}`, borderRadius: 8, padding: 10, marginBottom: 8 }}>
+        <div style={{ background: UI.card, border: `1px solid ${UI.border}`, borderRadius: 6, padding: 10, marginBottom: 8 }}>
           {!sel ? (
             <div style={{ fontSize: 12, color: UI.muted, lineHeight: 1.6 }}>
               Click any heading, paragraph, chip or panel in the preview below. Colour, typeface, size, weight and alignment appear here and apply to that element only. Changes are saved with the report.
@@ -297,13 +297,13 @@ export function ReportPageEditor({ html, brand, onChange, height = "78vh" }) {
                 <button onClick={() => { doc()?.querySelectorAll("[data-ae-sel]").forEach((n) => n.removeAttribute("data-ae-sel")); setSel(null); setSelKey(""); setTextMode(false); }} style={chip(false)}>Deselect</button>
               </div>
 
-              {!selKey && <div style={{ fontSize: 11.5, color: "#FF9F0A" }}>This element cannot be given a stable address, so a change to it would not survive saving. Pick the panel or heading around it instead.</div>}
+              {!selKey && <div style={{ fontSize: 11.5, color: "#FF6B35" }}>This element cannot be given a stable address, so a change to it would not survive saving. Pick the panel or heading around it instead.</div>}
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))", gap: 8, opacity: selKey ? 1 : 0.45, pointerEvents: selKey ? "auto" : "none" }}>
                 <div>
                   <label style={label}>Text colour</label>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <input type="color" value={current?.color || "#141414"} onChange={(e) => setStyle("color", e.target.value)} style={{ width: 32, height: 28, border: "none", background: "none", padding: 0, cursor: "pointer" }} />
+                    <input type="color" value={current?.color || "#1A1A1A"} onChange={(e) => setStyle("color", e.target.value)} style={{ width: 32, height: 28, border: "none", background: "none", padding: 0, cursor: "pointer" }} />
                     <button onClick={() => setStyle("color", "")} style={{ ...chip(false), padding: "4px 7px", fontWeight: 400 }} title="Back to the report's own colour">⨯</button>
                   </div>
                 </div>
@@ -355,7 +355,7 @@ export function ReportPageEditor({ html, brand, onChange, height = "78vh" }) {
         title="Report preview"
         srcDoc={src}
         onLoad={() => setGen((n) => n + 1)}
-        style={{ width: "100%", height, border: `1px solid ${on ? UI.sel : UI.border}`, borderRadius: 8, background: "#fff" }}
+        style={{ width: "100%", height, border: `1px solid ${on ? UI.sel : UI.border}`, borderRadius: 6, background: "#fff" }}
       />
     </div>
   );

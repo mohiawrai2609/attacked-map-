@@ -19,6 +19,7 @@
   --gold: #FCBD00;
   --gold-press: #E0A800;
   --on-gold: #0E1116;
+  --gold-text: #8A6D00;    /* gold for TEXT on white / canvas (#FCBD00 is 1.8:1 there) */
 
   /* Canvas (V1: warm off-white content on ink chrome) */
   --canvas: #F5F2E9;       /* warm off-white page canvas */

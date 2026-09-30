@@ -18,14 +18,14 @@ import { SiteFooter } from "./SiteFooter";
 const BRAND = {
   gold:     "#FCBD00",
   obsidian: "#1A1A1A",
-  deep:     "#080808",
+  deep:     "#0E1116",
   card:     "#242424",
   white:    "#FFFFFF",
-  t2:       "#A8A8A8",
-  tmuted:   "#585858",
-  border:   "#333",
+  t2:       "#A6A8AD",
+  tmuted:   "#8E9198",
+  border:   "#383838",
   green:    "#34C759",
-  red:      "#FF6B6B",
+  red:      "#FF3B30",
 };
 
 function FontLoader() {
@@ -72,7 +72,7 @@ export function UnsubscribePage({ token }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: `radial-gradient(ellipse at center top, rgba(252,189,0,0.06), transparent 70%), ${BRAND.deep}`,
+      background: BRAND.deep,
       color: BRAND.white,
       fontFamily: "Inter, sans-serif",
       display: "flex", flexDirection: "column",
@@ -91,7 +91,7 @@ export function UnsubscribePage({ token }) {
           width: "min(520px, 100%)",
           background: BRAND.card,
           border: `1px solid ${BRAND.border}`,
-          borderRadius: 8,
+          borderRadius: 6,
           padding: "36px 32px",
           textAlign: "center",
         }}>

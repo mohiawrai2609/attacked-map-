@@ -72,7 +72,7 @@ const S = {
   h2: { fontFamily: SERIF, fontSize: 34, lineHeight: 1.08, fontWeight: 500, margin: "6px 0 8px", letterSpacing: "-0.01em", color: BRAND.ink },
   lede: { fontFamily: FONT, fontSize: 14.5, lineHeight: 1.6, color: BRAND.inkSoft, maxWidth: 720, margin: 0 },
   grid: (min) => ({ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 14, marginTop: 22 }),
-  card: { background: "#fff", border: `1px solid ${BRAND.line}`, borderRadius: 14, padding: "22px 22px 20px", display: "flex", flexDirection: "column", minWidth: 0, fontFamily: FONT },
+  card: { background: "#fff", border: `1px solid ${BRAND.line}`, borderRadius: 6, padding: "22px 22px 20px", display: "flex", flexDirection: "column", minWidth: 0, fontFamily: FONT },
   name: { fontFamily: FONT, fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em", color: BRAND.ink, margin: 0 },
   price: { fontFamily: SERIF, fontSize: 34, lineHeight: 1, fontWeight: 600, color: BRAND.ink, marginTop: 10 },
   period: { fontFamily: MONO, fontSize: 10, color: BRAND.muted, marginLeft: 8, letterSpacing: ".06em" },
@@ -82,8 +82,8 @@ const S = {
   li: { display: "flex", gap: 9, fontSize: 12.5, lineHeight: 1.45, color: BRAND.ink },
   tick: { color: BRAND.goldDeep, fontWeight: 800, flex: "none" },
   tag: { fontFamily: MONO, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", background: BRAND.goldTint, color: BRAND.goldDeep, border: `1px solid ${BRAND.borderGold}`, borderRadius: 6, padding: "4px 7px", fontWeight: 700 },
-  primary: { background: BRAND.gold, color: BRAND.obsidian, border: 0, borderRadius: 8, padding: "12px 18px", fontWeight: 800, fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase", cursor: "pointer", fontFamily: FONT, textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 },
-  secondary: { background: "transparent", color: BRAND.ink, border: `1px solid ${BRAND.lineDark}`, borderRadius: 8, padding: "11px 16px", fontWeight: 700, fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", cursor: "pointer", fontFamily: FONT, textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 },
+  primary: { background: BRAND.gold, color: BRAND.obsidian, border: 0, borderRadius: 6, padding: "12px 18px", fontWeight: 800, fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase", cursor: "pointer", fontFamily: FONT, textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 },
+  secondary: { background: "transparent", color: BRAND.ink, border: `1px solid ${BRAND.lineDark}`, borderRadius: 6, padding: "11px 16px", fontWeight: 700, fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", cursor: "pointer", fontFamily: FONT, textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 },
   current: { fontFamily: MONO, fontSize: 11, color: "#1E7A3D", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 },
 };
 
@@ -147,7 +147,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
             const isSub = p.id === "subscriber";
             const current = isSub ? subscriber : (!!user && !subscriber);
             return (
-              <article key={p.id} style={{ ...S.card, ...(isSub ? { borderColor: BRAND.gold, boxShadow: "0 18px 44px rgba(252,189,0,.14)", background: "#FFFDF5" } : {}) }}>
+              <article key={p.id} style={{ ...S.card, ...(isSub ? { borderColor: BRAND.gold, boxShadow: "0 18px 44px rgba(252,189,0,.14)", background: "#FFFFFF" } : {}) }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                   <h3 style={S.name}>{p.name}</h3>
                   {isSub ? <span style={S.tag}>Recommended</span> : current ? <span style={S.tag}>Your plan</span> : null}
@@ -183,8 +183,8 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
 
       {/* 2 · Organisation intelligence */}
       <section style={{ ...S.section, paddingTop: 10, paddingBottom: embedded ? 20 : 56 }}>
-        <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 16, padding: "28px 26px 26px", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 85% 20%, rgba(252,189,0,.16), transparent 30%)", pointerEvents: "none" }} />
+        <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 6, padding: "28px 26px 26px", position: "relative", overflow: "hidden" }}>
+          
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>♛ Organisation intelligence · Premium</div>
           <h2 style={{ ...S.h2, color: "#fff" }}>Industry intelligence first. Organisation intelligence when you need it.</h2>
           <p style={{ ...S.lede, color: "rgba(255,255,255,.72)" }}>Free and Subscriber keep you informed at sector level. Premium adds your organisation: its suppliers, dependencies, materiality and controls — what an incident could mean for you, not just for your industry.</p>

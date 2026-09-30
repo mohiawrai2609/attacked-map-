@@ -16,17 +16,17 @@ import { supabase } from "../lib/supabaseClient";
 
 const BRAND = {
   gold: "#FCBD00",
-  obsidianDeep: "#080808",
+  obsidianDeep: "#0E1116",
   obsidian: "#1A1A1A",
   obsidianCard: "#242424",
   obsidianElevated: "#2E2E2E",
   white: "#FFFFFF",
-  textSecondary: "#A8A8A8",
-  textMuted: "#585858",
-  borderSubtle: "#333333",
+  textSecondary: "#A6A8AD",
+  textMuted: "#8E9198",
+  borderSubtle: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
-  red: "#FF6B6B",
+  red: "#FF3B30",
   vendorGreen: "#34C759",
 };
 
@@ -224,7 +224,7 @@ export function AdminInbox() {
             padding: "16px 18px 14px",
             background: BRAND.obsidianCard,
             border: `1px solid ${BRAND.borderSubtle}`,
-            borderRadius: 8,
+            borderRadius: 6,
           }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 7,
@@ -334,7 +334,7 @@ export function AdminInbox() {
         <div style={{
           padding: 60, textAlign: "center", color: BRAND.textMuted,
           background: BRAND.obsidianCard, border: `1px solid ${BRAND.borderSubtle}`,
-          borderRadius: 8,
+          borderRadius: 6,
         }}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={BRAND.textMuted}
             strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
@@ -372,7 +372,7 @@ export function AdminInbox() {
                 padding: 16,
                 background: BRAND.obsidianCard,
                 border: `1px solid ${isExpanded ? accentColor + "55" : BRAND.borderSubtle}`,
-                borderRadius: 8,
+                borderRadius: 6,
                 transition: "border-color 160ms ease",
               }}>
                 {/* Row 1 — type + identity + time */}

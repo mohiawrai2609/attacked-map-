@@ -25,16 +25,16 @@ import { SECTORS, ROLES } from "../lib/taxonomy";
 // Light / paper palette — white + ink + strong gold brand accent.
 const C = {
   paper: "#FFFFFF",
-  paper2: "#FBFAF6",
-  ink: "#101010",
-  ink2: "#3A3A3A",
-  ink3: "#6A6A6A",
-  ink4: "#9A9A98",
+  paper2: "#F5F2E9",
+  ink: "#0E1116",
+  ink2: "#383838",
+  ink3: "#7A7E86",
+  ink4: "#7A7E86",
   line: "#E7E5DE",
   line2: "#CFCDC4",
   gold: "#FCBD00",
   goldDeep: "#8A6D00", // text-safe gold on white
-  err: "#C0341D",
+  err: "#B21F31",
   ok: "#1E7A3D",
 };
 
@@ -234,13 +234,13 @@ export function AuthModal({ open, onClose, intent = null }) {
 
   return (
     <div onClick={close} style={{
-      position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,15,15,0.55)",
+      position: "fixed", inset: 0, zIndex: 9999, background: "rgba(14,17,22,0.55)",
       backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start",
       justifyContent: "center", padding: "3vh 18px", overflowY: "auto",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
         width: "min(500px, 100%)", background: C.paper,
-        border: `1px solid ${C.line}`, borderRadius: 10,
+        border: `1px solid ${C.line}`, borderRadius: 6,
         padding: "20px 24px 22px", boxShadow: "0 24px 70px rgba(16,16,16,0.28)",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>

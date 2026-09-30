@@ -18,18 +18,18 @@ import { supabase } from "../lib/supabaseClient";
 const BRAND = {
   gold: "#FCBD00",
   obsidian: "#1A1A1A",
-  obsidianDeep: "#080808",
+  obsidianDeep: "#0E1116",
   obsidianCard: "#242424",
   white: "#FFFFFF",
-  textSecondary: "#A8A8A8",
-  textMuted: "#585858",
-  borderSubtle: "#333333",
+  textSecondary: "#A6A8AD",
+  textMuted: "#8E9198",
+  borderSubtle: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
-  red: "#FF6B6B",
+  red: "#FF3B30",
   cyan: "#4FC3D7",
   violet: "#9D7BEC",
-  orange: "#FF8C5A",
+  orange: "#FF6B35",
 };
 
 const TIER_COLOR = {
@@ -254,7 +254,7 @@ function Tile({ label, value, color, hint, big }) {
       padding: big ? "16px 18px 14px" : "14px 16px 12px",
       background: BRAND.obsidianCard,
       border: `1px solid ${BRAND.borderSubtle}`,
-      borderRadius: 8,
+      borderRadius: 6,
     }}>
       <div style={{
         display: "inline-flex", alignItems: "center", gap: 7,
@@ -284,7 +284,7 @@ function Card({ title, color, children }) {
       padding: "16px 18px",
       background: BRAND.obsidianCard,
       border: `1px solid ${BRAND.borderSubtle}`,
-      borderRadius: 8,
+      borderRadius: 6,
     }}>
       <div style={{
         display: "inline-flex", alignItems: "center", gap: 7,

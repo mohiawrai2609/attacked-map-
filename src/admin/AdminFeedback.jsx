@@ -11,15 +11,15 @@ import { supabase } from "../lib/supabaseClient";
 const BRAND = {
   gold: "#FCBD00",
   obsidian: "#1A1A1A",
-  obsidianDeep: "#080808",
+  obsidianDeep: "#0E1116",
   obsidianCard: "#242424",
   white: "#FFFFFF",
-  textSecondary: "#A8A8A8",
-  textMuted: "#585858",
-  borderSubtle: "#333333",
+  textSecondary: "#A6A8AD",
+  textMuted: "#8E9198",
+  borderSubtle: "#383838",
   borderGold: "rgba(252,189,0,0.3)",
   green: "#34C759",
-  red: "#FF6B6B",
+  red: "#FF3B30",
 };
 
 const QUESTIONS = [
@@ -116,7 +116,7 @@ export function AdminFeedback() {
           padding: "14px 16px",
           background: BRAND.obsidianCard,
           border: `1px solid ${BRAND.borderSubtle}`,
-          borderRadius: 8,
+          borderRadius: 6,
           marginBottom: 18,
         }}>
           <div style={{
@@ -203,7 +203,7 @@ export function AdminFeedback() {
               <div key={item.id} style={{
                 background: BRAND.obsidianCard,
                 border: `1px solid ${isExp ? BRAND.borderGold : BRAND.borderSubtle}`,
-                borderRadius: 8,
+                borderRadius: 6,
                 overflow: "hidden",
                 transition: "border-color 160ms ease",
               }}>
