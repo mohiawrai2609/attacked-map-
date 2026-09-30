@@ -21,6 +21,7 @@ import React, { useState } from "react";
 import { useAuth, DIRECT_SIGNIN } from "./AuthProvider";
 import { supabase } from "../lib/supabaseClient";
 import { SECTORS, ROLES } from "../lib/taxonomy";
+import { GCP } from "../lib/backend";
 
 // Light / paper palette — white + ink + strong gold brand accent.
 const C = {
@@ -67,7 +68,9 @@ const ALL_PROVIDERS = [
   ["azure", "Microsoft", '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="2" y="2" width="9" height="9" fill="#F25022"/><rect x="13" y="2" width="9" height="9" fill="#7FBA00"/><rect x="2" y="13" width="9" height="9" fill="#00A4EF"/><rect x="13" y="13" width="9" height="9" fill="#FFB900"/></svg>'],
 ];
 const ENABLED = String((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_AUTH_PROVIDERS) || "").split(",").map((s) => s.trim()).filter(Boolean);
-const PROVIDERS = ENABLED.length ? ALL_PROVIDERS.filter(([id]) => ENABLED.includes(id)) : ALL_PROVIDERS;
+// GCP backend: our API signs people in with Google only (api/app/gcp/google.py).
+const PROVIDERS = GCP ? ALL_PROVIDERS.filter(([id]) => id === "google")
+  : ENABLED.length ? ALL_PROVIDERS.filter(([id]) => ENABLED.includes(id)) : ALL_PROVIDERS;
 
 // intent="subscribe": the reader pressed Subscribe while signed out. Once the
 // session exists we send them back to the subscription page with
@@ -367,12 +370,12 @@ export function AuthModal({ open, onClose, intent = null }) {
               <button type="submit" disabled={busy} style={goldBtn(busy)}>{busy ? (usePw || DIRECT_SIGNIN ? "Signing in…" : "Sending your code…") : (usePw ? "Sign in" : DIRECT_SIGNIN ? "Sign in →" : "Email me a code →")}</button>
               {DIRECT_SIGNIN && !usePw && <TestingNote />}
             </form>
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, textAlign: "center" }}>
+            {!GCP && <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, textAlign: "center" }}>
               <button type="button" onClick={() => { setUsePw(v => !v); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: C.ink3 }}>
                 {usePw ? <>Prefer a code? <span style={{ color: C.goldDeep, textDecoration: "underline", fontWeight: 600 }}>Email me a code instead</span></>
                        : <>Set a password earlier? <span style={{ color: C.goldDeep, textDecoration: "underline", fontWeight: 600 }}>Sign in with it</span></>}
               </button>
-            </div>
+            </div>}
             <Social />
           </>
         )}
@@ -386,7 +389,7 @@ export function AuthModal({ open, onClose, intent = null }) {
               {/* Until the Magic Link template in Supabase carries {{ .Token }}, a
                   reader whose address already has an account receives a link
                   instead of a code. Say so, and make the link useful. */}
-              <span style={{ display: "block", marginTop: 8, fontSize: 12, color: C.ink4 }}>Got a sign-in link instead of a code? That means this address already has an account — the link signs you in too and opens your dashboard.</span>
+              {!GCP && <span style={{ display: "block", marginTop: 8, fontSize: 12, color: C.ink4 }}>Got a sign-in link instead of a code? That means this address already has an account — the link signs you in too and opens your dashboard.</span>}
             </p>
             <form onSubmit={submitCode}>
               <label style={label}>Verification code</label>

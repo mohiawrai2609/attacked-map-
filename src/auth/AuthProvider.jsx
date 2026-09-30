@@ -19,6 +19,9 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase } from "../lib/supabaseClient";
 import { SUBSCRIBER_TIER, isSubscriber } from "../lib/taxonomy";
 import { sendCode, setSubscription } from "../lib/api";
+import { GCP } from "../lib/backend";
+import * as gcpAuth from "../lib/gcpAuth";
+import { beginSignIn } from "../lib/cookieStorage";
 
 // Testing mode: on `npm run dev` sign-in skips the email code (owner,
 // 2026-09-30). Set VITE_DIRECT_SIGNIN=0 in .env.local to test the real code flow
@@ -36,8 +39,13 @@ const AuthContext = createContext({
 // Honour ?preview=subscriber / ?preview=free / ?preview=public / ?preview=admin
 // for QA without a real account. 'partner' is accepted as an alias of
 // 'subscriber' so old links keep working; Design Partner itself is retired.
-function getPreviewTier() {
-  if (typeof window === "undefined") return null;
+// It changes what the UI shows, never what the database returns (row-level
+// security still applies), but on the live site it unlocked the report view
+// and the admin shell (2026-09-30 audit). So it is honoured only on the local
+// dev server, or in a staging build made with VITE_ALLOW_PREVIEW=1.
+export const PREVIEW_ALLOWED = !!import.meta.env.DEV || import.meta.env.VITE_ALLOW_PREVIEW === "1";
+export function getPreviewTier() {
+  if (typeof window === "undefined" || !PREVIEW_ALLOWED) return null;
   try {
     const p = new URLSearchParams(window.location.search).get("preview");
     if (p === "subscriber" || p === "partner") return SUBSCRIBER_TIER;
@@ -74,28 +82,38 @@ export function AuthProvider({ children }) {
   // Boot: read existing session + listen for changes.
   useEffect(() => {
     let cancelled = false;
+    const apply = async (sessionUser) => {
+      setUser(sessionUser);
+      if (!sessionUser) { setProfile(null); return; }
+      const p = await fetchProfile(sessionUser.id);
+      if (!cancelled) setProfile(p);
+    };
 
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-      const sessionUser = data?.session?.user || null;
-      setUser(sessionUser);
-      if (sessionUser) {
-        const p = await fetchProfile(sessionUser.id);
-        if (!cancelled) setProfile(p);
+      try {
+        if (GCP) {
+          const s = await gcpAuth.getSession();
+          if (!cancelled) await apply(s?.user || null);
+        } else {
+          const { data } = await supabase.auth.getSession();
+          if (!cancelled) await apply(data?.session?.user || null);
+        }
+      } catch (e) {
+        console.warn("[Auth] session check failed:", e?.message || e);
+      } finally {
+        // Always: a failed check must not leave every gated page on "Loading…".
+        if (!cancelled) setLoading(false);
       }
-      if (!cancelled) setLoading(false);
     })();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const sessionUser = session?.user || null;
-      setUser(sessionUser);
-      if (sessionUser) {
-        const p = await fetchProfile(sessionUser.id);
-        setProfile(p);
-      } else {
-        setProfile(null);
-      }
+    if (GCP) {
+      const off = gcpAuth.onChange((s) => { apply(s?.user || null); });
+      return () => { cancelled = true; off(); };
+    }
+    // supabase-js holds its auth lock while this callback runs; awaiting another
+    // Supabase call inside it can deadlock. Hand the profile read to the next tick.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => { if (!cancelled) apply(session?.user || null); }, 0);
     });
 
     return () => {
@@ -116,6 +134,8 @@ export function AuthProvider({ children }) {
   // production build with no dashboard). The origin must be allow-listed under
   // Authentication → URL configuration → Redirect URLs.
   const signIn = useCallback(async (email, meta = null) => {
+    // GCP: our API emails the code (Resend) and holds it; nothing else to try.
+    if (GCP) { await gcpAuth.emailStart(String(email || "").trim().toLowerCase(), meta); return; }
     // The API sends the code itself (always a code, never a link, any
     // address) when VITE_API_URL is set and the API is reachable. A real
     // refusal from the API (bad address, mail failure) is surfaced; only an
@@ -139,12 +159,14 @@ export function AuthProvider({ children }) {
   // false in every production build, which drops this path from the bundle.
   const directSignIn = useCallback(async (email, meta = null) => {
     if (!DIRECT_SIGNIN) throw new Error("Direct sign-in is only available on the local dev server.");
+    if (GCP) { await gcpAuth.devDirect(String(email || "").trim().toLowerCase(), meta); return; }
     const r = await fetch("/__dev/direct-signin", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: String(email || "").trim().toLowerCase(), meta }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.token_hash) throw new Error(j.error || `Direct sign-in failed (${r.status}).`);
+    beginSignIn();
     const { error } = await supabase.auth.verifyOtp({ token_hash: j.token_hash, type: j.type || "magiclink" });
     if (error) throw error;
   }, []);
@@ -157,6 +179,15 @@ export function AuthProvider({ children }) {
   // supabase-js exchanges it for a session on load, and onAuthStateChange
   // above picks it up like any other sign-in.
   const signInWithProvider = useCallback(async (provider, redirectTo) => {
+    if (GCP) {
+      // GCP: Google only, through our API (it sets the HttpOnly session cookie).
+      if (provider !== "google") throw new Error("That sign-in option is not switched on.");
+      let back = "/?dashboard";
+      try { if (redirectTo) { const u = new URL(redirectTo, window.location.origin); back = `${u.pathname}${u.search}`; } } catch { /* keep default */ }
+      gcpAuth.googleStart(back);
+      return;
+    }
+    beginSignIn();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: redirectTo || (typeof window !== "undefined" ? `${window.location.origin}/?dashboard` : undefined) },
@@ -174,6 +205,7 @@ export function AuthProvider({ children }) {
   // an empty identities array. Surface it as a typed error so the modal can
   // route to sign-in instead of stranding the reader on an empty code screen.
   const signUpWithPassword = useCallback(async (email, password, meta = {}) => {
+    if (GCP) throw new Error("Passwords are not used any more. Use an email code or Google.");
     const { data, error } = await supabase.auth.signUp({
       email: String(email || "").trim().toLowerCase(),
       password,
@@ -190,6 +222,8 @@ export function AuthProvider({ children }) {
 
   // Returning user — email + password.
   const signInWithPassword = useCallback(async (email, password) => {
+    if (GCP) throw new Error("Passwords are not used any more. Use an email code or Google.");
+    beginSignIn();
     const { error } = await supabase.auth.signInWithPassword({
       email: String(email || "").trim().toLowerCase(),
       password,
@@ -216,6 +250,9 @@ export function AuthProvider({ children }) {
   const verifyCode = useCallback(async (email, token, type = "email") => {
     const em = String(email || "").trim().toLowerCase();
     const raw = String(token || "").replace(/\D/g, "");
+    // GCP: one call; the API forgives a lost leading zero and sets the cookie.
+    if (GCP) return gcpAuth.emailVerify(em, raw);
+    beginSignIn();
     const tokens = [raw, ...OTP_LENGTHS.filter((n) => raw.length < n).map((n) => raw.padStart(n, "0"))];
     const types = [type, type === "signup" ? "email" : "signup"];
     let firstError = null;
@@ -229,30 +266,49 @@ export function AuthProvider({ children }) {
     throw firstError;
   }, []);
 
+  // The signed-in reader's id, on either backend.
+  const currentUid = useCallback(async () => {
+    if (GCP) return (await gcpAuth.getSession())?.user?.id || null;
+    const { data: u } = await supabase.auth.getUser();
+    return u?.user?.id || null;
+  }, []);
+
   // Persist the signup form basics onto the profile row. identity.profiles has
-  // an own-row UPDATE policy, so this writes only the caller's row. Best-effort
-  // — never blocks the sign-in.
+  // an own-row UPDATE policy, so this writes only the caller's row. Never blocks
+  // the sign-in, but reports the outcome: { ok: true } or { error }. PostgREST
+  // errors come back as { error } rather than throwing, so check it.
   const saveProfileBasics = useCallback(async (fields) => {
     try {
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u?.user?.id;
-      if (!uid) return;
-      await supabase.from("profiles").update(fields).eq("id", uid);
+      const uid = await currentUid();
+      if (!uid) return { error: "You're not signed in." };
+      const { error } = await supabase.from("profiles").update(fields).eq("id", uid);
+      if (error) { console.warn("[Auth] profile basics save failed:", error.message); return { error: error.message }; }
       const fresh = await fetchProfile(uid);
       setProfile(fresh);
-    } catch (err) { console.warn("[Auth] profile basics save failed:", err?.message); }
-  }, []);
+      return { ok: true };
+    } catch (err) {
+      console.warn("[Auth] profile basics save failed:", err?.message);
+      return { error: err?.message || "Could not save." };
+    }
+  }, [currentUid]);
 
   // Upload a profile picture to the `avatars` storage bucket, then persist its
   // public URL on profiles.avatar_url. Returns { url } on success or { error }.
   const uploadAvatar = useCallback(async (file) => {
     try {
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u?.user?.id;
+      const uid = await currentUid();
       if (!uid) return { error: "You're not signed in." };
       if (!file) return { error: "No file selected." };
       if (!/^image\//.test(file.type)) return { error: "Please choose an image file." };
       if (file.size > 5 * 1024 * 1024) return { error: "Image must be under 5 MB." };
+
+      // GCP: the API stores it in Cloud Storage and saves avatar_url itself.
+      if (GCP) {
+        const r = await gcpAuth.uploadAvatar(file);
+        if (r.error) return r;
+        setProfile(await fetchProfile(uid));
+        return { url: r.url };
+      }
 
       const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
       const path = `${uid}.${ext || "png"}`;
@@ -274,9 +330,10 @@ export function AuthProvider({ children }) {
     } catch (err) {
       return { error: err?.message || "Upload failed." };
     }
-  }, []);
+  }, [currentUid]);
 
   const signOut = useCallback(async () => {
+    if (GCP) { await gcpAuth.logout(); return; }
     await supabase.auth.signOut();
   }, []);
 

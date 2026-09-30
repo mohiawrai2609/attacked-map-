@@ -54,6 +54,7 @@ export function ProfilePage() {
   const [country, setCountry] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveErr, setSaveErr] = useState(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarErr, setAvatarErr] = useState(null);
   const fileRef = useRef(null);
@@ -76,13 +77,16 @@ export function ProfilePage() {
 
   async function save(e) {
     e?.preventDefault();
-    setBusy(true); setSaved(false);
-    await saveProfileBasics({
+    setBusy(true); setSaved(false); setSaveErr(null);
+    const r = await saveProfileBasics({
       full_name: fullName.trim() || null,
       role: jobTitle || null,
       country: country || null,
     });
-    setBusy(false); setSaved(true);
+    setBusy(false);
+    // Only claim "Saved" when the database said yes.
+    if (r && r.error) { setSaveErr("Couldn't save your changes. Please try again."); return; }
+    setSaved(true);
     setTimeout(() => setSaved(false), 2600);
   }
 
@@ -219,6 +223,7 @@ export function ProfilePage() {
               fontFamily: FONT, fontSize: 12.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
             }}>{busy ? "Saving…" : "Save changes"}</button>
             {saved && <span style={{ fontSize: 12.5, color: C.ok, fontWeight: 600 }}>✓ Saved</span>}
+            {saveErr && <span style={{ fontSize: 12.5, color: C.err, fontWeight: 600 }}>{saveErr}</span>}
           </div>
         </form>
 

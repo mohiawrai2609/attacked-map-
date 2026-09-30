@@ -18,7 +18,7 @@
 // Automotive & EV) so QA can click through.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth, getPreviewTier } from "../auth/AuthProvider";
 import { SiteNav } from "../auth/SiteNav";
 import { CATEGORY_NAME, INDUSTRIES, ROLES, SECTORS, SEVERITY, isSubscriber, tierLabel } from "../lib/taxonomy";
 import { loadCounts, loadIncidentDetail, loadIndustry, loadIndustryExtras, loadReportIndex, reportRefFor } from "./data";
@@ -360,7 +360,7 @@ const openSubscribe = () => { window.location.href = "/?subscribe"; };
 
 export function Dashboard({ initialPage = "dashboard" }) {
   const { user, tier, profile, loading: authLoading, signOut, setSubscribed, saveProfileBasics } = useAuth();
-  const preview = previewParam();
+  const preview = getPreviewTier() != null ? previewParam() : null;   // dev / staging only
   const subscriber = isSubscriber(tier);
   // The industry comes from the profile row, or — before that row has been
   // read, or if the write after sign-up failed — from the sign-up details kept

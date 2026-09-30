@@ -11,9 +11,16 @@
 //
 // A sign-in lasts SESSION_DAYS from the moment it began — absolute, not
 // sliding: refreshing the 1-hour access token rewrites the cookies with the
-// SAME expiry, so using the site does not extend it. After that the browser
-// drops the session cookies and enforceSessionLimit() signs the reader out
-// (revoking that refresh token), so they sign in again.
+// SAME expiry, so using the site does not extend it. In the last minutes of
+// that window an open page signs the reader out (enforceSessionLimit), which
+// also revokes the refresh token while its access token is still valid; then
+// the browser drops the cookies. A page that was closed through the deadline
+// just finds no session. The limit is kept by the browser's clock: the server
+// side of it needs Supabase Pro ("time-box user sessions") or the GCP backend,
+// where the API enforces the 3 days itself.
+//
+// If the browser blocks cookies, the session is kept in memory for this page
+// only (sign-in works until reload) instead of silently failing.
 //
 // These are strictly-necessary cookies (they keep a signed-in reader signed
 // in), so no consent banner is needed for them; the cookie policy lists them.
@@ -29,6 +36,20 @@ const CHUNK = 3500;                 // encoded characters per cookie, safely und
 const START_KEEP_DAYS = 30;         // the timestamp outlives the session so an expired sign-in is still recognised
 
 const inBrowser = () => typeof document !== "undefined";
+const NEAR_END_MS = 12 * 60 * 1000;   // sign out this close to the end (checks run every 10 min)
+const memory = new Map();             // used only when cookies are blocked
+let cookiesOk = null;
+function cookiesWork() {
+  if (cookiesOk !== null) return cookiesOk;
+  if (!inBrowser()) return (cookiesOk = false);
+  try {
+    document.cookie = `attackmap.cookietest=1; Path=/; SameSite=Lax${secureAttr()}`;
+    cookiesOk = document.cookie.includes("attackmap.cookietest=1");
+    document.cookie = `attackmap.cookietest=; Path=/; Max-Age=0; SameSite=Lax${secureAttr()}`;
+  } catch { cookiesOk = false; }
+  if (!cookiesOk) console.warn("[auth] cookies are blocked for this site: the sign-in will last until this page is reloaded.");
+  return cookiesOk;
+}
 const secureAttr = () => (typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "");
 
 // Raw (still URL-encoded) cookie values by name.
@@ -63,6 +84,7 @@ const expired = (start) => start != null && Date.now() >= start + SESSION_DAYS *
 export const cookieStorage = {
   getItem(key) {
     if (!inBrowser()) return null;
+    if (!cookiesWork()) return memory.has(key) ? memory.get(key) : null;
     const j = jar();
     const names = chunkNames(j, key);
     if (names.length) {
@@ -71,15 +93,21 @@ export const cookieStorage = {
     }
     // One-time move of a pre-2026-09-30 sign-in out of localStorage, so
     // readers signed in before the switch stay signed in (their 3 days start now).
+    // The old copy is removed only once the cookie copy reads back.
     try {
       const legacy = window.localStorage.getItem(key);
-      if (legacy) { window.localStorage.removeItem(key); cookieStorage.setItem(key, legacy); return legacy; }
+      if (legacy) {
+        cookieStorage.setItem(key, legacy);
+        if (chunkNames(jar(), key).length) window.localStorage.removeItem(key);
+        return legacy;
+      }
     } catch { /* storage blocked */ }
     return null;
   },
 
   setItem(key, value) {
     if (!inBrowser()) return;
+    if (!cookiesWork()) { memory.set(key, String(value)); return; }
     const j = jar();
     let exp;
     if (key === SESSION_STORAGE_KEY) {
@@ -100,6 +128,7 @@ export const cookieStorage = {
 
   removeItem(key) {
     if (!inBrowser()) return;
+    memory.delete(key);
     for (const name of chunkNames(jar(), key)) del(name);
     if (key === SESSION_STORAGE_KEY) del(START);
     try { window.localStorage.removeItem(key); } catch { /* storage blocked */ }
@@ -112,13 +141,21 @@ export const cookieStorage = {
 export function enforceSessionLimit(client) {
   if (!inBrowser() || !client?.auth) return;
   const check = async () => {
-    if (!expired(startOf(jar()))) return;
+    const start = startOf(jar());
+    if (start == null || Date.now() < start + SESSION_DAYS * DAY_MS - NEAR_END_MS) return;
     try { await client.auth.signOut({ scope: "local" }); } catch { /* offline: the cookies are cleared below */ }
     cookieStorage.removeItem(SESSION_STORAGE_KEY);
   };
   check();
   setInterval(check, 10 * 60 * 1000);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
+}
+
+// Call right before a NEW sign-in (code, password, Google): the next session
+// write then starts a fresh 3-day window instead of being refused because the
+// previous sign-in's window has closed.
+export function beginSignIn() {
+  if (inBrowser() && cookiesWork()) del(START);
 }
 
 // Everything this site keeps in the browser, for the "Your privacy choices"

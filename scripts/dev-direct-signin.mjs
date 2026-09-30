@@ -57,6 +57,16 @@ export function directSignin() {
       server.middlewares.use("/__dev/direct-signin", async (req, res) => {
         if (req.method !== "POST") return send(res, 405, { error: "POST only" });
         if (!LOOPBACK.has(req.socket.remoteAddress)) return send(res, 403, { error: "Direct sign-in works only from this computer." });
+        // Loopback is not enough: any website open in this browser can POST to
+        // localhost. Accept only the dev page itself: same-origin fetch with a
+        // JSON body (a cross-site page cannot send that without a preflight,
+        // which this server never grants).
+        const site = req.headers["sec-fetch-site"];
+        const origin = req.headers.origin;
+        const json = String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json");
+        if ((site && site !== "same-origin") || (origin && origin !== `http://${req.headers.host}`) || !json) {
+          return send(res, 403, { error: "Cross-site request refused." });
+        }
         const env = { ...readEnv(root, ".env"), ...readEnv(root, ".env.local") };
         if (env.VITE_DIRECT_SIGNIN === "0") return send(res, 404, { error: "Direct sign-in is switched off (VITE_DIRECT_SIGNIN=0)." });
         const URL_ = env.VITE_SUPABASE_URL;

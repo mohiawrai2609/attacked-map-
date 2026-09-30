@@ -6,7 +6,7 @@ import { PartnerFeedbackModal } from "./auth/PartnerFeedbackModal.jsx";
 import { SubscribeModal } from "./auth/SubscribeModal.jsx";
 import { isSubscriber } from "./lib/taxonomy";
 import { incidentImage } from "./lib/images";
-import { supabase } from "./lib/supabaseClient";
+import { readerToken as fetchReaderToken, onReaderToken } from "./lib/authClient";
 import { Logo } from "./auth/Logo.jsx";
 import { SiteNav } from "./auth/SiteNav.jsx";
 import Globe3D from "./Globe3D.jsx";
@@ -9031,11 +9031,10 @@ export default function GlobalAttackMap() {
   // one control until a full reload.
   const [readerToken, setReaderTokenState] = useState(null);
   useEffect(() => {
-    let sub = null;
     const take = (tok) => { setReaderToken(tok); setReaderTokenState(tok || null); };
-    supabase.auth.getSession().then(({ data }) => take(data?.session?.access_token)).catch(() => {});
-    try { sub = supabase.auth.onAuthStateChange((_e, s) => take(s?.access_token))?.data?.subscription || null; } catch { /* noop */ }
-    return () => { try { sub?.unsubscribe?.(); } catch { /* noop */ } };
+    // authClient works on either backend (Supabase, or our API on GCP).
+    fetchReaderToken().then(take).catch(() => {});
+    return onReaderToken(take);
   }, []);
   const isUserMode = useMemo(() => {
     let override = null;

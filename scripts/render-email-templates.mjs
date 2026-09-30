@@ -99,8 +99,10 @@ for (const [outName, srcName, label] of PREVIEWS) {
 const fnSrc = readFileSync(resolve(ROOT, "supabase/functions/daily-digest/index.ts"), "utf8");
 const cut = fnSrc.indexOf("Deno.serve(");
 if (cut < 0) throw new Error("Deno.serve( not found — daily-digest layout changed");
+// The _shared imports (mail, auth) are only used by the serve handler, which is cut off here.
 let core = fnSrc.slice(0, cut)
   .replace(/^import \{ SMTPClient \}[^\n]*\n/m, "const SMTPClient = class {};\n")
+  .replace(/^import [^\n]*\/_shared\/[^\n]*\n/gm, "")
   .replace(/Deno\.env\.get\(/g, "((k) => process.env[k])(");
 core += "\nexport { buildForProfile, partitionForProfile, makeLayer, freeDigestHtml, partnerDigestHtml };\n";
 const corePath = resolve(OUT, "_digest-core.ts");
@@ -185,6 +187,7 @@ const wCut = wSrc.indexOf("Deno.serve(");
 if (wCut < 0) throw new Error("Deno.serve( not found — welcome-email layout changed");
 let wCore = wSrc.slice(0, wCut)
   .replace(/^import \{ SMTPClient \}[^\n]*\n/m, "const SMTPClient = class {};\n")
+  .replace(/^import [^\n]*\/_shared\/[^\n]*\n/gm, "")
   .replace(/Deno\.env\.get\(/g, "((k) => process.env[k])(");
 wCore += "\nexport { welcomeHtml, welcomeSubject };\n";
 const wCorePath = resolve(OUT, "_welcome-core.ts");

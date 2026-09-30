@@ -7,7 +7,7 @@ import "./styles/tokens.css";
 import "./styles/site-nav.css";
 import "./responsive.css";
 import GlobalAttackMap from "./GlobalAttackMap.jsx";
-import { AuthProvider, useAuth } from "./auth/AuthProvider.jsx";
+import { AuthProvider, useAuth, getPreviewTier } from "./auth/AuthProvider.jsx";
 import { LandingPage } from "./auth/LandingPage.jsx";
 import { SubscribePage } from "./auth/SubscribePage.jsx";
 import { UnsubscribePage } from "./auth/UnsubscribePage.jsx";
@@ -46,14 +46,9 @@ function LoadingScreen() {
 function AppShell() {
   const { user, loading, tier } = useAuth();
 
-  // Detect ?preview= in URL — same heuristic the AuthProvider uses.
-  const hasPreviewOverride = (() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const p = new URLSearchParams(window.location.search).get("preview");
-      return p === "public" || p === "free" || p === "subscriber" || p === "partner" || p === "admin";
-    } catch { return false; }
-  })();
+  // ?preview= — the SAME rule the AuthProvider uses: local dev or a staging
+  // build only (VITE_ALLOW_PREVIEW=1), never the live site.
+  const hasPreviewOverride = getPreviewTier() != null;
 
 
   // Detect ?unsubscribe=<token> in URL — handle BEFORE auth resolution so
@@ -230,10 +225,37 @@ function AppShell() {
   return <LandingPage />;
 }
 
+// Last line of defence: an exception anywhere in a page used to blank the
+// whole site. Show a plain way back instead, and log what broke.
+class RootErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { failed: false }; }
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error, info) { console.error("[app] page crashed:", error, info?.componentStack); }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div style={{
+        minHeight: "100vh", background: "#0E1116", color: "#FFFFFF", display: "flex",
+        flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16,
+        fontFamily: "Inter, sans-serif", padding: "0 16px", textAlign: "center",
+      }}>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>Something went wrong on this page.</div>
+        <div style={{ fontSize: 14, color: "#A6A8AD" }}>Reload to try again. If it keeps happening, email hello@attacked.ai.</div>
+        <button type="button" onClick={() => window.location.reload()} style={{
+          padding: "10px 18px", background: "#FCBD00", color: "#1A1A1A", border: 0, borderRadius: 3,
+          fontFamily: "inherit", fontSize: 12.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+        }}>Reload</button>
+      </div>
+    );
+  }
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <AuthProvider>
-      <AppShell />
-    </AuthProvider>
+    <RootErrorBoundary>
+      <AuthProvider>
+        <AppShell />
+      </AuthProvider>
+    </RootErrorBoundary>
   </React.StrictMode>
 );
