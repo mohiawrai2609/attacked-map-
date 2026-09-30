@@ -903,8 +903,9 @@ function FontLoader() {
     const link = document.createElement("link");
     link.id = "attacked-fonts";
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap";
-    document.head.appendChild(link);
+    // Not appended: the brand faces are self-hosted (src/styles/fonts.css), and a
+    // Google Fonts request would send the reader's IP to Google (2026-09-30).
+    void link;
   }, []);
   return null;
 }
@@ -9188,26 +9189,8 @@ export default function GlobalAttackMap() {
         setStorageSubstrate(_storageState.substrate);
         setStorageCanaryError(_storageState.canaryError);
 
-        // Pull in any sweeps baked into /public/sweeps/index.json. Runs only
-        // when the substrate doesn't already hold them — keeps reloads fast
-        // when window.storage persists data. For the in-memory fallback
-        // (e.g. plain browser), this is the source of all data.
-        try {
-          const existing = await _store().list("sweep:");
-          const have = new Set((existing?.keys || []).map(k => k.slice(6)));
-          // Always run loadBakedSweeps when nothing is stored; otherwise skip.
-          if (have.size === 0) {
-            await loadBakedSweeps();
-          }
-        } catch (e) {
-          console.warn("Baked-sweep load skipped:", e?.message || e);
-        }
-        if (cancelled) return;
-
-        // Overlay live Supabase data on top of baked-in. Matching dates get
-        // overwritten by the DB version — newer days are added. Runs every
-        // boot so newly-pushed sweeps appear on the next refresh without a
-        // redeploy.
+        // Live Supabase data first. Runs every boot so newly-pushed sweeps
+        // appear on the next refresh without a redeploy.
         let supa = null;
         try {
           supa = await loadFromSupabase();
@@ -9216,6 +9199,23 @@ export default function GlobalAttackMap() {
           if (!cancelled) setLiveDataError(e?.message || String(e));
         }
         if (cancelled) return;
+
+        // The sweeps baked into /public/sweeps/ (14 files, ~1 MB each, May
+        // 2026) are an OFFLINE FALLBACK only. The database holds every one of
+        // those days, and writeSweep() replaces a whole day with the database
+        // copy anyway, so loading them first cost every map visitor ~14 MB for
+        // nothing (2026-09-30). They load only when the live load returned no
+        // days and nothing is stored.
+        if (!supa || !supa.sweepsByDay || supa.sweepsByDay.size === 0) {
+          try {
+            const existing = await _store().list("sweep:");
+            const have = new Set((existing?.keys || []).map(k => k.slice(6)));
+            if (have.size === 0) await loadBakedSweeps();
+          } catch (e) {
+            console.warn("Baked-sweep load skipped:", e?.message || e);
+          }
+          if (cancelled) return;
+        }
         if (supa && supa.sweepsByDay) liveDaysRef.current = supa.sweepsByDay;
         // A thrown error is not the only failure mode: _fetchSupabaseTable
         // swallows non-OK responses and returns [], so an exhausted egress

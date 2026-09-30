@@ -42,7 +42,6 @@ export function SiteFooter() {
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [state, setState] = useState("idle"); // idle | done | error
-  const [privacyOn, setPrivacyOn] = useState(false);
 
   async function subscribe(e) {
     e.preventDefault();
@@ -142,30 +141,9 @@ export function SiteFooter() {
               <NavLink label="Scam warning" href="/?legal=scam" />
               <NavLink label="FAQ" href="/?legal=faq" />
               <NavLink label="Privacy policy" href="/?legal=privacy" />
-              {/* Your privacy choices — toggle */}
-              <button
-                type="button"
-                onClick={() => setPrivacyOn(v => !v)}
-                aria-pressed={privacyOn}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  background: "none", border: "none", padding: 0, cursor: "pointer",
-                  color: BRAND.white, fontFamily: "Inter, sans-serif", fontSize: 15, fontWeight: 500,
-                }}
-              >
-                <span style={{
-                  width: 40, height: 22, borderRadius: 0, position: "relative",
-                  background: privacyOn ? BRAND.gold : "#383838",
-                  transition: "background 160ms ease", flexShrink: 0,
-                }}>
-                  <span style={{
-                    position: "absolute", top: 3, left: privacyOn ? 21 : 3,
-                    width: 16, height: 16, borderRadius: "50%", background: BRAND.white,
-                    transition: "left 160ms ease",
-                  }} />
-                </span>
-                Your privacy choices
-              </button>
+              {/* Was a switch that changed nothing (2026-09-30). The real control lives on
+                  the cookie policy page: current sign-in, and delete stored data. */}
+              <NavLink label="Your privacy choices" href="/?legal=cookies#choices" />
             </div>
             {/* Row 2 */}
             <div style={{

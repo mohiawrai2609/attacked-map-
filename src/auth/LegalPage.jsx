@@ -8,9 +8,62 @@
 // Content is concise and honest (a plain-language statement + a contact
 // route), not fabricated legalese. Swap in finalised copy when ready.
 // ─────────────────────────────────────────────────────────────────────────
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
+import { supabase } from "../lib/supabaseClient";
+import { clearSiteStorage, sessionWindow, SESSION_DAYS } from "../lib/cookieStorage";
+
+const fmtWhen = (d) => d.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+// "Your privacy choices": shows the current sign-in window and deletes
+// everything this site keeps in the browser (signing out this device first,
+// which also revokes its refresh token on the server).
+function CookieControls() {
+  const [win, setWin] = useState(() => sessionWindow());
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  async function clearAll() {
+    setBusy(true);
+    try { await supabase.auth.signOut({ scope: "local" }); } catch { /* offline: storage is cleared anyway */ }
+    clearSiteStorage();
+    setWin(null); setDone(true); setBusy(false);
+  }
+  return (
+    <section id="choices" style={{ marginTop: 34, padding: "20px 22px", border: "1px solid rgba(14,17,22,.12)", borderRadius: 6, background: "#F5F2E9" }}>
+      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0E1116" }}>Your privacy choices</h2>
+      <p style={{ margin: "10px 0 0", fontSize: 14.5, lineHeight: 1.65, color: "#5B5F66" }}>
+        {win
+          ? <>You are signed in on this device since <b style={{ color: "#1A1A1A" }}>{fmtWhen(win.since)}</b>. This sign-in ends on <b style={{ color: "#1A1A1A" }}>{fmtWhen(win.until)}</b> ({SESSION_DAYS} days).</>
+          : done ? "Done. Everything this site stored in your browser has been deleted and you are signed out on this device."
+          : "You are not signed in on this device, so no sign-in cookies are stored."}
+      </p>
+      <button type="button" onClick={clearAll} disabled={busy} style={{
+        marginTop: 14, padding: "10px 18px", background: "#0E1116", color: "#FFFFFF", border: 0, borderRadius: 3,
+        fontFamily: "inherit", fontSize: 12.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: busy ? "default" : "pointer",
+      }}>{busy ? "Clearing…" : "Delete stored data and sign out"}</button>
+    </section>
+  );
+}
+
+// A body entry is [heading, paragraph] or [heading, rows] where rows are
+// [name, type, purpose, duration] — rendered as a list of stored items.
+function StoredItems({ rows }) {
+  return (
+    <div style={{ marginTop: 12, border: "1px solid rgba(14,17,22,.12)", borderRadius: 6, overflow: "hidden" }}>
+      {rows.map(([name, type, purpose, duration], i) => (
+        <div key={name} style={{ padding: "14px 16px", borderTop: i ? "1px solid rgba(14,17,22,.12)" : 0, background: "#FFFFFF" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+            <code style={{ fontFamily: "var(--mono)", fontSize: 12.5, fontWeight: 600, color: "#0E1116" }}>{name}</code>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7E86" }}>{type}</span>
+          </div>
+          <p style={{ margin: "6px 0 0", fontSize: 14, lineHeight: 1.6, color: "#5B5F66" }}>{purpose}</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.55, color: "#1A1A1A" }}><b>Kept:</b> {duration}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const BRAND = {
   gold: "#FCBD00", obsidian: "#1A1A1A", deep: "#0E1116",
@@ -38,13 +91,24 @@ const PAGES = {
       ["Contact", `For licensing or enterprise terms, email ${CONTACT_EMAIL}.`],
     ],
   },
+  // Matches what the site actually stores (src/lib/cookieStorage.js,
+  // LandingPage's welcome flag). Update both together.
   cookies: {
-    title: "Cookie preferences",
+    title: "Cookie policy",
+    updated: "30 September 2026",
     body: [
-      ["What we use", "We use a small number of essential cookies to keep you signed in and to remember your session. We do not run third-party advertising cookies."],
-      ["Managing them", "You can clear or block cookies in your browser settings. Blocking essential cookies will sign you out and may break parts of the map."],
-      ["Contact", `Questions? Email ${CONTACT_EMAIL}.`],
+      ["In short", "Attacked.ai uses a few first-party cookies that keep you signed in, and nothing else. There are no advertising, analytics or tracking cookies, and nothing is shared with other websites. Because every item below is strictly necessary for the service you asked for, we do not show a consent banner."],
+      ["What we store in your browser", [
+        ["attackmap.auth.0, attackmap.auth.1", "Cookie", "Keeps you signed in: your sign-in tokens and basic account details (email, name, organisation, industry).", "3 days from when you sign in, then deleted. Removed at once when you sign out."],
+        ["attackmap.session_start", "Cookie", "Records when you signed in, so the 3-day limit applies even while you keep using the site.", "Up to 30 days. Removed when you sign out."],
+        ["attacked_welcome_seen", "Local storage", "Remembers that you closed the welcome message, so it does not appear on every visit. Holds only the value “1”.", "Until you clear this site’s data."],
+      ]],
+      ["How long you stay signed in", "A sign-in lasts 3 days. Behind the scenes a short-lived access token is renewed about every hour while you use the site; after 3 days you are asked to sign in again with a new code. Signing out ends the sign-in immediately on this device."],
+      ["Third-party services", "To draw the map and pictures, your browser fetches files directly from a few providers: satellite imagery from Esri (ArcGIS), the 3D map engine from Cloudflare (cdnjs), some incident pictures from Unsplash, and, only when an incident carries a video, YouTube’s privacy-enhanced player (youtube-nocookie.com). These providers see your IP address when they send a file, as any website would. They do not set cookies on attackedmap.vercel.app; YouTube may use its own storage on its own domain if you play a video."],
+      ["Your choices", "Use the control below to see your current sign-in and to delete everything this site keeps in your browser. You can also clear or block cookies in your browser settings. Blocking our cookies means you cannot stay signed in."],
+      ["Contact", `Questions about cookies or your data? Email ${CONTACT_EMAIL}.`],
     ],
+    manage: true,
   },
   accessibility: {
     title: "Accessibility statement",
@@ -75,7 +139,13 @@ const PAGES = {
 
 export function LegalPage({ pageKey }) {
   const page = PAGES[pageKey] || PAGES.privacy;
-  useEffect(() => { try { window.scrollTo(0, 0); } catch { /* noop */ } }, [pageKey]);
+  useEffect(() => {
+    try {
+      // The footer's "Your privacy choices" link lands on #choices.
+      const el = window.location.hash === "#choices" ? document.getElementById("choices") : null;
+      if (el) el.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0);
+    } catch { /* noop */ }
+  }, [pageKey]);
 
   return (
     <div style={{
@@ -98,7 +168,7 @@ export function LegalPage({ pageKey }) {
             margin: "12px 0 0", fontSize: "clamp(28px, 3.4vw, 42px)", fontWeight: 800,
             letterSpacing: "-0.02em", color: BRAND.white,
           }}>{page.title}</h1>
-          <div style={{ marginTop: 8, fontSize: 12.5, color: BRAND.t2 }}>Last updated · 2026</div>
+          <div style={{ marginTop: 8, fontSize: 12.5, color: BRAND.t2 }}>Last updated · {page.updated || "2026"}</div>
         </div>
       </section>
 
@@ -107,10 +177,13 @@ export function LegalPage({ pageKey }) {
           {page.body.map(([h, p], i) => (
             <section key={i} style={{ marginTop: i === 0 ? 0 : 30 }}>
               <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0E1116" }}>{h}</h2>
-              <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.72, color: "#5B5F66" }}>{p}</p>
+              {Array.isArray(p)
+                ? <StoredItems rows={p} />
+                : <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.72, color: "#5B5F66" }}>{p}</p>}
             </section>
           ))}
         </div>
+        {page.manage && <CookieControls />}
 
         <div style={{ marginTop: 44 }}>
           <a href={`mailto:${CONTACT_EMAIL}`} style={{

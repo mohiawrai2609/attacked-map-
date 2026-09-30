@@ -91,8 +91,9 @@ function useFonts() {
   useEffect(() => {
     if (document.getElementById("attacked-subscribe-fonts")) return;
     const link = document.createElement("link"); link.id = "attacked-subscribe-fonts"; link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap";
-    document.head.appendChild(link);
+    // Not appended: the brand faces are self-hosted (src/styles/fonts.css), and a
+    // Google Fonts request would send the reader's IP to Google (2026-09-30).
+    void link;
   }, []);
 }
 

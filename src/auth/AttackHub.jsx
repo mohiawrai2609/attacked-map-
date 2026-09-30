@@ -233,8 +233,9 @@ function HubStyles() {
     if (document.getElementById("attacked-fonts")) return;
     const l = document.createElement("link");
     l.id = "attacked-fonts"; l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap";
-    document.head.appendChild(l);
+    // Not appended: the brand faces are self-hosted (src/styles/fonts.css), and a
+    // Google Fonts request would send the reader's IP to Google (2026-09-30).
+    void l;
   }, []);
   return <style>{HUB_CSS}</style>;
 }

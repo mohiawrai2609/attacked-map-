@@ -95,8 +95,9 @@ function FontLoader() {
     // Load BOTH upright and true italic axes so the gold italic accent text
     // ("calibrated to you.", "blast radius") renders as real Inter italic
     // rather than a browser-synthesized slant that can read as a serif.
-    link.href = "https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap";
-    document.head.appendChild(link);
+    // Not appended: the brand faces are self-hosted (src/styles/fonts.css), and a
+    // Google Fonts request would send the reader's IP to Google (2026-09-30).
+    void link;
   }, []);
   return null;
 }

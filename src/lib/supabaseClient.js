@@ -9,6 +9,7 @@
 // pagination in GlobalAttackMap.jsx — those paths are unchanged.
 // ─────────────────────────────────────────────────────────────────────────
 import { createClient } from "@supabase/supabase-js";
+import { cookieStorage, enforceSessionLimit, SESSION_STORAGE_KEY } from "./cookieStorage";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -19,14 +20,19 @@ if (!url || !key) {
   );
 }
 
+// The session lives in first-party cookies for SESSION_DAYS (3) from sign-in,
+// not in localStorage forever — see cookieStorage.js. The access token itself
+// stays 1 hour (the Supabase JWT setting) and is renewed silently.
 export const supabase = createClient(url || "", key || "", {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true, // handles magic-link redirect
-    storageKey: "attackmap.auth",
+    storageKey: SESSION_STORAGE_KEY,
+    storage: cookieStorage,
   },
 });
+enforceSessionLimit(supabase);
 
 // ─────────────────────────────────────────────────────────────────────────
 // Hub data client — the Attacked Hub (?hub) reads its incidents from a
