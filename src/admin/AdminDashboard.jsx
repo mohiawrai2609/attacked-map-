@@ -146,7 +146,8 @@ export function AdminDashboard() {
           </span>
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          <a href="/" style={{
+          {/* ?map, not "/": a signed-in visitor at "/" gets the dashboard. */}
+          <a href="/?map" style={{
             fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
             color: BRAND.textSecondary, letterSpacing: "0.10em",
             textTransform: "uppercase", textDecoration: "none",

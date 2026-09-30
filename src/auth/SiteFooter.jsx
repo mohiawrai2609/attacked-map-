@@ -3,8 +3,8 @@
 //
 // One component dropped into the landing page, the hub and pricing so the
 // footer is consistent everywhere. Every control works:
-//   • Subscribe   — validates the email and confirms inline (best-effort
-//                   insert into newsletter_subscribers; never blocks the UI)
+//   • Subscribe   — validates the email, inserts into newsletter_subscribers
+//                   and confirms inline only when the insert succeeded
 //   • Explore     — real in-app routes (map / hub / pricing)
 //   • Resources   — FAQ, Scam warning, legal pages (?legal=…)
 //   • Contact     — mailto
@@ -41,16 +41,26 @@ function SocialIcon({ name, size = 15 }) {
 export function SiteFooter() {
   const { user } = useAuth();
   const [email, setEmail] = useState("");
-  const [state, setState] = useState("idle"); // idle | done | error
+  const [state, setState] = useState("idle"); // idle | sending | done | error (bad email) | failed (insert)
 
   async function subscribe(e) {
     e.preventDefault();
+    if (state === "sending") return;
     const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
     if (!ok) { setState("error"); return; }
+    setState("sending");
+    // The confirmation used to show BEFORE the insert and ignore its {error},
+    // so every signup "succeeded" even though newsletter_subscribers may not
+    // exist yet. Confirm only a stored row; otherwise say it failed.
+    let error = null;
+    try { ({ error } = await supabase.from("newsletter_subscribers").insert({ email: email.trim() })); }
+    catch (err) { error = err; }
+    if (error) {
+      console.warn("Newsletter signup failed:", error.message || error);
+      setState("failed");
+      return;
+    }
     setState("done");
-    // Best-effort persistence — works if a newsletter_subscribers table exists,
-    // otherwise the confirmation still shows (we never surface a table error).
-    try { await supabase.from("newsletter_subscribers").insert({ email: email.trim() }); } catch { /* noop */ }
     setEmail("");
   }
 
@@ -99,7 +109,7 @@ export function SiteFooter() {
               <form onSubmit={subscribe} style={{ marginTop: 18, display: "flex", gap: 14, maxWidth: 480 }}>
                 <input
                   type="email" value={email}
-                  onChange={e => { setEmail(e.target.value); if (state === "error") setState("idle"); }}
+                  onChange={e => { setEmail(e.target.value); if (state === "error" || state === "failed") setState("idle"); }}
                   placeholder="Email address"
                   style={{
                     flex: "1 1 auto", minWidth: 0, padding: "13px 16px", borderRadius: 0,
@@ -110,20 +120,24 @@ export function SiteFooter() {
                   onFocus={e => { if (state !== "error") e.currentTarget.style.borderColor = "#A6A8AD"; }}
                   onBlur={e => { if (state !== "error") e.currentTarget.style.borderColor = "#383838"; }}
                 />
-                <button type="submit" style={{
+                <button type="submit" disabled={state === "sending"} style={{
                   padding: "13px 32px", background: BRAND.gold, color: BRAND.obsidian,
-                  border: "none", borderRadius: 0, cursor: "pointer",
+                  border: "none", borderRadius: 0, cursor: state === "sending" ? "default" : "pointer",
+                  opacity: state === "sending" ? 0.7 : 1,
                   fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700,
                   letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
                   transition: "background 160ms ease",
                 }}
                   onMouseEnter={e => { e.currentTarget.style.background = "#E0A800"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = BRAND.gold; }}
-                >Submit</button>
+                >{state === "sending" ? "Sending…" : "Submit"}</button>
               </form>
             )}
             {state === "error" && (
               <div style={{ marginTop: 8, fontSize: 12, color: "#FF3B30" }}>Enter a valid email address.</div>
+            )}
+            {state === "failed" && (
+              <div style={{ marginTop: 8, fontSize: 12, color: "#FF3B30" }}>We couldn't sign you up just now. Please try again later.</div>
             )}
             <div style={{ marginTop: 28, fontSize: 13, color: BRAND.tmuted }}>
               © 2026 Attacked<span style={{ color: BRAND.gold }}>.ai</span>

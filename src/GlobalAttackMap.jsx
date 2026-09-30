@@ -1258,7 +1258,11 @@ function _reshapeViIncident(row) {
   return inc;
 }
 
-async function loadFromSupabase() {
+// prefetched: the raw { reg, reporters } rows loadIncidentsFast already pulled
+// this boot. Both run the SAME incidents query (same columns, filters, order,
+// limit), so the boot hands them over instead of downloading the whole corpus
+// a second time. Null (fast paint failed or came back empty) = fetch here.
+async function loadFromSupabase(prefetched = null) {
   if (typeof window === "undefined" || typeof fetch !== "function") return [];
   const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
   const url = env.VITE_SUPABASE_URL;
@@ -1315,11 +1319,15 @@ async function loadFromSupabase() {
   //      (see the child-hydration effect near the selectedIncident memo),
   //      exactly as blast_radius already was.
   // ────────────────────────────────────────────────────────────────────
-  const [regularRows, reporterRows] = await Promise.all([
-    _fetchSupabaseTable(url, key, "incidents",
-      `select=${incidentCols}&incident_day=not.is.null&latitude=not.is.null&longitude=not.is.null&order=incident_day.desc&${q}`),
-    _fetchSupabaseTable(url, key, "reporters", "select=slug,name,desk,cats,color&limit=200"),
-  ]);
+  // Rows are copied because the loop below adds the empty child arrays to each
+  // one; the fast-paint sweeps keep their own copies either way.
+  const [regularRows, reporterRows] = prefetched && Array.isArray(prefetched.reg) && prefetched.reg.length
+    ? [prefetched.reg.map((r) => ({ ...r })), prefetched.reporters || []]
+    : await Promise.all([
+      _fetchSupabaseTable(url, key, "incidents",
+        `select=${incidentCols}&incident_day=not.is.null&latitude=not.is.null&longitude=not.is.null&order=incident_day.desc&${q}`),
+      _fetchSupabaseTable(url, key, "reporters", "select=slug,name,desk,cats,color&limit=200"),
+    ]);
   // vi_* incidents were dropped from the database on 2026-07-28; keep the
   // downstream code paths alive with an empty set rather than 13 dead fetches.
   const viRows = [];
@@ -1421,7 +1429,7 @@ async function loadFromSupabase() {
 // day's dots in ~1–2s, instead of blocking on the full multi-table enrichment
 // (blast_radius, vendors, controls, …) which can take 30s+. Returns the newest
 // day's synthetic sweep, or null. The full loadFromSupabase still runs after to
-// enrich detail panels + populate the archive.
+// enrich detail panels + populate the archive, from the rows fetched here.
 // ─────────────────────────────────────────────────────────────────────────────
 // Deep-link first paint: ONE day, straight from the DB. ?date= names the day;
 // a bare ?incident=<id> resolves it with a one-row lookup first. A single day
@@ -1528,7 +1536,8 @@ async function loadIncidentsFast(preferDay = null, incidentId = null) {
       for (const d of days) if (byDay.get(d).some((i) => i && i.id != null && String(i.id) === w)) { pick = d; break; }
     }
     if (!pick) pick = newest;
-    return { day: pick, sweep: sweepsByDay.get(pick), sweepsByDay };
+    // raw: handed to loadFromSupabase so the boot does not fetch the corpus twice.
+    return { day: pick, sweep: sweepsByDay.get(pick), sweepsByDay, raw: { reg, reporters } };
   } catch (e) {
     console.warn("Fast incident load failed:", e?.message || e);
     return null;
@@ -9190,10 +9199,12 @@ export default function GlobalAttackMap() {
         setStorageCanaryError(_storageState.canaryError);
 
         // Live Supabase data first. Runs every boot so newly-pushed sweeps
-        // appear on the next refresh without a redeploy.
+        // appear on the next refresh without a redeploy. It reuses the rows
+        // the fast paint just fetched (same query) and only fetches them
+        // itself when the fast paint failed or came back empty.
         let supa = null;
         try {
-          supa = await loadFromSupabase();
+          supa = await loadFromSupabase(fast && fast.raw);
         } catch (e) {
           console.warn("Supabase load skipped:", e?.message || e);
           if (!cancelled) setLiveDataError(e?.message || String(e));
@@ -9418,6 +9429,12 @@ export default function GlobalAttackMap() {
   // rows for that incident, group them by bucket, cache the result on the
   // incident object (so the flat view sees it too) and feed the globe via
   // `selBlast`. Skipped when the incident already carries blast data.
+  //
+  // The answer is cached per incident id AND reader token, empty included: a
+  // free reader's read is RLS-locked (200 + zero rows), and without the cache
+  // that empty answer was refetched on every visibleIncidents change. Keyed by
+  // token so signing in as a subscriber asks again.
+  const blastCacheRef = useRef(new Map());
   useEffect(() => {
     if (!selectedId) { setSelBlast(null); return; }
     const inc = visibleIncidents.find(i => String(i._id) === String(selectedId));
@@ -9425,6 +9442,12 @@ export default function GlobalAttackMap() {
     if (inc.blast_radius && Object.keys(inc.blast_radius).length) { setSelBlast(inc.blast_radius); return; }
     const dbId = inc.id;
     if (dbId == null || dbId === "") { setSelBlast(null); return; }
+    const cacheKey = `${dbId}|${_readerToken || "anon"}`;
+    if (blastCacheRef.current.has(cacheKey)) {
+      const hit = blastCacheRef.current.get(cacheKey);
+      if (Object.keys(hit).length) { inc.blast_radius = hit; setSelBlast(hit); } else setSelBlast(null);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -9434,13 +9457,23 @@ export default function GlobalAttackMap() {
         const res = await fetch(`${url}/rest/v1/blast_radius?select=*&incident_id=eq.${encodeURIComponent(dbId)}`, {
           headers: { apikey: key, Authorization: `Bearer ${_readerToken || key}` },
         });
+        if (!res.ok) {
+          console.warn(`Supabase blast_radius fetch failed for incident ${dbId}: ${res.status} ${res.statusText}`);
+          // A permission refusal is a stable answer for this reader; anything
+          // else (5xx, rate limit) stays uncached so the next pass retries.
+          if (res.status === 401 || res.status === 403) blastCacheRef.current.set(cacheKey, {});
+          if (!cancelled) setSelBlast(null);
+          return;
+        }
         const rows = await res.json();
-        if (cancelled || !Array.isArray(rows) || !rows.length) return;
         const grouped = {};
-        for (const br of rows) { const b = br.exposure_group || "internal"; (grouped[b] = grouped[b] || []).push(br); }
+        for (const br of Array.isArray(rows) ? rows : []) { const b = br.exposure_group || "internal"; (grouped[b] = grouped[b] || []).push(br); }
+        blastCacheRef.current.set(cacheKey, grouped);
+        if (cancelled) return;
+        if (!Object.keys(grouped).length) { setSelBlast(null); return; }
         inc.blast_radius = grouped;   // also feeds the flat MapCanvas view
         setSelBlast(grouped);
-      } catch (_) { /* noop */ }
+      } catch (e) { console.warn("Supabase blast_radius fetch error:", e?.message || e); }
     })();
     return () => { cancelled = true; };
   }, [selectedId, visibleIncidents]);

@@ -171,8 +171,8 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
           </div>
         </div>
         <div className="mast-art" aria-hidden="true"
-             style={{ backgroundImage: `url(${incidentImage({ cat: P.cats?.[0]?.cat })})`, backgroundSize: "cover", backgroundPosition: "58% 55%" }}>
-          <img className="mast-photo" src={industryPhoto(P.incidents, P.cats?.[0]?.cat)}
+             style={{ backgroundImage: `url(${incidentImage({ cat: P.cats?.[0]?.code })})`, backgroundSize: "cover", backgroundPosition: "58% 55%" }}>
+          <img className="mast-photo" src={industryPhoto(P.incidents, P.cats?.[0]?.code)}
                alt="" width="1220" height="860" decoding="async" fetchpriority="high"
                onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </div>

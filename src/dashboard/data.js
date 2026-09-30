@@ -60,6 +60,8 @@ export function shape(r) {
     secondary: Array.isArray(r.secondary_mappings)
       ? r.secondary_mappings.slice(0, 4).map((s) => ({ cat: s.category, name: s.subcategory_name })) : [],
     day: r.incident_day, date: r.event_date, body: r.article_body || null,
+    // The stored picture; incidentPhoto() (lib/images.js) reads i.image_url.
+    image_url: r.image_url || null,
     n: hasCounts(r) ? counts(r) : null,
   };
 }

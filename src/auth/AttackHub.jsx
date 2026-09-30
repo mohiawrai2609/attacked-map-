@@ -355,7 +355,7 @@ function ArticleView({ article, onBack, onMap, user }) {
     setFull(article);
     (async () => {
       try {
-        const { data: rows } = await supabase
+        const { data: rows, error } = await supabase
           .from("incidents")
           // Only columns public.incidents actually has: PostgREST rejects the
           // WHOLE select on one unknown name, and this request is what loads the
@@ -364,6 +364,8 @@ function ArticleView({ article, onBack, onMap, user }) {
           // silently 400ing it. The three fields below degrade to nothing.
           .select("article_body,summary,entity,country,location_name,primary_subcategory_name,severity_rationale,image_url")
           .eq("id", article.id).limit(1);
+        // A failed read keeps the lightweight version, but says why.
+        if (error) console.warn(`Hub article ${article.id} detail load failed:`, error.message || error);
         const r = rows && rows[0];
         if (!r || cancelled) return;
         setFull(prev => ({
@@ -376,7 +378,7 @@ function ArticleView({ article, onBack, onMap, user }) {
           severity_rationale: r.severity_rationale || prev.severity_rationale,
           image_url: r.image_url || prev.image_url,
         }));
-      } catch { /* keep the lightweight version */ }
+      } catch (e) { console.warn(`Hub article ${article.id} detail load error:`, e?.message || e); /* keep the lightweight version */ }
     })();
     return () => { cancelled = true; };
   }, [article && article.id]);
@@ -575,7 +577,8 @@ export function AttackHub() {
         else if (m) baked = { refs: m.refs || Object.values(m.byIncident || {}), byIncident: m.byIncident || {} };
       } catch { /* no manifest — the CMS alone still works */ }
       let rows = [];
-      try { rows = await listPublishedReports({ limit: 1000 }); } catch { /* CMS unreachable — the baked files alone still work */ }
+      try { rows = await listPublishedReports({ limit: 1000 }); }
+      catch (e) { console.warn("Hub CMS reports load failed:", e?.message || e); /* the baked files alone still work */ }
       if (cancelled) return;
       const cmsByIncident = {};
       for (const row of rows) if (row && row.incident_id != null && row.ref) cmsByIncident[String(row.incident_id)] = row.ref;
@@ -629,6 +632,11 @@ export function AttackHub() {
           .not("article_body", "is", null)
           .order("incident_day", { ascending: false, nullsFirst: false })
           .limit(400);
+        // supabase-js resolves a failed query as { data: null, error } rather
+        // than throwing, so an error here used to render an empty feed with
+        // nothing in the console. The empty state stays; the cause is logged.
+        if (incRes.error) console.warn("Hub feed query failed:", incRes.error.message || incRes.error);
+        if (repRes.error) console.warn("Hub report-rows query failed:", repRes.error.message || repRes.error);
         const seenIds = new Set();
         const incRows = [...(incRes.data || []), ...(repRes.data || [])].filter(r => r && !seenIds.has(r.id) && seenIds.add(r.id));
 
@@ -636,6 +644,7 @@ export function AttackHub() {
         // are capped at 1000, so articles.length under-reports the corpus.
         const totalRes = await supabase.from("incidents")
           .select("id", { count: "exact", head: true });
+        if (totalRes.error) console.warn("Hub incident count failed:", totalRes.error.message || totalRes.error);
 
         const mapped = incRows.map(r => shapeRow(r, reportByIncident));
         const sorted = mapped
@@ -645,7 +654,7 @@ export function AttackHub() {
           setArticles(sorted);
           if (typeof totalRes?.count === "number") setTotalIncidents(totalRes.count);
         }
-      } catch { /* graceful empty */ }
+      } catch (e) { console.warn("Hub feed load error:", e?.message || e); /* graceful empty */ }
       finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
@@ -667,8 +676,11 @@ export function AttackHub() {
     if (!/^\d+$/.test(String(openId))) { didDeepOpen.current = true; return; }
     didDeepOpen.current = true;
     supabase.from("incidents").select(HUB_COLS).eq("id", Number(openId)).limit(1)
-      .then(({ data }) => { const r = data && data[0]; if (r && r.headline) { const one = shapeRow(r, reportByIncident); setArticles(prev => prev.some(x => x.id === one.id) ? prev : [one, ...prev]); open(one); } })
-      .catch(() => { /* stay on the feed */ });
+      .then(({ data, error }) => {
+        if (error) console.warn(`Hub deep-open of incident ${openId} failed:`, error.message || error);
+        const r = data && data[0]; if (r && r.headline) { const one = shapeRow(r, reportByIncident); setArticles(prev => prev.some(x => x.id === one.id) ? prev : [one, ...prev]); open(one); }
+      })
+      .catch((e) => { console.warn(`Hub deep-open of incident ${openId} error:`, e?.message || e); /* stay on the feed */ });
   }, [articles, reportByIncident]);
 
   // Deep link: /?hub&report=<ref> opens a published report directly — the
@@ -727,7 +739,8 @@ export function AttackHub() {
   useEffect(() => { setPage(0); }, [catFilter, indFilter, dayFilter, dateFrom, dateTo]);
 
   function goToPage(p) { setPage(Math.max(0, Math.min(p, pageCount - 1))); try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); } }
-  function openMap() { if (user) window.location.href = "/"; else setAuthOpen(true); }
+  // ?map, not "/": a signed-in visitor at "/" gets the dashboard, not the map.
+  function openMap() { if (user) window.location.href = "/?map"; else setAuthOpen(true); }
   function openArticle(a) { setSelected(a); try { window.scrollTo({ top: 0, behavior: "instant" }); } catch { window.scrollTo(0, 0); } }
 
   // ── card/rail builders (close over openArticle) ──
