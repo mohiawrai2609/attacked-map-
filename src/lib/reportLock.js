@@ -53,6 +53,14 @@ export function prepareReportFrame(frame, { subscriber, onSubscribe, readerName 
   if (!doc || !doc.body || !doc.body.children.length) return false;
   try { frame.contentWindow.__ATTACKED_LICENSE__ = { name: readerName || "Registered reader", role: subscriber ? "Subscriber" : "Free reader" }; } catch { /* noop */ }
   doc.querySelectorAll('a[href*="?hub"], .r-back').forEach((el) => { el.style.display = "none"; });
+  // Reports store their HTML when saved, so ones published before 2026-10-05
+  // still crop the hero to 420px tall (12.7% of a 3:2 picture lost on desktop).
+  // Same rule as reportTemplate.js now has: whole picture, 3:2 frame.
+  if (!doc.getElementById("attacked-hero-fit")) {
+    const st = doc.createElement("style"); st.id = "attacked-hero-fit";
+    st.textContent = ".r-hero{max-height:none!important;height:auto!important;aspect-ratio:3/2;object-fit:contain!important;background:rgba(127,127,127,.10)}.r-md img{max-width:100%;height:auto}";
+    doc.head.appendChild(st);
+  }
   if (!subscriber) lockReportForFreeReader(doc, onSubscribe);
   return true;
 }
