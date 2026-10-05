@@ -5,7 +5,7 @@ How a sign-in is held (the answer to "cookies, JWT, how long"):
   __session cookie   a random 256-bit token. HttpOnly (page scripts cannot read
                      it), Secure, SameSite=Lax, Path=/. Only its SHA-256 is stored
                      (auth.sessions.token_hash), so a database leak does not leak
-                     sign-ins. It expires SESSION_DAYS (3) after sign-in, ABSOLUTE:
+                     sign-ins. It expires SESSION_DAYS (30) after sign-in, ABSOLUTE:
                      using the site does not extend it. Sign-out revokes it.
   access token       a JWT (HS256, JWT_SECRET shared with PostgREST) that lives
                      ACCESS_TOKEN_TTL (1 hour). The page keeps it in memory only and

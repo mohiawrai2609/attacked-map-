@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     service_role_key: str | None = None
     jwt_secret: str | None = None                    # PGRST_JWT_SECRET, ≥ 32 chars
     database_url: str | None = None                  # postgresql://attacked_api:…@/attacked?host=/cloudsql/<instance>
-    session_days: int = 3                            # absolute sign-in lifetime
+    session_days: int = 30                           # absolute sign-in lifetime (owner: at least a month)
     access_token_ttl: int = 3600                     # seconds; the data-API JWT
     session_cookie: str = "__session"                # the ONLY cookie Firebase Hosting forwards
     code_ttl_minutes: int = 10

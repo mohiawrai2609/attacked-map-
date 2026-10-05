@@ -36,7 +36,7 @@ async def test_code_is_stored_hashed_and_not_in_subject(client, admin_conn):
     assert 9 * 60 <= row["ttl"].total_seconds() <= 10 * 60 + 1
 
 
-async def test_sign_in_sets_httponly_3_day_cookie_and_1h_token(client, admin_conn):
+async def test_sign_in_sets_httponly_session_cookie_and_1h_token(client, admin_conn):
     r = await sign_in(client, "new@example.test", {"full_name": "New Reader", "industry": "Insurance", "tier": "admin"})
     assert r.status_code == 200, r.text
     body = r.json()
@@ -44,7 +44,9 @@ async def test_sign_in_sets_httponly_3_day_cookie_and_1h_token(client, admin_con
     cookie = r.headers["set-cookie"]
     assert cookie.startswith("__session=") and "HttpOnly" in cookie and "SameSite=lax" in cookie and "Path=/" in cookie
     max_age = int(re.search(r"Max-Age=(\d+)", cookie).group(1))
-    assert 3 * 86400 - 60 <= max_age <= 3 * 86400
+    days = settings.session_days
+    assert days >= 30                                               # owner: at least a month
+    assert days * 86400 - 60 <= max_age <= days * 86400
     claims = jwt.decode(body["access_token"], settings.supabase_jwt_secret, algorithms=["HS256"], audience="authenticated")
     assert claims["role"] == "authenticated" and claims["sub"] == body["user"]["id"] and claims["iss"] == "attacked-api"
     assert claims["exp"] - claims["iat"] <= 3600

@@ -2,7 +2,7 @@
 // Data client — single instance shared across the app.
 //
 // Supabase backend (default): auth + data from Supabase. The session lives in
-// first-party cookies for SESSION_DAYS (3) from sign-in (cookieStorage.js);
+// first-party cookies for SESSION_DAYS (30) from sign-in (cookieStorage.js);
 // the access token itself stays 1 hour and is renewed silently.
 //
 // GCP backend (VITE_BACKEND=gcp): the same supabase-js data calls
@@ -14,7 +14,7 @@
 // GlobalAttackMap.jsx against the same /rest/v1 base.
 // ─────────────────────────────────────────────────────────────────────────
 import { createClient } from "@supabase/supabase-js";
-import { cookieStorage, enforceSessionLimit, SESSION_STORAGE_KEY } from "./cookieStorage";
+import { cookieStorage, enforceSessionLimit, beginSignIn, SESSION_STORAGE_KEY } from "./cookieStorage";
 import { GCP } from "./backend";
 import { getAccessToken } from "./gcpAuth";
 
@@ -44,3 +44,15 @@ export const supabase = GCP
       },
     });
 if (!GCP) enforceSessionLimit(supabase);
+
+// A sign-in link (the emailed-link fallback, or a provider coming back) lands
+// with the new session in the URL; supabase-js stores it on load. Start a fresh
+// window for it, as the code and password paths do, so a stale start time from
+// an earlier sign-in in this browser cannot refuse or shorten it.
+if (!GCP && typeof window !== "undefined") {
+  try {
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const q = new URLSearchParams(window.location.search);
+    if (h.get("access_token") || q.get("code")) beginSignIn();
+  } catch { /* noop */ }
+}

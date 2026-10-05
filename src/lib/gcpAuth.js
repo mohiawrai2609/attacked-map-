@@ -5,7 +5,7 @@
 // holds is a short-lived access token (1 hour, in memory only) that the data
 // API (our PostgREST at /rest/v1) checks; it is fetched from
 // POST /api/auth/token with the cookie and renewed a minute before it lapses.
-// The sign-in itself ends 3 days after it began, on the server.
+// The sign-in itself ends SESSION_DAYS (30) after it began, on the server.
 //
 //   getSession()           { user, session, access_token } | null
 //   getAccessToken()       for supabase-js's accessToken option

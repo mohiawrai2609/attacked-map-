@@ -17,7 +17,16 @@
 // the browser drops the cookies. A page that was closed through the deadline
 // just finds no session. The limit is kept by the browser's clock: the server
 // side of it needs Supabase Pro ("time-box user sessions") or the GCP backend,
-// where the API enforces the 3 days itself.
+// where the API enforces the limit itself.
+//
+// Safari, and every browser on iPhone and iPad (they all run WebKit), limits
+// what page scripts store: depending on the version, each script-written cookie
+// lasts at most 7 days from its last write, or the site's script storage is
+// deleted after 7 days of Safari use without the reader clicking or typing on
+// the site. Every token refresh rewrites ALL these cookies, the start time
+// included, so a Safari reader who comes back at least once a week keeps the
+// full SESSION_DAYS and one who stays away longer signs in again. Server-set
+// HttpOnly cookies from the same host (the GCP backend) are not affected.
 //
 // If the browser blocks cookies, the session is kept in memory for this page
 // only (sign-in works until reload) instead of silently failing.
@@ -28,12 +37,12 @@
 // scripts (not HttpOnly) — the same exposure localStorage had. HttpOnly
 // cookies need a server to set them, which comes with the hosted API.
 
-export const SESSION_DAYS = 3;
+export const SESSION_DAYS = 30;     // owner, 2026-10-01: stay signed in for at least a month
 export const SESSION_STORAGE_KEY = "attackmap.auth";
 const START = "attackmap.session_start";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CHUNK = 3500;                 // encoded characters per cookie, safely under the 4 KB limit
-const START_KEEP_DAYS = 30;         // the timestamp outlives the session so an expired sign-in is still recognised
+const START_KEEP_DAYS = SESSION_DAYS;   // rewritten with every session write, so it lives exactly as long as the session
 
 const inBrowser = () => typeof document !== "undefined";
 const NEAR_END_MS = 12 * 60 * 1000;   // sign out this close to the end (checks run every 10 min)
@@ -92,7 +101,7 @@ export const cookieStorage = {
       try { return decodeURIComponent(names.map((n) => j.get(n)).join("")); } catch { return null; }
     }
     // One-time move of a pre-2026-09-30 sign-in out of localStorage, so
-    // readers signed in before the switch stay signed in (their 3 days start now).
+    // readers signed in before the switch stay signed in (their SESSION_DAYS start now).
     // The old copy is removed only once the cookie copy reads back.
     try {
       const legacy = window.localStorage.getItem(key);
@@ -113,7 +122,10 @@ export const cookieStorage = {
     if (key === SESSION_STORAGE_KEY) {
       let start = startOf(j);
       if (expired(start)) { cookieStorage.removeItem(key); return; }   // the sign-in is over; never extend it
-      if (!start) { start = Date.now(); setRaw(START, String(start), new Date(start + START_KEEP_DAYS * DAY_MS)); }
+      if (!start) start = Date.now();
+      // Every write, with the SAME value: under Safari's per-write cap a START
+      // written once would expire before the chunks and the limit would restart.
+      setRaw(START, String(start), new Date(start + START_KEEP_DAYS * DAY_MS));
       exp = expiryFor(start);
     } else {
       exp = new Date(Date.now() + SESSION_DAYS * DAY_MS);
@@ -152,7 +164,7 @@ export function enforceSessionLimit(client) {
 }
 
 // Call right before a NEW sign-in (code, password, Google): the next session
-// write then starts a fresh 3-day window instead of being refused because the
+// write then starts a fresh SESSION_DAYS window instead of being refused because the
 // previous sign-in's window has closed.
 export function beginSignIn() {
   if (inBrowser() && cookiesWork()) del(START);

@@ -31,7 +31,7 @@ breaks before the API is deployed.
 
 Google Cloud Run, with `BACKEND=gcp`: `Dockerfile` here, the rest in
 `deploy/gcp/` (setup.sh, cloudbuild.yaml, README.md). On GCP this service also
-signs people in (Google + emailed code via Resend), holds the 3-day HttpOnly
+signs people in (Google + emailed code via Resend), holds the 30-day HttpOnly
 sessions, takes uploads to Cloud Storage and runs the scheduled jobs. The
 report files come from a private Cloud Storage bucket mounted at `REPORTS_DIR`.
 

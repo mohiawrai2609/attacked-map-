@@ -131,7 +131,7 @@ create index if not exists identities_user_id_idx on auth.identities (user_id);
 
 -- Our sign-in sessions. The browser holds a random token in the HttpOnly
 -- __session cookie; only its SHA-256 is stored. expires_at is ABSOLUTE
--- (3 days from sign-in by default, SESSION_DAYS on the API).
+-- (30 days from sign-in by default, SESSION_DAYS on the API).
 create table if not exists auth.sessions (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references auth.users (id) on delete cascade,
