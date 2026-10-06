@@ -39,20 +39,20 @@ const CAT_SHORT = {
   STR: "Strategic", TEC: "Technology", TPR: "Third Party",
 };
 const CATEGORY_IMG = {
-  CYB: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1000&q=70&auto=format&fit=crop",
-  DAT: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1000&q=70&auto=format&fit=crop",
-  FIN: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&q=70&auto=format&fit=crop",
-  GEO: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1000&q=70&auto=format&fit=crop",
-  REG: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1000&q=70&auto=format&fit=crop",
-  PHY: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1000&q=70&auto=format&fit=crop",
-  PPL: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1000&q=70&auto=format&fit=crop",
-  TEC: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1000&q=70&auto=format&fit=crop",
-  STR: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=1000&q=70&auto=format&fit=crop",
-  REP: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1000&q=70&auto=format&fit=crop",
-  TPR: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1000&q=70&auto=format&fit=crop",
-  OPS: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1000&q=70&auto=format&fit=crop",
-  ENV: "https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=1000&q=70&auto=format&fit=crop",
-  _default: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1000&q=70&auto=format&fit=crop",
+  CYB: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1000&h=667&q=70&auto=format&fit=crop",
+  DAT: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1000&h=667&q=70&auto=format&fit=crop",
+  FIN: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&h=667&q=70&auto=format&fit=crop",
+  GEO: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1000&h=667&q=70&auto=format&fit=crop",
+  REG: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1000&h=667&q=70&auto=format&fit=crop",
+  PHY: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1000&h=667&q=70&auto=format&fit=crop",
+  PPL: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1000&h=667&q=70&auto=format&fit=crop",
+  TEC: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1000&h=667&q=70&auto=format&fit=crop",
+  STR: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=1000&h=667&q=70&auto=format&fit=crop",
+  REP: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1000&h=667&q=70&auto=format&fit=crop",
+  TPR: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1000&h=667&q=70&auto=format&fit=crop",
+  OPS: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1000&h=667&q=70&auto=format&fit=crop",
+  ENV: "https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=1000&h=667&q=70&auto=format&fit=crop",
+  _default: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1000&h=667&q=70&auto=format&fit=crop",
 };
 const PAGE_SIZE = 12;
 
@@ -69,7 +69,7 @@ const EXTRA_POOL = [
   "1473341304170-971dccb5ac1e", "1486406146926-c627a92ad1ab", "1581092160562-40aa08e78837",
   "1589578527966-fdac0f44566c", "1444723121867-7a241cacace9", "1581094794329-c8112a89af12",
   "1504384764586-bb4cdc1707b0", "1526628953301-3e589a6a8b74",
-].map(id => `https://images.unsplash.com/photo-${id}?w=1000&q=70&auto=format&fit=crop`);
+].map(id => `https://images.unsplash.com/photo-${id}?w=1000&h=667&q=70&auto=format&fit=crop`);
 const IMG_POOL = [...Object.keys(CATEGORY_IMG).filter(k => k !== "_default").map(k => CATEGORY_IMG[k]), ...EXTRA_POOL];
 function hashId(id) { let h = 5381; const s = String(id); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h; }
 const imLead = (a) => a.image_url || CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
@@ -125,9 +125,8 @@ const HUB_CSS = `
 .hubft .rm{font-size:11px;font-weight:600;color:var(--gold-d);letter-spacing:.06em;text-transform:uppercase}
 .hubft .lead{cursor:pointer}
 .hubft .lead .img{border:1px solid var(--line);overflow:hidden;margin-bottom:15px;transition:border-color .22s,box-shadow .22s}
-.hubft .lead .img img{width:100%;object-fit:cover;transition:transform .55s}
+.hubft .lead .img img{width:100%}
 .hubft .lead:hover .img{border-color:var(--gold);box-shadow:0 16px 38px rgba(20,20,20,.13)}
-.hubft .lead:hover .img img{transform:scale(1.04)}
 .hubft .lead h2{font-size:clamp(24px,2.8vw,34px);font-weight:700;line-height:1.1;letter-spacing:-.01em;margin:11px 0 0}
 .hubft .lead:hover h2{color:var(--gold-d)}
 .hubft .lead .dek{margin-top:13px;font-size:15px;line-height:1.66;color:var(--sub);-webkit-line-clamp:4;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
@@ -147,15 +146,13 @@ const HUB_CSS = `
 .hubft .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
 .hubft .story{cursor:pointer}
 .hubft .story .img{border:1px solid var(--line);overflow:hidden;margin-bottom:11px}
-.hubft .story .img img{width:100%;object-fit:cover;transition:transform .5s}
-.hubft .story:hover .img img{transform:scale(1.05)}
+.hubft .story .img img{width:100%}
 .hubft .story h3{font-size:20px;font-weight:600;line-height:1.1;letter-spacing:-.032em;margin-top:7px;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .hubft .story:hover h3{color:var(--gold-d)}
 .hubft .spot{display:grid;grid-template-columns:1.7fr 1fr;gap:30px;align-items:start}
 .hubft .spot .big,.hubft .spot .aside{cursor:pointer}
 .hubft .spot .img{overflow:hidden;border:1px solid var(--line);margin-bottom:12px}
-.hubft .spot .img img{width:100%;object-fit:cover;transition:transform .55s}
-.hubft .spot .big:hover .img img,.hubft .spot .aside:hover .img img{transform:scale(1.04)}
+.hubft .spot .img img{width:100%}
 .hubft .spot .big h3{font-size:26px;font-weight:700;line-height:1.08;margin-top:6px}
 .hubft .spot .big:hover h3{color:var(--gold-d)}
 .hubft .spot .big .dek{margin-top:11px;font-size:14px;color:var(--sub);line-height:1.6;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
@@ -165,8 +162,7 @@ const HUB_CSS = `
 .hubft .band{display:grid;grid-template-columns:1.5fr 1fr;gap:34px;align-items:start}
 .hubft .band .feat{cursor:pointer}
 .hubft .band .feat .img{overflow:hidden;border:1px solid var(--line);margin-bottom:13px}
-.hubft .band .feat .img img{width:100%;object-fit:cover;transition:transform .55s}
-.hubft .band .feat:hover .img img{transform:scale(1.04)}
+.hubft .band .feat .img img{width:100%}
 .hubft .band .feat h3{font-size:24px;font-weight:700;line-height:1.1;margin-top:6px}
 .hubft .band .feat:hover h3{color:var(--gold-d)}
 .hubft .band .feat .dek{margin-top:10px;font-size:14px;color:var(--sub);line-height:1.6;-webkit-line-clamp:3;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
@@ -188,8 +184,7 @@ const HUB_CSS = `
 .hubft .decon{background:var(--ob);color:#fff}
 .hubft .decon .in{display:grid;grid-template-columns:1.3fr 1fr;gap:34px;align-items:center}
 .hubft .decon .img{position:relative;overflow:hidden;border-radius:0;cursor:pointer}
-.hubft .decon .img img{width:100%;object-fit:cover;transition:transform .6s}
-.hubft .decon:hover .img img{transform:scale(1.05)}
+.hubft .decon .img img{width:100%}
 .hubft .decon .tag{position:absolute;left:16px;bottom:16px;background:var(--gold);color:#1A1A1A;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px}
 .hubft .decon h2{font-size:clamp(28px,3vw,40px);font-weight:700;line-height:1.08}
 .hubft .decon p{margin-top:14px;font-size:14px;color:#bdbdbd;line-height:1.66}
@@ -203,12 +198,19 @@ const HUB_CSS = `
 .hubft .latest{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:26px}
 .hubft .goldband{background:var(--gold);color:#14130F;margin:34px 0 10px}.hubft .goldband .in{display:grid;grid-template-columns:1.5fr repeat(3,1fr)}.hubft .goldband .c{padding:26px 26px;border-left:1px solid rgba(20,19,15,.18)}.hubft .goldband .c:first-child{border-left:none}.hubft .goldband .lede{font-size:18px;font-weight:600;line-height:1.28;letter-spacing:-.03em;max-width:30ch}.hubft .goldband strong{display:block;font-size:36px;line-height:1;font-weight:600;letter-spacing:-.05em}.hubft .goldband em{font-style:normal;display:block;margin-top:9px;font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;font-weight:700;opacity:.72;line-height:1.35}@media(max-width:860px){.hubft .goldband .in{grid-template-columns:1fr 1fr}.hubft .goldband .c:nth-child(3){border-left:none}}.hubft .pullquote{margin:46px 0;padding-top:22px;border-top:5px solid var(--gold);font-size:clamp(22px,2.2vw,31px);line-height:1.24;letter-spacing:-.035em;font-weight:600;color:var(--ink)}
 .hubft .metric{background:var(--paper-3);border:1px solid var(--line);padding:18px}
+/* Picture frame: always the picture's own 3:2 shape, so a 3:2 picture fills it
+   whole; any other shape is shown whole (contain) on a soft blurred copy of
+   itself. Nothing stretched, nothing cut off. */
+.hubft .nimg{position:relative;display:block;width:100%;aspect-ratio:3/2;overflow:hidden;background:var(--paper-3,#EFEDE6)}
+.hubft .nimg img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hubft .nimg .fill{object-fit:cover}
+.hubft .nimg .whole{object-fit:contain}
+.hubft .nimg .backdrop{object-fit:cover;filter:blur(18px) saturate(1.1);transform:scale(1.12);opacity:.55}
 .hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
 .hubft .card{border:1px solid var(--line);border-radius:0;overflow:hidden;background:var(--paper-2);box-shadow:none;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
 .hubft .card:hover{border-color:var(--gold);border-top:3px solid var(--gold);margin-top:-2px;box-shadow:0 24px 70px rgba(18,20,24,.14);transform:translateY(-3px)}
 .hubft .card .img{overflow:hidden}
-.hubft .card .img img{width:100%;object-fit:cover;transition:transform .5s}
-.hubft .card:hover .img img{transform:scale(1.05)}
+.hubft .card .img img{width:100%}
 .hubft .card .bd{padding:0 17px 19px}
 .hubft .card .crow{display:flex;align-items:center;gap:7px;margin:13px 0 7px;flex-wrap:wrap}
 .hubft .card .day{margin-left:auto;font-size:10px;color:var(--mut)}
@@ -239,18 +241,23 @@ function HubStyles() {
   return <style>{HUB_CSS}</style>;
 }
 
-// Category-themed image with a severity-gradient fallback. Height is explicit
-// so the fallback box matches the photo it replaces.
-function NewsImage({ a, height, lead }) {
+// Category-themed image with a severity-gradient fallback, in a 3:2 frame.
+// Every picture is framed 3:2 (the shape of the stored and category pictures)
+// and shown whole: a picture of another shape (the bundled /incidents ones are
+// 1:1 and 5:3) is fitted inside on a blurred copy of itself instead of being
+// cropped. `height` is ignored now; the frame's width sets its height.
+const FRAME = 3 / 2;
+function NewsImage({ a, lead }) {
   const [failed, setFailed] = useState(false);
   const [catFailed, setCatFailed] = useState(false);
+  const [whole, setWhole] = useState(false);   // picture shape differs from the frame
   const sev = SEV_C[a.severity] || GOLD;
 
-  // AI-generated image based on the exact incident headline
-  const aiPrompt = encodeURIComponent(`${a.headline}, realistic news photography, editorial`);
-  const generatedImg = `https://image.pollinations.ai/prompt/${aiPrompt}?width=1000&height=600&nologo=true`;
-
-  let primary = a.image_url || generatedImg;
+  // The stored picture (incidents.image_url) first, else the category photo.
+  // No live AI picture: the free generator stamps a "pollinations.ai" mark in
+  // the corner (nologo is ignored), which the old crop hid and a whole picture
+  // shows; main has used the category photo since 2026-09-30 (ced6eb2).
+  let primary = a.image_url || CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
 
   // Specific overrides for the images we generated via Gemini
   if (a.headline) {
@@ -296,8 +303,7 @@ function NewsImage({ a, height, lead }) {
   // Ultimate fallback — branded dark placeholder (no external image at all)
   if (catFailed) {
     return (
-      <div style={{
-        height, width: "100%",
+      <div className="nimg" style={{
         background: `radial-gradient(ellipse 120% 100% at 30% 0%, ${sev}22, transparent 60%), linear-gradient(135deg, #141417, ${OB} 70%)`,
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
         border: "1px solid rgba(255,255,255,0.05)",
@@ -313,25 +319,25 @@ function NewsImage({ a, height, lead }) {
   // If primary image failed, try the category fallback image
   if (failed) {
     const catImg = CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
-    return (
-      <img
-        src={catImg}
-        alt={CAT_NAME[a.primary_category] || "Incident"}
-        loading="lazy"
-        onError={() => setCatFailed(true)}
-        style={{ height, width: "100%", objectFit: "cover" }}
-      />
-    );
+    return <Framed src={catImg} alt={CAT_NAME[a.primary_category] || "Incident"} whole={whole} setWhole={setWhole} onFail={() => setCatFailed(true)} />;
   }
 
+  return <Framed src={primary} alt={a.headline || ""} whole={whole} setWhole={setWhole} onFail={() => setFailed(true)} />;
+}
+
+// The 3:2 frame. On load, a picture more than 0.5% off 3:2 switches to "whole":
+// contained, over a blurred, enlarged copy of itself that fills the frame. (At
+// 4% the 1.52:1 photos still lost ~2.5 px a side; owner: hide nothing.)
+function Framed({ src, alt, whole, setWhole, onFail }) {
+  const onLoad = (e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    if (w && h) setWhole(Math.abs(w / h - FRAME) / FRAME > 0.005);
+  };
   return (
-    <img
-      src={primary}
-      alt={a.headline || ""}
-      loading="lazy"
-      onError={() => setFailed(true)}
-      style={{ height, width: "100%", objectFit: "cover" }}
-    />
+    <span className="nimg">
+      {whole && <img className="backdrop" src={src} alt="" aria-hidden="true" />}
+      <img className={whole ? "whole" : "fill"} src={src} alt={alt} loading="lazy" onLoad={onLoad} onError={onFail} />
+    </span>
   );
 }
 
@@ -401,7 +407,7 @@ function ArticleView({ article, onBack, onMap, user }) {
         <h1 style={{ margin: "14px 0 0", fontSize: "clamp(32px, 4.4vw, 52px)", fontWeight: 600, lineHeight: 1.02, letterSpacing: "-0.045em", textWrap: "balance" }}>{a.headline}</h1>
         {meta && <div style={{ marginTop: 14, fontSize: 12.5, color: "#6E6A60", fontWeight: 600 }}>{meta}</div>}
         <div style={{ margin: "24px 0 0", overflow: "hidden", border: "1px solid #E6E3DB" }}>
-          <div style={{ width: "100%", overflow: "hidden" }}><NewsImage a={a} height={340} lead /></div>
+          <div style={{ width: "100%", overflow: "hidden" }}><NewsImage a={a} lead /></div>
         </div>
         {body && (
           <p style={{ margin: "26px 0 0", fontSize: 16.5, lineHeight: 1.78, color: "#14130F", whiteSpace: "pre-line",
@@ -738,7 +744,7 @@ export function AttackHub() {
   );
   const Card = (a) => (
     <article key={a._key || a.id} className="card" onClick={() => openArticle(a)}>
-      <div className="img"><NewsImage a={a} height={165} /></div>
+      <div className="img"><NewsImage a={a} /></div>
       <div className="bd">
         <div className="crow"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick><span className="day">{fmtShort(a.incident_day)}</span></div>
         <h3>{a.headline}</h3>
@@ -749,7 +755,7 @@ export function AttackHub() {
   );
   const Story = (a) => (
     <article key={a._key || a.id} className="story" onClick={() => openArticle(a)}>
-      <div className="img"><NewsImage a={a} height={150} /></div>
+      <div className="img"><NewsImage a={a} /></div>
       <div className="row"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick></div>
       <h3>{a.headline}</h3>
       {a.summary && <div className="ridek">{a.summary}</div>}
@@ -800,7 +806,7 @@ export function AttackHub() {
     const a = reportArticle(r);
     return (
       <div key={r.ref} className="opc" style={{ cursor: "pointer", padding: 0, overflow: "hidden" }} onClick={() => openArticle(a)}>
-        <NewsImage a={a} height={150} />
+        <NewsImage a={a} />
         <div style={{ padding: "16px 18px 18px" }}>
           <div className="mrow" style={{ marginBottom: 8, gap: 8 }}><SevChip a={a} /><span className="by">{fmtShort(a.incident_day)}</span></div>
           <h3 style={{ margin: "0 0 6px" }}>{r.title}</h3>
@@ -952,7 +958,7 @@ export function AttackHub() {
                 {safePage === 0 && visible[0] && (
                   <div className="band" style={{ marginBottom: 40 }}>
                     <div className="feat" onClick={() => openArticle(visible[0])}>
-                      <div className="img"><NewsImage a={visible[0]} height={300} lead /></div>
+                      <div className="img"><NewsImage a={visible[0]} lead /></div>
                       <div className="row"><SevChip a={visible[0]} /><Kick>{catName(visible[0])}</Kick><span className="by">{fmtShort(visible[0].incident_day)}</span></div>
                       <h3>{visible[0].headline}</h3>
                       {visible[0].summary && <div className="dek">{visible[0].summary}</div>}
@@ -974,7 +980,7 @@ export function AttackHub() {
                     <section className="hero">
                       <div className="col">{leftLeads.map(SideLead)}</div>
                       <div className="lead col" onClick={() => openArticle(featured)}>
-                        <div className="img"><NewsImage a={featured} height={320} lead /></div>
+                        <div className="img"><NewsImage a={featured} lead /></div>
                         <div className="row"><Kick>Lead briefing</Kick><SevChip a={featured} /><span className="by">{fmtDay(featured.incident_day)}</span></div>
                         <h2>{featured.headline}</h2>
                         <div className="by" style={{ marginTop: 10 }}>{[featured.entity, featured.country, featured.industry || featured.sector].filter(Boolean).join("   ·   ")}</div>
@@ -1016,14 +1022,14 @@ export function AttackHub() {
                       <section className="sec"><SecHead>Spotlight</SecHead>
                         <div className="spot">
                           <div className="big" onClick={() => openArticle(spotMain)}>
-                            <div className="img"><NewsImage a={spotMain} height={300} lead /></div>
+                            <div className="img"><NewsImage a={spotMain} lead /></div>
                             <div className="row"><SevChip a={spotMain} /><Kick>{catName(spotMain)}</Kick><span className="by">{fmtShort(spotMain.incident_day)}</span></div>
                             <h3>{spotMain.headline}</h3>
                             {spotMain.summary && <div className="dek">{spotMain.summary}</div>}
                           </div>
                           <div>{spotSide.map(a => (
                             <div key={a._key || a.id} className="aside" onClick={() => openArticle(a)}>
-                              <div className="img"><NewsImage a={a} height={170} /></div>
+                              <div className="img"><NewsImage a={a} /></div>
                               <div className="row"><SevChip a={a} />{a.incident_day === liveDay && <LiveTag />}<Kick>{catName(a)}</Kick></div>
                               <h3>{a.headline}</h3>
                               {a.summary && <div className="ridek">{a.summary}</div>}
@@ -1041,7 +1047,7 @@ export function AttackHub() {
                           <div className="sh l"><span className="sq" style={{ background: SEV_C[lead.severity] || GOLD }} /><h2>{CAT_NAME[c] || c}</h2><button className="more" onClick={() => setCatFilter(c)}>More in {CAT_NAME[c] || c} ›</button></div>
                           <div className="band">
                             <div className="feat" onClick={() => openArticle(lead)}>
-                              <div className="img"><NewsImage a={lead} height={240} lead /></div>
+                              <div className="img"><NewsImage a={lead} lead /></div>
                               <div className="row"><SevChip a={lead} /><Kick>{catName(lead)}</Kick><span className="by">{fmtShort(lead.incident_day)}</span></div>
                               <h3>{lead.headline}</h3>
                               {lead.summary && <div className="dek">{lead.summary}</div>}
@@ -1074,7 +1080,7 @@ export function AttackHub() {
                       <section className="decon sec" style={{ padding: "48px 0" }}>
                         <div className="wrap"><div className="sh l" style={{ borderBottomColor: "#333" }}><span className="sq" style={{ background: GOLD }} /><h2 style={{ color: "#fff" }}>Deconstructed · one incident, traced</h2></div>
                           <div className="in">
-                            <div className="img" onClick={() => openArticle(decon)}><NewsImage a={decon} height={330} lead /><span className="tag">Blast radius</span></div>
+                            <div className="img" onClick={() => openArticle(decon)}><NewsImage a={decon} lead /><span className="tag">Blast radius</span></div>
                             <div>
                               <div className="row" style={{ marginBottom: 10 }}><SevChip a={decon} /><span className="kick" style={{ color: GOLD }}>{catName(decon)}</span></div>
                               <h2>{decon.headline}</h2>
