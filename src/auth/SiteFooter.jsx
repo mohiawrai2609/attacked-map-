@@ -73,7 +73,7 @@ export function SiteFooter() {
     transition: "color 160ms ease",
   };
   const NavLink = ({ label, href, ext }) => (
-    <a href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}
+    <a className="r-foot-link" href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}
       style={navLinkStyle}
       onMouseEnter={e => { e.currentTarget.style.color = BRAND.gold; }}
       onMouseLeave={e => { e.currentTarget.style.color = BRAND.white; }}
@@ -120,7 +120,7 @@ export function SiteFooter() {
                   onFocus={e => { if (state !== "error") e.currentTarget.style.borderColor = "#A6A8AD"; }}
                   onBlur={e => { if (state !== "error") e.currentTarget.style.borderColor = "#383838"; }}
                 />
-                <button type="submit" disabled={state === "sending"} style={{
+                <button type="submit" className="r-foot-submit" disabled={state === "sending"} style={{
                   padding: "13px 32px", background: BRAND.gold, color: BRAND.obsidian,
                   border: "none", borderRadius: 0, cursor: state === "sending" ? "default" : "pointer",
                   opacity: state === "sending" ? 0.7 : 1,
@@ -144,8 +144,10 @@ export function SiteFooter() {
             </div>
           </div>
 
-          {/* RIGHT — utility links in fixed reference rows (5 / 3 / 1) + social */}
-          <div className="r-foot-right" style={{ flex: "1 1 600px", maxWidth: 740 }}>
+          {/* RIGHT — utility links in fixed reference rows (5 / 3 / 1) + social.
+              marginLeft auto: when the columns wrap (tablets, ~769-1170px) the
+              block still ends at the right edge instead of mid-page. */}
+          <div className="r-foot-right" style={{ flex: "1 1 600px", maxWidth: 740, marginLeft: "auto" }}>
             {/* Row 1 */}
             <div style={{
               display: "flex", flexWrap: "wrap", justifyContent: "flex-end",
@@ -174,11 +176,12 @@ export function SiteFooter() {
             </div>
 
             {/* Social icons */}
-            <div style={{ marginTop: 36, display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end" }}>
+            {/* gap shrinks only below 400px, so the 40px circles never squash. */}
+            <div style={{ marginTop: 36, display: "flex", gap: "clamp(8px, 3vw, 12px)", alignItems: "center", justifyContent: "flex-end" }}>
               {Object.entries(SOCIAL).map(([name, url]) => (
                 <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}
                   style={{
-                    width: 40, height: 40, borderRadius: "50%",
+                    width: 40, height: 40, flex: "none", borderRadius: "50%",
                     border: `1px solid ${BRAND.white}`, color: BRAND.white, background: "transparent",
                     display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
                     transition: "color 160ms ease, background 160ms ease",

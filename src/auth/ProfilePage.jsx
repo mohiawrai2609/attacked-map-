@@ -128,7 +128,7 @@ export function ProfilePage() {
   return (
     <div style={{ minHeight: "100vh", background: C.paper, color: C.ink, fontFamily: FONT, WebkitFontSmoothing: "antialiased" }}>
       <FontLoader />
-      <div style={{ background: C.deep }}><SiteNav /></div>
+      <SiteNav />
       <div style={{ height: 3, background: C.gold }} />
 
       {/* Header — dark band */}
@@ -177,7 +177,7 @@ export function ProfilePage() {
               }}>{tier || "free"} tier</span>
             </div>
             <button type="button" onClick={() => fileRef.current && fileRef.current.click()} disabled={avatarBusy} style={{
-              marginTop: 10, background: "none", border: "none", padding: 0,
+              margin: "5px 0 -5px", background: "none", border: "none", padding: "5px 0", minHeight: 24,
               cursor: avatarBusy ? "default" : "pointer",
               color: C.gold, fontFamily: FONT, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
             }}>{avatarBusy ? "Uploading…" : (avatarUrl ? "Change photo" : "＋ Add a photo")}</button>
@@ -199,7 +199,7 @@ export function ProfilePage() {
               onChange={(e) => setFullName(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} />
           </div>
 
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", columnGap: 14, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 240px", marginBottom: 16 }}>
               <label style={label}>Job title</label>
               <select value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} style={{ ...sel, color: jobTitle ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>

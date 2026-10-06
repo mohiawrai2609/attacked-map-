@@ -12,6 +12,7 @@
 
 import { marked } from "marked";
 import { REPORT_SHELL_CSS } from "./reportShellCss";
+import { REPORT_RESPONSIVE_CSS } from "./reportLock";
 
 export const REPORT_SECTIONS = [
   { id: "r-sum",     num: "",   eyebrow: "Executive summary",                         title: "",                                     key: "summary",     hint: "The bottom line. 3–6 short paragraphs or bullets. Always shown first." },
@@ -99,8 +100,14 @@ const SHELL_JS = `
   var btns=Array.prototype.slice.call(document.querySelectorAll('.r-nav-item'));
   var secs=btns.map(function(b){return {btn:b, el:document.getElementById(b.getAttribute('data-target'))};}).filter(function(x){return x.el;});
   btns.forEach(function(b){ b.addEventListener('click', function(){ var el=document.getElementById(b.getAttribute('data-target')); if(el&&sc) sc.scrollTo({top:el.offsetTop-18,behavior:'smooth'}); }); });
+  var mob=document.getElementById('rMobNav'), list=document.getElementById('rMobList'), pill=document.getElementById('rMobPill'), curEl=document.getElementById('rMobCur');
+  if(mob&&list&&sc){ secs.forEach(function(s,i){ var b=document.createElement('button'); b.type='button'; b.className='r-mobnav-item'; b.setAttribute('data-target', s.el.id); var n=document.createElement('span'); n.className='n'; n.textContent=String(i+1).padStart(2,'0'); b.appendChild(n); b.appendChild(document.createTextNode(s.btn.textContent)); b.addEventListener('click', function(){ sc.scrollTo({top:s.el.offsetTop-18,behavior:'smooth'}); mob.classList.remove('open'); }); list.appendChild(b); });
+    if(pill) pill.addEventListener('click', function(){ mob.classList.toggle('open'); });
+    sc.addEventListener('click', function(){ mob.classList.remove('open'); }, {passive:true}); }
   function onScroll(){ if(!sc) return; var max=sc.scrollHeight-sc.clientHeight; if(prog) prog.style.width=(max>0?Math.min(100,sc.scrollTop/max*100):0)+'%';
-    var cur=null; secs.forEach(function(s){ if(s.el.offsetTop-40<=sc.scrollTop) cur=s; }); secs.forEach(function(s){ s.btn.classList.toggle('active', s===cur); }); }
+    var cur=null; secs.forEach(function(s){ if(s.el.offsetTop-40<=sc.scrollTop) cur=s; }); secs.forEach(function(s){ s.btn.classList.toggle('active', s===cur); });
+    var c=cur||secs[0]; if(c&&curEl) curEl.textContent=c.btn.textContent;
+    Array.prototype.slice.call(document.querySelectorAll('.r-mobnav-item')).forEach(function(b){ b.classList.toggle('active', !!c && b.getAttribute('data-target')===c.el.id); }); }
   if(sc){ sc.addEventListener('scroll', onScroll, {passive:true}); onScroll(); }
   var back=document.getElementById('rBack'); if(back) back.addEventListener('click', function(){ try{ window.top.history.back(); }catch(e){} });
   Array.prototype.slice.call(document.querySelectorAll('[data-print]')).forEach(function(b){ b.addEventListener('click', function(){ window.print(); }); });
@@ -168,6 +175,7 @@ export function renderReport(data = {}, brand = {}) {
 <link href="https://fonts.googleapis.com/css2?family=${font.gf}&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>${REPORT_SHELL_CSS}</style>
 <style>${brandCss(b)}</style>
+<style id="attacked-resp">${REPORT_RESPONSIVE_CSS}</style>
 </head>
 <body>
 <div class="reader open" id="reader" aria-label="Intelligence briefing — ${esc(data.title || "")}">
@@ -179,6 +187,7 @@ export function renderReport(data = {}, brand = {}) {
   <div class="reader-scroll" id="readerScroll">
     <div class="r-doc" id="readerArticle">${railLeft}${article}${railRight}</div>
   </div>
+  <div class="r-mobnav" id="rMobNav"><div class="r-mobnav-sheet" id="rMobSheet"><div class="r-mobnav-sheet-h">Jump to section</div><div id="rMobList"></div></div><button class="r-mobnav-pill" id="rMobPill" type="button"><span class="rm-ic">&#9776;</span><span class="rm-txt"><span class="rm-lab">Reading now</span><span class="rm-cur" id="rMobCur">${esc(present[0]?.title || present[0]?.eyebrow || "Contents")}</span></span><span class="rm-chev">&#8963;</span></button></div>
 </div>
 <script>${SHELL_JS}</script>
 </body>

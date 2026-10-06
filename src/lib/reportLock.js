@@ -20,9 +20,9 @@ const LOCK_CSS = `
   .dash-locked{position:relative;max-height:260px;overflow:hidden}
   .dash-locked::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.75) 45%,#fff 100%);pointer-events:none}
   .dash-locked > *:not(.r-sec-title):not(.dash-lock){filter:blur(4px);user-select:none}
-  .dash-lock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;display:flex;align-items:center;gap:12px;background:#0E1116;color:#fff;border:1px solid #FCBD00;padding:12px 16px;border-radius:6px;font:600 13px/1.3 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.28);white-space:nowrap;max-width:calc(100% - 24px)}
+  .dash-lock{position:absolute;left:12px;right:12px;bottom:22px;margin:0 auto;width:fit-content;max-width:calc(100% - 24px);z-index:2;display:flex;align-items:center;gap:12px;background:#0E1116;color:#fff;border:1px solid #FCBD00;padding:12px 16px;border-radius:6px;font:600 13px/1.3 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.28);white-space:normal}
   .dash-lock b{color:#FCBD00;font-weight:700}
-  .dash-lock button{background:#FCBD00;color:#0E1116;border:0;border-radius:6px;padding:8px 12px;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+  .dash-lock button{flex:none;white-space:nowrap;background:#FCBD00;color:#0E1116;border:0;border-radius:6px;padding:8px 12px;font:700 11px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
   @media (max-width:640px){.dash-lock{white-space:normal;flex-direction:column;text-align:center}}`;
 
 export function lockReportForFreeReader(doc, onSubscribe) {
@@ -46,13 +46,97 @@ export function lockReportForFreeReader(doc, onSubscribe) {
   return n;
 }
 
+// Responsive layer for the report shell (2026-10-07 responsive sweep). One
+// text, three carriers that must stay identical:
+//   - the 310 baked files, as <style id="attacked-resp"> before </head>
+//     (scripted, never hand-edited);
+//   - renderReport() in reportTemplate.js, for new CMS reports;
+//   - prepareReportFrame() below, for CMS reports saved before this and for
+//     the API srcdoc shown in the Hub and the dashboard.
+// It only adds rules for sizes the shell got wrong; every other size renders
+// exactly as before.
+export const REPORT_RESPONSIVE_CSS = [
+  "/* attacked-resp v1 (2026-10-07) */",
+  // 769-1080: one column, but keep the 720px reading measure
+  "@media(max-width:1080px){.r-doc{grid-template-columns:minmax(0,720px)}}",
+  // 1081-1279: narrower rails so the article is ~590-720px, not 504px
+  "@media(min-width:1081px) and (max-width:1279px){.r-doc{grid-template-columns:200px minmax(0,720px) 170px;gap:32px;padding:0 28px}}",
+  "@media(min-width:641px){.r-vendors{grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))}}",
+  // short laptops: the sticky rail never runs past the screen; its Download PDF stays in view
+  "@media(min-width:1081px){.r-rail{max-height:calc(100vh - 88px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.r-rail-cta{position:sticky;bottom:0;z-index:1}}",
+  "@media(min-width:1081px) and (max-height:860px){.r-rail{padding:28px 0 24px;gap:18px}}",
+  // phones: cause cards, control rows, small reading text, pull quote, padding
+  "@media(max-width:560px){",
+  ".r-cause-top{display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px 12px;padding:16px}",
+  ".r-cause-meta{display:contents}",
+  ".r-cause-tier{grid-column:2;align-self:center;margin:0}",
+  ".r-cause-hyp{grid-column:1/-1;font-size:18px}",
+  ".r-cause-body{padding:0 16px 18px}",
+  ".r-ctrl{grid-template-columns:minmax(0,1fr);gap:6px 0}",
+  ".r-ctrl .r-code{justify-self:start}",
+  ".r-ctrl-obj,.r-ctrl-lnk{grid-column:1}",
+  ".r-chip,.r-stat .s,.r-assessment,.r-cat-blurb,.r-vendor-dom{font-size:12px}",
+  ".r-vendor-type,.r-vendor-ctrl-ac,.r-chips-h,.r-mobnav-pill .rm-lab{font-size:10px}",
+  ".r-pull{font-size:21px;padding-left:16px;margin:28px 0}",
+  ".r-takeaway{padding:20px 18px}.r-takeaway p{font-size:16px}",
+  ".r-ctrlcard,.r-scenario{padding:18px 16px}",
+  "}",
+  // the jump pill never wider than a 280px screen
+  ".r-mobnav-pill{min-width:min(286px,calc(100vw - 30px))}",
+  // landscape phones: thinner reader bar, pill closer to the edge
+  "@media(orientation:landscape) and (max-height:500px){.reader-bar{height:44px}.reader-scroll{top:44px}.r-mobnav-pill{bottom:8px;padding:7px 16px}.r-mobnav-sheet{bottom:58px}}",
+].join("\n");
+
+// CMS reports saved before 2026-10-07 have no jump-to-section pill, and the
+// shell hides their contents rail at <=1080px. Build the same pill the baked
+// shell has, from the frame's own contents list (the CSS is already there).
+function addMobileNav(doc) {
+  if (doc.getElementById("rMobNav")) return;
+  const reader = doc.getElementById("reader"), sc = doc.getElementById("readerScroll");
+  const btns = Array.from(doc.querySelectorAll(".r-nav-item"));
+  const secs = btns.map((b) => ({ btn: b, el: doc.getElementById(b.getAttribute("data-target")) })).filter((s) => s.el);
+  if (!reader || !sc || !secs.length) return;
+  const mk = (tag, cls, id) => { const el = doc.createElement(tag); if (cls) el.className = cls; if (id) el.id = id; return el; };
+  const mob = mk("div", "r-mobnav", "rMobNav"), sheet = mk("div", "r-mobnav-sheet", "rMobSheet");
+  const head = mk("div", "r-mobnav-sheet-h"); head.textContent = "Jump to section";
+  const list = mk("div", "", "rMobList"); sheet.append(head, list);
+  const pill = mk("button", "r-mobnav-pill", "rMobPill"); pill.type = "button";
+  const ic = mk("span", "rm-ic"); ic.textContent = "☰";
+  const txt = mk("span", "rm-txt"), lab = mk("span", "rm-lab"), cur = mk("span", "rm-cur", "rMobCur");
+  lab.textContent = "Reading now"; cur.textContent = secs[0].btn.textContent; txt.append(lab, cur);
+  const chev = mk("span", "rm-chev"); chev.textContent = "⌃";
+  pill.append(ic, txt, chev); mob.append(sheet, pill); reader.appendChild(mob);
+  const items = secs.map((s, i) => {
+    const b = mk("button", "r-mobnav-item"); b.type = "button";
+    const n = mk("span", "n"); n.textContent = String(i + 1).padStart(2, "0");
+    b.append(n, doc.createTextNode(s.btn.textContent));
+    b.addEventListener("click", () => { sc.scrollTo({ top: s.el.offsetTop - 18, behavior: "smooth" }); mob.classList.remove("open"); });
+    list.appendChild(b); return b;
+  });
+  pill.addEventListener("click", () => mob.classList.toggle("open"));
+  sc.addEventListener("click", () => mob.classList.remove("open"), { passive: true });
+  const onScroll = () => {
+    let at = 0; secs.forEach((s, i) => { if (s.el.offsetTop - sc.scrollTop <= 140) at = i; });
+    cur.textContent = secs[at].btn.textContent;
+    items.forEach((b, i) => b.classList.toggle("active", i === at));
+  };
+  sc.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+}
+
 // Stamp the licence line the report prints, hide any in-report navigation the
 // host page owns, and gate the subscriber sections for free readers.
 export function prepareReportFrame(frame, { subscriber, onSubscribe, readerName } = {}) {
   let doc; try { doc = frame.contentDocument; } catch { return false; }
   if (!doc || !doc.body || !doc.body.children.length) return false;
   try { frame.contentWindow.__ATTACKED_LICENSE__ = { name: readerName || "Registered reader", role: subscriber ? "Subscriber" : "Free reader" }; } catch { /* noop */ }
-  doc.querySelectorAll('a[href*="?hub"], .r-back').forEach((el) => { el.style.display = "none"; });
+  // .r-bar-back: the frame's own "← Back" sits under the host's back button
+  // (Hub, dashboard) at <=1080px; the host owns navigation, so hide it.
+  doc.querySelectorAll('a[href*="?hub"], .r-back, .r-bar-back').forEach((el) => { el.style.display = "none"; });
+  // Responsive layer: always the current text, after the shell stylesheet.
+  let rs = doc.getElementById("attacked-resp");
+  if (!rs) { rs = doc.createElement("style"); rs.id = "attacked-resp"; doc.head.appendChild(rs); }
+  if (rs.textContent !== REPORT_RESPONSIVE_CSS) rs.textContent = REPORT_RESPONSIVE_CSS;
+  try { addMobileNav(doc); } catch { /* noop */ }
   // Reports store their HTML when saved, so ones published before 2026-10-05
   // still crop the hero to 420px tall (12.7% of a 3:2 picture lost on desktop).
   // Same rule as reportTemplate.js now has: whole picture, 3:2 frame.

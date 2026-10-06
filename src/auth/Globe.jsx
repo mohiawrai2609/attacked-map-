@@ -163,7 +163,11 @@ export function Globe({ size = 380, incidents = null, dateLabel = null }) {
   }, []);
 
   return (
-    <div style={{ position:'relative', width:'100%', maxWidth:size, margin:'0 auto', aspectRatio:'1 / 1', background:'transparent', overflow:'visible' }}>
+    <div className="globe-root" style={{ position:'relative', width:'100%', maxWidth:size, margin:'0 auto', aspectRatio:'1 / 1', background:'transparent', overflow:'visible' }}>
+      {/* The legend (left) and the readout (right) share the bottom strip. Below
+          a 340px globe they cannot both fit with a gap, so the decorative
+          readout is hidden there and the legend stays. */}
+      <style>{`.globe-root{container-type:inline-size}@container (max-width:339.98px){.globe-readout{display:none}}`}</style>
       <div className="globe-ovl" style={{ position:'absolute', top:14, left:16, right:16, display:'flex', justifyContent:'space-between', zIndex:4, pointerEvents:'none' }}>
         <span style={{ display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter, sans-serif', fontSize:10.5, letterSpacing:'0.14em', textTransform:'uppercase', color:'#A6A8AD' }}>
           <span style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00' }} />{dateLabel ? `Latest incidents · ${dateLabel}` : 'Incident network'}
@@ -176,7 +180,7 @@ export function Globe({ size = 380, incidents = null, dateLabel = null }) {
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00', display:'inline-block' }} />Medium</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#34C759', display:'inline-block' }} />Low</span>
       </div>
-      <div ref={coordRef} className="globe-ovl" style={{ position:'absolute', right:16, bottom:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', textAlign:'right', lineHeight:1.5, pointerEvents:'none' }}>TRACKING<br/>11 COUNTRIES · 17 SECTORS</div>
+      <div ref={coordRef} className="globe-ovl globe-readout" style={{ position:'absolute', right:16, bottom:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', textAlign:'right', lineHeight:1.5, pointerEvents:'none' }}>LON · GB<br/>TRACKING</div>
     </div>
   );
 }

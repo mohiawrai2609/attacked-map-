@@ -71,14 +71,14 @@ const S = {
   eyebrow: { fontFamily: MONO, fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: BRAND.goldDeep, fontWeight: 700 },
   h2: { fontFamily: SERIF, fontSize: 34, lineHeight: 1.08, fontWeight: 500, margin: "6px 0 8px", letterSpacing: "-0.01em", color: BRAND.ink },
   lede: { fontFamily: FONT, fontSize: 14.5, lineHeight: 1.6, color: BRAND.inkSoft, maxWidth: 720, margin: 0 },
-  grid: (min) => ({ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 14, marginTop: 22 }),
+  grid: (min) => ({ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`, gap: 14, marginTop: 22 }),
   card: { background: "#fff", border: `1px solid ${BRAND.line}`, borderRadius: 6, padding: "22px 22px 20px", display: "flex", flexDirection: "column", minWidth: 0, fontFamily: FONT },
   name: { fontFamily: FONT, fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em", color: BRAND.ink, margin: 0 },
   price: { fontFamily: SERIF, fontSize: 34, lineHeight: 1, fontWeight: 600, color: BRAND.ink, marginTop: 10 },
   period: { fontFamily: MONO, fontSize: 10, color: BRAND.muted, marginLeft: 8, letterSpacing: ".06em" },
   note: { fontFamily: MONO, fontSize: 9.5, color: BRAND.muted, marginTop: 6 },
   pitch: { fontSize: 13, color: BRAND.inkSoft, margin: "10px 0 0", lineHeight: 1.5 },
-  list: { listStyle: "none", padding: 0, margin: "16px 0 18px", display: "grid", gap: 8, flex: 1 },
+  list: { listStyle: "none", padding: 0, margin: "16px 0 18px", display: "grid", gap: 8, flex: 1, alignContent: "start" },
   li: { display: "flex", gap: 9, fontSize: 12.5, lineHeight: 1.45, color: BRAND.ink },
   tick: { color: BRAND.goldDeep, fontWeight: 800, flex: "none" },
   tag: { fontFamily: MONO, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", background: BRAND.goldTint, color: BRAND.goldDeep, border: `1px solid ${BRAND.borderGold}`, borderRadius: 6, padding: "4px 7px", fontWeight: 700 },
@@ -137,6 +137,18 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
 
   return (
     <div style={{ fontFamily: FONT }}>
+      {/* Phone-only overrides for this page (layout only). Fine print goes to
+          12px on phones, portrait and landscape; the third Premium card spans
+          the row while the Premium grid has exactly two columns, so it does
+          not sit alone (container query on the dark box: 574-867px wide). */}
+      <style>{`
+        @media (max-width: 768px), (pointer: coarse) and (max-height: 500px) {
+          .sub-fine { font-size: 12px !important; line-height: 1.45 !important; }
+        }
+        @container (min-width: 574px) and (max-width: 867.98px) {
+          .sub-premium > article:nth-child(3) { grid-column: 1 / -1; }
+        }
+      `}</style>
       {/* 1 · Attack Map */}
       <section style={{ ...S.section, paddingTop: embedded ? 4 : 34 }}>
         <div style={S.eyebrow}>Attack Map · industry intelligence</div>
@@ -154,7 +166,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
                   {isSub ? <span style={S.tag}>Recommended</span> : current ? <span style={S.tag}>Your plan</span> : null}
                 </div>
                 <div style={S.price}>{p.price}<span style={S.period}>{p.period}</span></div>
-                {p.note && <div style={S.note}>{p.note}</div>}
+                {p.note && <div className="sub-fine" style={S.note}>{p.note}</div>}
                 <p style={S.pitch}>{p.pitch}</p>
                 <ul style={S.list}>{p.includes.map((f) => <li key={f} style={S.li}><span style={S.tick}>✓</span><span>{f}</span></li>)}</ul>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
@@ -168,7 +180,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
                     ) : (
                       <>
                         <button style={S.primary} disabled={busy} onClick={subscribe}>{busy ? "Subscribing…" : user ? "Subscribe →" : "Subscribe · create an account →"}</button>
-                        <span style={{ fontSize: 11.5, color: BRAND.muted }}>{user ? "Switches on now. Switch off any time." : "Takes a minute. Then it switches on."}</span>
+                        <span className="sub-fine" style={{ fontSize: 11.5, color: BRAND.muted }}>{user ? "Switches on now. Switch off any time." : "Takes a minute. Then it switches on."}</span>
                       </>
                     )
                   ) : (
@@ -184,12 +196,12 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
 
       {/* 2 · Organisation intelligence */}
       <section style={{ ...S.section, paddingTop: 10, paddingBottom: embedded ? 20 : 56 }}>
-        <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 6, padding: "28px 26px 26px", position: "relative", overflow: "hidden" }}>
+        <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 6, padding: "28px clamp(16px, 6vw, 26px) 26px", position: "relative", overflow: "hidden", containerType: "inline-size" }}>
           
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>♛ Organisation intelligence · Premium</div>
-          <h2 style={{ ...S.h2, color: "#fff" }}>Industry intelligence first. Organisation intelligence when you need it.</h2>
+          <h2 style={{ ...S.h2, color: "#fff", textWrap: "balance" }}>Industry intelligence first. Organisation intelligence when you need it.</h2>
           <p style={{ ...S.lede, color: "rgba(255,255,255,.72)" }}>Free and Subscriber keep you informed at sector level. Premium adds your organisation: its suppliers, dependencies, materiality and controls — what an incident could mean for you, not just for your industry.</p>
-          <div style={S.grid(280)}>
+          <div className="sub-premium" style={S.grid(280)}>
             {PREMIUM.map((p) => (
               <article key={p.key} style={{ ...S.card, background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.12)", color: "#fff" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
@@ -202,7 +214,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
               </article>
             ))}
           </div>
-          <div style={{ marginTop: 18, fontFamily: MONO, fontSize: 10.5, color: "rgba(255,255,255,.55)", letterSpacing: ".04em" }}>Available to Subscriber organisations · scoped and priced per organisation · a sample assessment on request.</div>
+          <div className="sub-fine" style={{ marginTop: 18, fontFamily: MONO, fontSize: 10.5, color: "rgba(255,255,255,.55)", letterSpacing: ".04em" }}>Available to Subscriber organisations · scoped and priced per organisation · a sample assessment on request.</div>
         </div>
       </section>
 
@@ -222,7 +234,7 @@ export function SubscribePage() {
           nav item and left the bar with nothing highlighted. */}
       <SiteNav active="pricing" />
       <header style={{ background: BRAND.obsidian, color: "#fff", padding: "54px 24px 46px", borderBottom: `1px solid ${BRAND.border}` }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1132, margin: "0 auto" }}>
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>Subscribe · Attacked.ai</div>
           <h1 style={{ fontFamily: SERIF, fontSize: 52, lineHeight: 1.02, fontWeight: 500, margin: "10px 0 14px", letterSpacing: "-0.015em", maxWidth: 820 }}>One corpus. Three ways in.</h1>
           <p style={{ ...S.lede, color: "rgba(255,255,255,.72)", fontSize: 16 }}>The Attack Map for your industry, the organisation-level intelligence behind it, and the reports, listings and licences that stand on their own.</p>

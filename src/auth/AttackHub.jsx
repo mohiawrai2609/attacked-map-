@@ -231,9 +231,34 @@ const HUB_CSS = `
 .hubft .cta h3{font-size:30px;font-weight:700;color:#fff}
 .hubft .cta p{max-width:470px;margin:10px auto 0;font-size:13.5px;color:#A6A8AD;line-height:1.6}
 .hubft .empty{padding:90px 0;text-align:center;color:var(--mut);font-size:13px}
-@media(max-width:980px){.hubft .hero{grid-template-columns:1fr;gap:28px}.hubft .band{grid-template-columns:1fr;gap:24px}.hubft .spot{grid-template-columns:1fr;gap:24px}.hubft .an3{grid-template-columns:1fr 1fr}.hubft .decon .in{grid-template-columns:1fr;gap:22px}}
+@media(max-width:980px){.hubft .hero{grid-template-columns:1fr;gap:28px}.hubft .hero>.lead{order:-1}.hubft .g4{grid-template-columns:1fr 1fr}.hubft .band{grid-template-columns:1fr;gap:24px}.hubft .spot{grid-template-columns:1fr;gap:24px}.hubft .an3{grid-template-columns:1fr 1fr}.hubft .decon .in{grid-template-columns:1fr;gap:22px}}
 @media(max-width:680px){.hubft .g4{grid-template-columns:1fr 1fr}.hubft .an3{grid-template-columns:1fr}.hubft .crit{grid-template-columns:1fr}.hubft .sh.l{flex-wrap:wrap}.hubft .sh.l .more{margin-left:auto}.hubft .sh h2{white-space:normal}}
 @media(max-width:460px){.hubft .g4{grid-template-columns:1fr}}
+/* Responsive pass 2026-10-07 (phones, landscape phones, tablets). */
+/* Gold band: one column on phones, hairlines between the lede and the stats. */
+@media(max-width:560px){.hubft .goldband .in{grid-template-columns:1fr}.hubft .goldband .c{padding:20px 22px;border-left:none;border-top:1px solid rgba(20,19,15,.18)}.hubft .goldband .c:first-child{border-top:none}.hubft .goldband .lede{max-width:none}}
+/* Filter bar on phones: count left on its own row, full-width select, both dates on one row. */
+@media(max-width:560px){.hubft .filterbar{justify-content:flex-start}.hubft .filterbar .cnt{flex:1 1 100%}.hubft .filterbar select{flex:1 1 100%;width:100%;min-width:0}.hubft .filterbar .dr{flex:1 1 100%;min-width:0}.hubft .filterbar .dr input{flex:1 1 0;min-width:0}}
+/* iOS zooms into a focused control under 16px; only WebKit on iOS matches this. */
+@supports (-webkit-touch-callout:none){@media(max-width:560px){.hubft .filterbar select,.hubft .filterbar input[type="date"]{font-size:16px!important}}}
+/* "More in X" buttons: a taller hit area, same layout (the margins cancel the padding). */
+.hubft .sh.l button.more{padding-top:12px;padding-bottom:12px;margin-top:-12px;margin-bottom:-12px}
+/* Report view: the Hub's back button and the report frame. */
+.hubft .rf-back{top:12px;left:24px}
+@media(max-width:560px){.hubft .rf-back{left:13px}}
+@media(max-width:360px){.hubft .rf-long{display:none}}
+/* Centred on the report's 44px reader bar on short landscape screens (reportLock.js). */
+@media (orientation:landscape) and (max-height:500px){.hubft .rf-back{top:7px}}
+.hubft .rframe{width:100%;border:none;display:block;height:calc(100vh - 64px);height:calc(100dvh - 64px)}
+/* Short landscape screens: a picture no taller than the screen under the nav. */
+@media (orientation:landscape) and (max-height:500px){.hubft .hero .lead .img,.hubft .band .feat .img,.hubft .spot .img,.hubft .decon .img,.hubft .art-img{max-width:calc((100vh - 64px) * 1.5);max-width:calc((100dvh - 64px) * 1.5);margin-left:auto;margin-right:auto}}
+/* Reports sit inside main.wrap already: no second inset. */
+.hubft .reports>.wrap{padding-left:0;padding-right:0}
+/* Section heads on phones: Deconstructed keeps its square beside the title;
+   centred heads keep their gold rules and stay centred when they wrap. */
+@media(max-width:680px){.hubft .decon .sh.l{flex-wrap:nowrap}.hubft .decon .sh.l .sq{flex:none}.hubft .decon .sh.l h2{min-width:0}.hubft .sh:not(.l) .ln{min-width:16px}.hubft .sh:not(.l) h2{text-align:center}}
+/* Live stays pinned at the end of the category strip while it scrolls. */
+@media(max-width:1262px){.hubft .catnav .live{position:sticky;right:0;z-index:1;padding-left:18px!important;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)!important}}
 `;
 
 function HubStyles() {
@@ -428,7 +453,7 @@ function ArticleView({ article, onBack, onMap, user }) {
         </div>
         <h1 style={{ margin: "14px 0 0", fontSize: "clamp(32px, 4.4vw, 52px)", fontWeight: 600, lineHeight: 1.02, letterSpacing: "-0.045em", textWrap: "balance" }}>{a.headline}</h1>
         {meta && <div style={{ marginTop: 14, fontSize: 12.5, color: "#7A7E86", fontWeight: 600 }}>{meta}</div>}
-        <div style={{ margin: "24px 0 0", overflow: "hidden", border: "1px solid #EDEDED" }}>
+        <div className="art-img" style={{ marginTop: 24, overflow: "hidden", border: "1px solid #EDEDED" }}>
           <div style={{ width: "100%", overflow: "hidden" }}><NewsImage a={a} lead /></div>
         </div>
         {body && (
@@ -494,19 +519,19 @@ function ReportFrame({ article, onBack, onMap, user, subscriber }) {
   }, [article?.reportRef, subscriber, user?.email, doc]); // doc: the frame mounts only once the API answered
   return (
     <main style={{ background: "#FFFFFF", fontFamily: "Inter, sans-serif", position: "relative" }}>
-      <button onClick={onBack} style={{
-        position: "absolute", top: 12, left: 24, zIndex: 20,
+      <button className="rf-back" onClick={onBack} style={{
+        position: "absolute", zIndex: 20,
         display: "inline-flex", alignItems: "center", gap: 6,
         background: "rgba(255,255,255,0.9)", backdropFilter: "saturate(1.4) blur(6px)",
         border: "1px solid #D9D6CE", borderRadius: 0, padding: "7px 13px",
         color: "#1A1A1A", cursor: "pointer", fontFamily: "Inter, sans-serif",
         fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-      }}>← Back to the feed</button>
+      }}><span>← Back<span className="rf-long"> to the feed</span></span></button>
       {doc === undefined ? null : <iframe
         ref={ref}
         {...(doc ? { srcDoc: doc } : { src: `/reports/${encodeURIComponent(reportRef)}.html` })}
         title={article.headline || article.id}
-        style={{ width: "100%", height: "calc(100vh - 73px)", border: "none", display: "block" }}
+        className="rframe"
       />}
     </main>
   );
@@ -936,6 +961,7 @@ export function AttackHub() {
               
               {/* LIVE button moved to the side of REPUTATION (end of cats) */}
               <button
+                className="live"
                 onClick={() => { if (liveActive) { setDateFrom(""); setDateTo(""); } else if (liveDay) { setDateFrom(liveDay); setDateTo(liveDay); } }}
                 title={liveActive ? "Showing the latest day — click to clear" : "Show only the latest live incidents"}
                 style={{
@@ -968,7 +994,7 @@ export function AttackHub() {
                   color: on ? "var(--ink)" : "var(--mut)", colorScheme: "light", cursor: "pointer",
                 });
                 return (
-                  <span title="Filter by date range" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span className="dr" title="Filter by date range" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <input type="date" value={dateFrom} max={dateTo || undefined}
                       onChange={e => setDateFrom(e.target.value)} style={dStyle(!!dateFrom)} title="From" />
                     <span style={{ color: "var(--mut)", fontSize: 12 }}>→</span>

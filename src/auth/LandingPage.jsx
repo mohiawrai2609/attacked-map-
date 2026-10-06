@@ -379,6 +379,42 @@ export function LandingPage() {
         @media (prefers-reduced-motion: reduce) {
           .attacked-marquee-track, .attacked-tick { animation: none !important; }
         }
+        /* ── Responsive fixes (2026-10-07). Inline styles hold the desktop look,
+           so the overrides below need !important, as in responsive.css. ── */
+        /* Phones: the hero grid drops the 48px shell rail; the section's .r-pad
+           already gives the 20px gutter every other section uses. */
+        @media (max-width: 768px) {
+          .landing-root .r-herogrid { width: 100% !important; }
+        }
+        /* Phones: the GUARD ticker label goes onto two lines with tighter
+           padding so the scrolling strip keeps room. Same words. */
+        @media (max-width: 480px) {
+          .lp-ticklabel { padding: 0 12px !important; letter-spacing: 0.08em !important; white-space: normal !important; line-height: 1.3; }
+          .lp-ticktext > span { display: block; white-space: nowrap; }
+        }
+        /* Touch: the inbox buttons get a 44px tap height. */
+        @media (pointer: coarse) {
+          .landing-root .lp-cta { min-height: 44px; }
+        }
+        /* Beyond headlines: when the three cards fall to 2 + 1, the third fills
+           its row (3-up needs 3 x 280 + 2 x 18 = 876px). */
+        .lp-caps-wrap { container-type: inline-size; }
+        @container (max-width: 875px) { .lp-caps > :last-child { grid-column: 1 / -1; } }
+        /* Phones: the blast-radius heading no longer outsizes the hero h1. */
+        @media (max-width: 600px) {
+          .lp-blast-h2 { font-size: clamp(24px, 7vw, 34px) !important; }
+        }
+        /* Welcome overlay on short screens (landscape phones): tighter spacing
+           so the card fits; the overlay itself scrolls if it still does not. */
+        @media (max-height: 460px) {
+          .welcome-ov { padding: 12px !important; }
+          .welcome-card { padding: 20px 28px 18px !important; }
+          .welcome-logo { width: 32px !important; height: 32px !important; margin-bottom: 8px !important; }
+          .welcome-h { margin-top: 8px !important; }
+          .welcome-p { margin-top: 10px !important; }
+          .welcome-ctas { margin-top: 16px !important; }
+          .welcome-jl { margin-top: -1px !important; }
+        }
       `}</style>
       <a href="#main-content" className="landing-skip-link">Skip to content</a>
 
@@ -390,14 +426,14 @@ export function LandingPage() {
         borderBottom: `1px solid ${BRAND.border}`, background: BRAND.deep,
         display: "flex", alignItems: "center", overflow: "hidden",
       }}>
-        <div style={{
+        <div className="lp-ticklabel" style={{
           flex: "none", display: "flex", alignItems: "center", gap: 9,
           padding: "0 22px", height: 52, borderRight: `1px solid ${BRAND.border}`,
           fontSize: 10.5, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase",
           color: BRAND.gold, background: BRAND.deep, zIndex: 2, whiteSpace: "nowrap",
         }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: BRAND.gold }} />
-          13 GUARD Categories · 30 days
+          <span style={{ flexShrink: 0, width: 7, height: 7, borderRadius: "50%", background: BRAND.gold }} />
+          <span className="lp-ticktext"><span>13 GUARD Categories</span>{" "}<span>· 30 days</span></span>
         </div>
         <div className="attacked-tickwrap" style={{ flex: 1, overflow: "hidden", position: "relative" }}>
           <div className="attacked-tick" style={{ display: "flex", gap: 30, whiteSpace: "nowrap", width: "max-content", paddingLeft: 30 }}>
@@ -483,14 +519,30 @@ export function LandingPage() {
           </div>
 
           {/* Right (bottom on desktop / full-width on mobile) — slim sample card */}
-          <div style={{ gridArea: "card", width: "100%", maxWidth: 440, margin: "0 auto" }}>
+          <div className="livesample-wrap" style={{ gridArea: "card", width: "100%", maxWidth: 440, margin: "0 auto" }}>
             {/* Fixed-size card: constant height on desktop so it never resizes as
                 the sample rotates. Columns clip overflow; text is line-clamped.
-                On mobile the two columns stack, so height falls back to auto. */}
+                On mobile the two columns stack, so height falls back to auto.
+                The columns (flex-basis 240 + 180, plus the 2px border) also stack
+                whenever the card is narrower than 422px — tablets and landscape
+                phones on the two-column hero — so the height is released there
+                too (container query on the wrapper). */}
             <style>{`
+              .livesample-wrap { container-type: inline-size; }
               .livesample { height: 210px; }
               .livesample > div { overflow: hidden; }
-              @media (max-width: 700px) { .livesample { height: auto; } }
+              @container (max-width: 421.98px) { .livesample { height: auto; } }
+              @supports not (container-type: inline-size) {
+                @media (min-width: 769px) and (max-width: 1199px) { .livesample { height: auto; } }
+              }
+              /* At the fixed height, keep the entity · country · industry line to 2 lines. */
+              @media (min-width: 701px) {
+                .livesample-meta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+              }
+              @media (max-width: 700px) {
+                .livesample { height: auto; }
+                .livesample-sum { font-size: 13px !important; }
+              }
             `}</style>
             <div
               className="livesample"
@@ -505,12 +557,12 @@ export function LandingPage() {
                 transition: "border-color 160ms ease",
               }}>
               <div style={{ flex: "1 1 240px", minWidth: 0, padding: "16px 18px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", columnGap: 10, rowGap: 4, marginBottom: 10 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.t2 }}>
                     <span style={{ width: 6, height: 6, borderRadius: 0, background: BRAND.gold }} />
                     Live sample · {fmtDay(intel.latestDay) || "today"}
                   </span>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.gold, whiteSpace: "nowrap" }}>GUARD classified</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.gold, whiteSpace: "nowrap" }}>GUARD classified</span>
                 </div>
                 {hero ? (
                   <>
@@ -519,7 +571,7 @@ export function LandingPage() {
                       <span style={{ padding: "3px 9px", borderRadius: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: "rgba(255,255,255,0.06)", color: BRAND.t2, border: `1px solid ${BRAND.border}` }}>{hero.primary_category || "OPS"}</span>
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, letterSpacing: "-0.01em", marginBottom: 8, color: BRAND.white, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{hero.headline}</div>
-                    <div style={{ fontSize: 11, color: BRAND.tmuted, fontWeight: 600, letterSpacing: "0.03em" }}>
+                    <div className="livesample-meta" style={{ fontSize: 11, color: BRAND.tmuted, fontWeight: 600, letterSpacing: "0.03em" }}>
                       {[hero.entity, hero.country, hero.industry || hero.sector].filter(Boolean).join("  ·  ")}
                     </div>
                   </>
@@ -528,8 +580,8 @@ export function LandingPage() {
                 )}
               </div>
               <div style={{ flex: "1 1 180px", padding: "16px 18px", borderLeft: `1px solid ${BRAND.border}`, background: "rgba(252,189,0,0.04)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.gold, marginBottom: 8 }}>What happened</div>
-                <div style={{ fontSize: 11.5, lineHeight: 1.55, color: BRAND.t2, display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.gold, marginBottom: 8 }}>What happened</div>
+                <div className="livesample-sum" style={{ fontSize: 11.5, lineHeight: 1.55, color: BRAND.t2, display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {hero?.summary || "Geolocated and GUARD-classified, with the blast radius traced to the named companies in scope."}
                 </div>
               </div>
@@ -590,15 +642,22 @@ export function LandingPage() {
               letterSpacing: "0.16em", textTransform: "uppercase",
             }}>
               <span style={{
+                flexShrink: 0,
                 width: 7, height: 7, borderRadius: 0, background: BRAND.gold,
                 boxShadow: "0 0 10px rgba(252,189,0,0.5)",
               }} />
-              Live from the latest incidents
-              <span style={{ color: "#7A7E86" }}>· {fmtDay(intel.latestDay)}</span>
+              {/* Text and date share one wrapping row, so on phones the date
+                  drops under the text instead of forming its own column. */}
+              <span style={{ display: "flex", flexWrap: "wrap", columnGap: 9 }}>
+                Live from the latest incidents
+                <span style={{ color: "#7A7E86", whiteSpace: "nowrap" }}>· {fmtDay(intel.latestDay)}</span>
+              </span>
             </div>
+            {/* Padding widens the tap area to 44px; the negative margin cancels it in the layout. */}
             <a href="/?hub" style={{
               fontSize: 11.5, fontWeight: 700, color: "#5B5F66", textDecoration: "none",
               letterSpacing: "0.08em", textTransform: "uppercase",
+              padding: "15px 0", margin: "-15px 0",
             }}>Browse the hub →</a>
           </div>
 
@@ -611,7 +670,7 @@ export function LandingPage() {
         <style>{`
           @keyframes attacked-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
           .attacked-marquee-track { animation: attacked-marquee 48s linear infinite; }
-          .attacked-marquee-track:hover { animation-play-state: paused; }
+          .attacked-marquee-track:hover, .attacked-marquee-track:active, .attacked-marquee-track:focus-within { animation-play-state: paused; }
           .attacked-marquee-mask {
             -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
             mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
@@ -626,7 +685,7 @@ export function LandingPage() {
                 <article key={`${c.id}-${i}`}
                   onClick={() => { if (user) window.location.href = `/?map&incident=${c.id}${c.incident_day ? `&date=${c.incident_day}` : ""}`; else setAuthOpen(true); }}
                   style={{
-                    flex: "0 0 auto", width: 320,
+                    flex: "0 0 auto", width: "min(320px, 84vw)",
                     background: "#FFFFFF", border: `1px solid ${BRAND.lineDark}`,
                     borderRadius: 0, overflow: "hidden", cursor: "pointer",
                     display: "flex", flexDirection: "column",
@@ -640,7 +699,7 @@ export function LandingPage() {
                     }}>
                       <span style={{
                         padding: "2px 8px", borderRadius: 0,
-                        fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                         background: `${SEVERITY_COLOR[c.severity] || BRAND.gold}26`,
                         color: SEVERITY_COLOR[c.severity] || BRAND.gold,
                         border: `1px solid ${SEVERITY_COLOR[c.severity] || BRAND.gold}66`,
@@ -648,7 +707,7 @@ export function LandingPage() {
                       }}>{SEVERITY_LABEL[c.severity] || "—"}</span>
                       <span style={{
                         padding: "2px 7px", borderRadius: 0,
-                        fontSize: 9.5, fontWeight: 700, color: BRAND.white,
+                        fontSize: 10, fontWeight: 700, color: BRAND.white,
                         letterSpacing: "0.08em", textTransform: "uppercase",
                         background: "rgba(14,17,22,0.5)", border: `1px solid ${BRAND.border}`,
                         backdropFilter: "blur(4px)",
@@ -681,7 +740,7 @@ export function LandingPage() {
             <div style={{ display: "flex", gap: 16, padding: "0 36px" }}>
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} style={{
-                  flex: "0 0 auto", width: 320, height: 240,
+                  flex: "0 0 auto", width: "min(320px, 84vw)", height: 240,
                   background: BRAND.paper2, border: `1px solid ${BRAND.lineDark}`, borderRadius: 0,
                 }} />
               ))}
@@ -702,7 +761,7 @@ export function LandingPage() {
         padding: "84px 36px 80px", background: BRAND.black, color: BRAND.text,
         borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)",
       }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+        <div className="lp-caps-wrap" style={{ maxWidth: 1180, margin: "0 auto" }}>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 700, color: BRAND.gold, letterSpacing: "0.18em", textTransform: "uppercase", textAlign: "center", marginBottom: 14 }}>Beyond headlines</div>
           <h2 style={{
             fontFamily: "Inter, sans-serif", margin: 0, textAlign: "center", fontWeight: 800,
@@ -718,9 +777,9 @@ export function LandingPage() {
             how it spreads, and what to do about it.
           </p>
 
-          <div style={{
+          <div className="lp-caps" style={{
             marginTop: 48, display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18,
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: 18,
           }}>
             {[
               {
@@ -799,7 +858,7 @@ export function LandingPage() {
           </h2>
           <div style={{
             marginTop: 44, display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(320px, 100%), 1fr))",
             gap: 18, maxWidth: 880, marginLeft: "auto", marginRight: "auto",
           }}>
             {/* Daily Brief — free */}
@@ -816,7 +875,7 @@ export function LandingPage() {
                 Every incident we catch — headline, severity, category and country.
                 The full day's breadth at a glance, in your inbox.
               </div>
-              <button onClick={() => { if (user) window.location.href = "/?dashboard"; else { setAuthIntent(null); setAuthOpen(true); } }} style={{
+              <button className="lp-cta" onClick={() => { if (user) window.location.href = "/?dashboard"; else { setAuthIntent(null); setAuthOpen(true); } }} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: "transparent", color: "#8A6D00",
                 border: `1px solid ${BRAND.gold}`, borderRadius: 0, cursor: "pointer",
@@ -838,7 +897,7 @@ export function LandingPage() {
               <div style={{ marginTop: 10, fontSize: 13.5, lineHeight: 1.6, color: "#5B5F66" }}>
                 Full operational detail — named blast radius, adaptive GUARD controls, peer watchlist, historical analogues and vendor Defence Ratings.
               </div>
-              <button onClick={startSubscribe} style={{
+              <button className="lp-cta" onClick={startSubscribe} style={{
                 marginTop: 18, padding: "10px 18px",
                 background: BRAND.gold, color: BRAND.obsidian,
                 border: "none", borderRadius: 0, cursor: "pointer",
@@ -862,7 +921,7 @@ export function LandingPage() {
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.24em", textTransform: "uppercase", color: BRAND.gold, marginBottom: 22 }}>
             The blast radius
           </div>
-          <h2 style={{
+          <h2 className="lp-blast-h2" style={{
             margin: 0, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800,
             fontSize: "clamp(40px, 5.6vw, 70px)", lineHeight: 1.03, letterSpacing: "-0.005em", color: "#fff",
           }}>
@@ -908,44 +967,52 @@ export function LandingPage() {
       <SiteFooter />
 
       {/* ───────────────── WELCOME OVERLAY ───────────────── */}
-      {welcomeOpen && (
+      {/* Shown to signed-out visitors only — its copy is a sign-up prompt.
+          The overlay scrolls and the card centres with auto margins, so a card
+          taller than a landscape phone is never clipped top and bottom. */}
+      {welcomeOpen && !user && (
         <div
+          className="welcome-ov"
           onClick={dismissWelcome}
           style={{
             position: "fixed", inset: 0, zIndex: 200,
             background: "rgba(14,17,22,0.78)", backdropFilter: "blur(6px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            display: "flex", justifyContent: "center",
+            overflowY: "auto", overscrollBehavior: "contain",
             padding: 24,
           }}>
           <div
+            className="welcome-card"
             onClick={e => e.stopPropagation()}
             style={{
-              width: "100%", maxWidth: 480,
+              width: "100%", maxWidth: 480, margin: "auto",
               background: BRAND.obsidian, border: `1px solid ${BRAND.borderGold}`,
               borderRadius: 0, padding: "34px 34px 30px",
               boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
               textAlign: "center", position: "relative",
             }}>
+            {/* 44x44 tap area; the × stays where it was. */}
             <button onClick={dismissWelcome} aria-label="Close" style={{
-              position: "absolute", top: 12, right: 14,
+              position: "absolute", top: 8, right: 4, width: 44, height: 44,
+              display: "flex", alignItems: "center", justifyContent: "center",
               background: "none", border: "none", color: BRAND.tmuted,
-              fontSize: 20, cursor: "pointer", padding: 6,
+              fontSize: 20, cursor: "pointer", padding: 0,
             }}>×</button>
-            <img src="/attacked-ai-logo.svg" alt="Attacked.ai" width={52} height={52}
+            <img className="welcome-logo" src="/attacked-ai-logo.svg" alt="Attacked.ai" width={52} height={52}
               style={{ display: "block", margin: "0 auto 14px" }} />
             <div style={{ ...eyebrowStyle, fontSize: 10.5 }}>Welcome to Attacked.ai</div>
-            <h3 style={{
+            <h3 className="welcome-h" style={{
               margin: "12px 0 0", fontSize: 26, fontWeight: 800,
               letterSpacing: "-0.015em", lineHeight: 1.2,
             }}>
               The world's corporate harm,<br />on one map.
             </h3>
-            <p style={{ margin: "14px 0 0", fontSize: 13.5, lineHeight: 1.6, color: BRAND.t2 }}>
+            <p className="welcome-p" style={{ margin: "14px 0 0", fontSize: 13.5, lineHeight: 1.6, color: BRAND.t2 }}>
               {intel.totalIncidents != null && intel.latestDay
                 ? `${intel.totalIncidents.toLocaleString("en-IN")} incidents classified to date — the latest incidents landed ${fmtDay(intel.latestDay)}. Sign up free to open the map and start your daily brief.`
                 : "Incidents classified daily through the GUARD framework. Sign up free to open the map and start your daily brief."}
             </p>
-            <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "center", flexWrap: "wrap" }}>
+            <div className="welcome-ctas" style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "center", flexWrap: "wrap" }}>
               <button
                 onClick={() => { dismissWelcome(); setAuthIntent(null); setAuthOpen(true); }}
                 style={{ ...goldBtn, padding: "12px 24px" }}>
@@ -957,8 +1024,11 @@ export function LandingPage() {
                 Subscribe
               </button>
             </div>
-            <button onClick={dismissWelcome} style={{
-              marginTop: 16, background: "none", border: "none",
+            {/* Padding gives a ~39px tap area; the margins cancel it, so the text
+                and the card height stay where they were. */}
+            <button className="welcome-jl" onClick={dismissWelcome} style={{
+              marginTop: 5, marginBottom: -11, padding: "12px 10px",
+              background: "none", border: "none",
               color: BRAND.tmuted, fontSize: 12, cursor: "pointer",
               textDecoration: "underline",
             }}>

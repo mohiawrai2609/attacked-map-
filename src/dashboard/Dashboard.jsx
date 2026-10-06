@@ -462,6 +462,8 @@ export function Dashboard({ initialPage = "dashboard" }) {
           )}
           <div className="side-footer">Free: every incident in your industry, classified.<br />Subscriber: who it reaches and what to do.</div>
         </aside>
+        {/* Phone drawer backdrop (CSS shows it only at <=760px): dims the page and closes the drawer on tap. */}
+        <div className={`side-backdrop ${sideOpen ? "open" : ""}`} style={{ top: navH }} onClick={() => setSideOpen(false)} aria-hidden="true" />
 
         <main className="main">
           <header className="topbar">
@@ -484,11 +486,11 @@ export function Dashboard({ initialPage = "dashboard" }) {
       </div>
 
       {menu && (
-        <div className="profile-menu open">
-          <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?profile">Profile</a>
+        <div className="profile-menu open" style={{ top: navH + 54 }}>
+          <a href="/?profile">Profile</a>
           {subscriber && user && tier !== "admin" && <button onClick={async () => { try { await setSubscribed(false); toast("Subscription switched off."); } catch (e) { toast(e.message); } setMenu(false); }}>Switch off subscription</button>}
           {!subscriber && <button onClick={() => { setMenu(false); openSubscribe(); }}>Subscribe</button>}
-          <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?home">Landing page</a>
+          <a href="/?home">Landing page</a>
           <button onClick={() => { setMenu(false); user ? signOut() : (window.location.href = "/?home"); }}>{user ? "Sign out" : "Exit preview"}</button>
         </div>
       )}
