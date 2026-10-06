@@ -186,7 +186,7 @@ const HUB_CSS = `
 .hubft .decon .in{display:grid;grid-template-columns:1.3fr 1fr;gap:34px;align-items:center}
 .hubft .decon .img{position:relative;overflow:hidden;border-radius:0;cursor:pointer}
 .hubft .decon .img img{width:100%}
-.hubft .decon .tag{position:absolute;left:16px;bottom:16px;background:var(--gold);color:#1A1A1A;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px}
+.hubft .decon .tag{display:inline-block;margin-top:12px;background:var(--gold);color:#1A1A1A;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px}
 .hubft .decon h2{font-size:clamp(28px,3vw,40px);font-weight:700;line-height:1.08}
 .hubft .decon p{margin-top:14px;font-size:14px;color:#A6A8AD;line-height:1.66}
 .hubft .decon .steps{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
@@ -207,6 +207,11 @@ const HUB_CSS = `
 .hubft .nimg .fill{object-fit:cover}
 .hubft .nimg .whole{object-fit:contain}
 .hubft .nimg .backdrop{object-fit:cover;filter:blur(18px) saturate(1.1);transform:scale(1.12);opacity:.55}
+@supports not (aspect-ratio:1/1){.hubft .nimg{height:0;padding-top:66.6667%}.hubft .nimg img{top:0;left:0}}
+/* A long unbroken word (an .onion address, a wallet id) must not widen a column
+   past the screen and push half a picture off it. */
+.hubft .hero>*,.hubft .g4>*,.hubft .spot>*,.hubft .band>*,.hubft .an3>*,.hubft .decon .in>*,.hubft .crit>*{min-width:0}
+.hubft .dek,.hubft .ridek,.hubft .card p{overflow-wrap:anywhere}
 .hubft .imgcap{font-size:11px;letter-spacing:.02em;color:var(--mut);margin-top:8px;font-style:italic}
 .hubft .card{border:1px solid var(--line);border-radius:0;overflow:hidden;background:var(--paper-2);box-shadow:none;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column}
 .hubft .card:hover{border-color:var(--gold);border-top:3px solid var(--gold);margin-top:-2px;box-shadow:0 24px 70px rgba(18,20,24,.14);transform:translateY(-3px)}
@@ -249,10 +254,18 @@ function HubStyles() {
 // 1:1 and 5:3) is fitted inside on a blurred copy of itself instead of being
 // cropped. `height` is ignored now; the frame's width sets its height.
 const FRAME = 3 / 2;
-function NewsImage({ a, lead }) {
+// Keyed by article: a slot that switches to another incident (the filtered
+// view's lead) starts clean instead of inheriting the last one's fallback state.
+function NewsImage(props) {
+  const a = props.a || {};
+  return <NewsImageBody key={a._key || a.id || a.headline} {...props} />;
+}
+function NewsImageBody({ a, lead }) {
   const [failed, setFailed] = useState(false);
   const [catFailed, setCatFailed] = useState(false);
-  const [whole, setWhole] = useState(false);   // picture shape differs from the frame
+  // null until the picture is measured; meanwhile it is shown whole (contain),
+  // so a picture that is not 3:2 is never cropped while it loads.
+  const [whole, setWhole] = useState(null);
   const sev = SEV_C[a.severity] || GOLD;
 
   // The stored picture (incidents.image_url) first, else the category photo.
@@ -302,34 +315,39 @@ function NewsImage({ a, lead }) {
     }
   }
 
+  const catImg = CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
+
   // Ultimate fallback — branded dark placeholder (no external image at all)
   if (catFailed) {
     return (
       <div className="nimg" style={{
         background: OB, borderTop: `2px solid ${sev}`,
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
         border: "1px solid rgba(255,255,255,0.05)",
       }}>
+        <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <span style={{ width: 8, height: 8, borderRadius: 0, background: sev }} />
         <span style={{ color: "rgba(255,255,255,0.55)", fontWeight: 700, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase" }}>
           {CAT_NAME[a.primary_category] || a.primary_category || "Incident"}
         </span>
+        </div>
       </div>
     );
   }
 
   // If primary image failed, try the category fallback image
   if (failed) {
-    const catImg = CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
     return <Framed src={catImg} alt={CAT_NAME[a.primary_category] || "Incident"} whole={whole} setWhole={setWhole} onFail={() => setCatFailed(true)} />;
   }
 
-  return <Framed src={primary} alt={a.headline || ""} whole={whole} setWhole={setWhole} onFail={() => setFailed(true)} />;
+  // When the primary IS the category photo, a failure goes straight to the
+  // placeholder (re-rendering the same URL would never fire another error).
+  return <Framed src={primary} alt={a.headline || ""} whole={whole} setWhole={setWhole} onFail={() => (primary === catImg ? setCatFailed(true) : setFailed(true))} />;
 }
 
-// The 3:2 frame. On load, a picture more than 0.5% off 3:2 switches to "whole":
-// contained, over a blurred, enlarged copy of itself that fills the frame. (At
-// 4% the 1.52:1 photos still lost ~2.5 px a side; owner: hide nothing.)
+// The 3:2 frame. On load, a picture within 0.5% of 3:2 fills it ("fill",
+// cover: under a pixel lost); anything else is shown whole ("whole", contain)
+// over a blurred, enlarged copy of itself. Until measured it is shown whole
+// without the copy. (At 4% the 1.52:1 photos lost ~2.5 px a side; owner: hide nothing.)
 function Framed({ src, alt, whole, setWhole, onFail }) {
   const onLoad = (e) => {
     const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
@@ -337,8 +355,8 @@ function Framed({ src, alt, whole, setWhole, onFail }) {
   };
   return (
     <span className="nimg">
-      {whole && <img className="backdrop" src={src} alt="" aria-hidden="true" />}
-      <img className={whole ? "whole" : "fill"} src={src} alt={alt} loading="lazy" onLoad={onLoad} onError={onFail} />
+      {whole === true && <img className="backdrop" src={src} alt="" aria-hidden="true" />}
+      <img className={whole === false ? "fill" : "whole"} src={src} alt={alt} loading="lazy" onLoad={onLoad} onError={onFail} />
     </span>
   );
 }
