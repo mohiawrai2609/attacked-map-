@@ -176,8 +176,10 @@ export function SiteFooter() {
             </div>
 
             {/* Social icons */}
-            {/* gap shrinks only below 400px, so the 40px circles never squash. */}
-            <div style={{ marginTop: 36, display: "flex", gap: "clamp(8px, 3vw, 12px)", alignItems: "center", justifyContent: "flex-end" }}>
+            {/* Five 40px circles + four gaps must fit the phone column (vw - 40px):
+                the gap is 12px from 288px up and shrinks only below that (10px at
+                280), so the circles never squash and no other size changes. */}
+            <div style={{ marginTop: 36, display: "flex", gap: "clamp(8px, 25vw - 60px, 12px)", alignItems: "center", justifyContent: "flex-end" }}>
               {Object.entries(SOCIAL).map(([name, url]) => (
                 <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}
                   style={{

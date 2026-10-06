@@ -227,7 +227,9 @@ export function AuthModal({ open, onClose, intent = null }) {
     fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
     cursor: disabled ? "not-allowed" : "pointer",
   });
-  const linkBtn = { background: "none", border: "none", color: C.goldDeep, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, padding: 0, textDecoration: "underline" };
+  // padding 6 / margin -6: a 28px-tall tap target whose margin box is the old
+  // 16px line, so the sentence and the row around it do not move.
+  const linkBtn = { background: "none", border: "none", color: C.goldDeep, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, padding: "6px 0", margin: "-6px 0", textDecoration: "underline" };
   const onFocus = (e) => (e.target.style.borderColor = C.gold);
   const onBlur = (e) => (e.target.style.borderColor = C.line2);
 
@@ -412,7 +414,7 @@ export function AuthModal({ open, onClose, intent = null }) {
             </form>
             <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between" }}>
               <button type="button" onClick={resend} disabled={busy} style={{ ...linkBtn, textDecoration: "none" }}>Resend code</button>
-              <button type="button" onClick={() => { setView(from); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: C.ink3, padding: 0 }}>Back</button>
+              <button type="button" onClick={() => { setView(from); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: C.ink3, padding: "6px 0", margin: "-6px 0" }}>Back</button>
             </div>
           </>
         )}

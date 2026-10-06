@@ -164,23 +164,23 @@ export function Globe({ size = 380, incidents = null, dateLabel = null }) {
 
   return (
     <div className="globe-root" style={{ position:'relative', width:'100%', maxWidth:size, margin:'0 auto', aspectRatio:'1 / 1', background:'transparent', overflow:'visible' }}>
-      {/* The legend (left) and the readout (right) share the bottom strip. Below
-          a 340px globe they cannot both fit with a gap, so the decorative
-          readout is hidden there and the legend stays. */}
-      <style>{`.globe-root{container-type:inline-size}@container (max-width:339.98px){.globe-readout{display:none}}`}</style>
+      {/* The legend (left, 16-262px) and the readout (right, ~58px + 16px inset)
+          share the bottom strip. Below a 350px globe they cannot both fit with
+          a clear gap, so the decorative readout is hidden there; the legend stays. */}
+      <style>{`.globe-root{container-type:inline-size}@container (max-width:349.98px){.globe-readout{display:none}}`}</style>
       <div className="globe-ovl" style={{ position:'absolute', top:14, left:16, right:16, display:'flex', justifyContent:'space-between', zIndex:4, pointerEvents:'none' }}>
         <span style={{ display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter, sans-serif', fontSize:10.5, letterSpacing:'0.14em', textTransform:'uppercase', color:'#A6A8AD' }}>
           <span style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00' }} />{dateLabel ? `Latest incidents · ${dateLabel}` : 'Incident network'}
         </span>
       </div>
       <canvas ref={canvasRef} style={{ display:'block', width:'100%', height:'100%', cursor:'grab' }} aria-label="Live rotating globe of classified incidents — drag to rotate, scroll to zoom" />
-      <div className="globe-ovl" style={{ position:'absolute', left:16, bottom:14, display:'flex', gap:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', flexWrap:'wrap', pointerEvents:'none' }}>
+      <div className="globe-ovl" style={{ position:'absolute', left:16, bottom:14, maxWidth:'calc(100% - 32px)', display:'flex', gap:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', flexWrap:'wrap', pointerEvents:'none' }}>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF3B30', display:'inline-block' }} />Critical</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FF6B35', display:'inline-block' }} />High</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#FCBD00', display:'inline-block' }} />Medium</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}><i style={{ width:7, height:7, borderRadius:'50%', background:'#34C759', display:'inline-block' }} />Low</span>
       </div>
-      <div ref={coordRef} className="globe-ovl globe-readout" style={{ position:'absolute', right:16, bottom:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:9.5, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', textAlign:'right', lineHeight:1.5, pointerEvents:'none' }}>LON · GB<br/>TRACKING</div>
+      <div ref={coordRef} className="globe-ovl globe-readout" style={{ position:'absolute', right:16, bottom:14, zIndex:4, fontFamily:'Inter, sans-serif', fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'#7A7E86', textAlign:'right', lineHeight:1.5, pointerEvents:'none' }}>LON · GB<br/>TRACKING</div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# Responsiveness pass — handoff (stopped 2026-10-07, usage limit)
+# Responsiveness pass — handoff (stopped twice on 2026-10-07 at the owner's request; latest backup = 2nd WIP commit on branch responsive-wip)
 
 Owner's request (2026-10-06): before deploying, check EVERY page and section on every
 phone, tablet and laptop size, and fix responsiveness properly (landing, Attack Hub,
@@ -16,6 +16,10 @@ reports, dashboard, Attack Map, pricing, legal, profile, admin — everything).
 | Attack Map | NOT reviewed yet (review was cut off) |
 | Fix workflow script (for a new session to re-run) | `D:/attacked-dev/resp/resp_fix_wf.js` (copy of the scratchpad script) |
 | Card-only version waiting to go live (live site 6c98277 + Hub card fix) | branch `cards-only-on-live`, worktree `D:/attacked-dev/wt-cards` (commits bcb80be, c0013eb) |
+
+## Latest state (2nd stop)
+
+The fix step was re-run once (workflow wf_8f473606-fdb) and stopped again by the owner. Six fixers had started (chrome, landing, hub, reports, account-legal, dashboard), none finished or was checked; their extra edits are in the second WIP commit. Admin and Map were never started. Every change on responsive-wip is UNVERIFIED: step 3 below (re-measure) comes first.
 
 ## What was done
 

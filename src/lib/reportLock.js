@@ -61,7 +61,6 @@ export const REPORT_RESPONSIVE_CSS = [
   "@media(max-width:1080px){.r-doc{grid-template-columns:minmax(0,720px)}}",
   // 1081-1279: narrower rails so the article is ~590-720px, not 504px
   "@media(min-width:1081px) and (max-width:1279px){.r-doc{grid-template-columns:200px minmax(0,720px) 170px;gap:32px;padding:0 28px}}",
-  "@media(min-width:641px){.r-vendors{grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))}}",
   // short laptops: the sticky rail never runs past the screen; its Download PDF stays in view
   "@media(min-width:1081px){.r-rail{max-height:calc(100vh - 88px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.r-rail-cta{position:sticky;bottom:0;z-index:1}}",
   "@media(min-width:1081px) and (max-height:860px){.r-rail{padding:28px 0 24px;gap:18px}}",

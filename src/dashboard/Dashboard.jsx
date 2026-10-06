@@ -148,6 +148,13 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
   const latest = P.latest.filter((i) => i.industry !== P.industry).slice(0, 6);
   const max = Math.max(...P.cats.map((c) => c.n), 1);
   const gridRef = useRef(null);
+  // Width of the longest word of the industry name, in ems of the masthead
+  // headline (Inter 800, measured: at most .58em per letter for 11+ letter
+  // words, .63em for shorter ones). dashboard.css scales the headline down to
+  // fit its column only when that word would not fit, so "Telecommunications"
+  // stays whole on phones instead of breaking mid-word.
+  const longest = Math.max(...P.industry.split(/\s+/).map((w) => w.length));
+  const fitEm = (longest * (longest >= 11 ? 0.58 : 0.63)).toFixed(2);
   return (
     <div className="content">
       <section className="masthead no-band">
@@ -160,7 +167,7 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
             <span className="sep">·</span>
             <span className="mono">Updated {fmtDay(P.latestDay)}</span>
           </div>
-          <h1>{greeting}, {name}<strong>{P.industry}</strong></h1>
+          <h1>{greeting}, {name}<strong style={{ "--fit": fitEm }}>{P.industry}</strong></h1>
           <p><b>{P.total} incidents</b> in {P.industry} sit in the Attacked.ai corpus, <b>{P.week} of them this week</b> and <b>{P.critical} rated High or Critical</b>. {top ? <>The category landing hardest on your industry right now is <b>{top.name}</b> ({top.n}).</> : null} Every one is classified through the GUARD framework, geolocated, and traced to the companies in its blast radius.</p>
           <div className="mast-actions">
             <div className="mast-meta">

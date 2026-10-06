@@ -86,14 +86,14 @@ export function UnsubscribePage({ token }) {
       <main style={{
         flex: 1,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "32px clamp(16px, 10vw - 8px, 32px)",
+        padding: "32px clamp(16px, 20vw - 40px, 32px)",
       }}>
         <div style={{
           width: "min(520px, 100%)",
           background: BRAND.card,
           border: `1px solid ${BRAND.border}`,
           borderRadius: 6,
-          padding: "36px clamp(20px, 10vw - 8px, 32px)",
+          padding: "36px clamp(20px, 20vw - 40px, 32px)",
           textAlign: "center",
         }}>
           {state.status === "loading" && (
@@ -104,7 +104,7 @@ export function UnsubscribePage({ token }) {
                 marginBottom: 8,
               }}>◇ Processing…</div>
               <h1 style={{
-                fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "clamp(24px, 8vw, 32px)",
+                fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "clamp(24px, 20vw - 40px, 32px)",
                 color: BRAND.white, lineHeight: 1.15, margin: "8px 0",
               }}>One moment.</h1>
               <p style={{ fontSize: 13.5, color: BRAND.t2, lineHeight: 1.55 }}>
@@ -122,7 +122,7 @@ export function UnsubscribePage({ token }) {
                 fontSize: 24, color: BRAND.green,
               }}>✓</div>
               <h1 style={{
-                fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "clamp(24px, 8vw, 32px)",
+                fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "clamp(24px, 20vw - 40px, 32px)",
                 color: BRAND.white, lineHeight: 1.15, margin: "0 0 14px",
               }}>
                 {state.already ? "Already unsubscribed." : "You're unsubscribed."}
@@ -159,8 +159,8 @@ export function UnsubscribePage({ token }) {
                 fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 28,
                 color: BRAND.white, lineHeight: 1.15, margin: "0 0 14px",
               }}>That link didn't work.</h1>
-              <p style={{ fontSize: 13.5, color: BRAND.t2, lineHeight: 1.55 }}>
-                {state.error || "The unsubscribe token is invalid or expired."}
+              <p style={{ fontSize: 13.5, color: BRAND.t2, lineHeight: 1.55, overflowWrap: "anywhere" }}>
+                {state.error ||"The unsubscribe token is invalid or expired."}
               </p>
               <p style={{ fontSize: 12, color: BRAND.tmuted, lineHeight: 1.55, marginTop: 18 }}>
                 Sign in to your account and update preferences directly, or reply to any

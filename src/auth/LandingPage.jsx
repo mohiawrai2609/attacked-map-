@@ -387,10 +387,12 @@ export function LandingPage() {
           .landing-root .r-herogrid { width: 100% !important; }
         }
         /* Phones: the GUARD ticker label goes onto two lines with tighter
-           padding so the scrolling strip keeps room. Same words. */
+           padding so the scrolling strip keeps room. Same words; the line
+           break stands in for the "·" separator. */
         @media (max-width: 480px) {
           .lp-ticklabel { padding: 0 12px !important; letter-spacing: 0.08em !important; white-space: normal !important; line-height: 1.3; }
           .lp-ticktext > span { display: block; white-space: nowrap; }
+          .lp-tickdot { display: none; }
         }
         /* Touch: the inbox buttons get a 44px tap height. */
         @media (pointer: coarse) {
@@ -415,6 +417,12 @@ export function LandingPage() {
           .welcome-ctas { margin-top: 16px !important; }
           .welcome-jl { margin-top: -1px !important; }
         }
+        /* Welcome overlay on the narrowest phones (320px and below): slimmer
+           side padding gives the copy room, so the card fits a 568px screen. */
+        @media (max-width: 340px) {
+          .welcome-ov { padding: 12px !important; }
+          .welcome-card { padding-left: 20px !important; padding-right: 20px !important; }
+        }
       `}</style>
       <a href="#main-content" className="landing-skip-link">Skip to content</a>
 
@@ -433,7 +441,7 @@ export function LandingPage() {
           color: BRAND.gold, background: BRAND.deep, zIndex: 2, whiteSpace: "nowrap",
         }}>
           <span style={{ flexShrink: 0, width: 7, height: 7, borderRadius: "50%", background: BRAND.gold }} />
-          <span className="lp-ticktext"><span>13 GUARD Categories</span>{" "}<span>· 30 days</span></span>
+          <span className="lp-ticktext"><span>13 GUARD Categories</span>{" "}<span><span className="lp-tickdot">· </span>30 days</span></span>
         </div>
         <div className="attacked-tickwrap" style={{ flex: 1, overflow: "hidden", position: "relative" }}>
           <div className="attacked-tick" style={{ display: "flex", gap: 30, whiteSpace: "nowrap", width: "max-content", paddingLeft: 30 }}>
@@ -881,7 +889,8 @@ export function LandingPage() {
                 border: `1px solid ${BRAND.gold}`, borderRadius: 0, cursor: "pointer",
                 fontFamily: "Inter, sans-serif", fontSize: 11.5, fontWeight: 700,
                 letterSpacing: "0.08em", textTransform: "uppercase",
-              }}>{user ? "Open your dashboard →" : "Get the free daily brief →"}</button>
+              }}>{/* No-break space: the arrow wraps with its word, never alone. */}
+                {user ? "Open your dashboard →" : "Get the free daily brief →"}</button>
             </div>
             {/* Subscriber Brief — featured (gold-tint) */}
             <div style={{

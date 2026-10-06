@@ -93,8 +93,10 @@
 .dash .btn-gold:hover { background: var(--gold-press); border-color: var(--gold-press); color: var(--on-gold); }
 .dash .grid { display: grid; grid-template-columns: minmax(0, 1fr) 328px; gap: 16px; align-items: start; }
 .dash .panel { background: var(--card); border: 1px solid var(--line-l); border-radius: var(--r-md); min-width: 0; }
-.dash .panel-head { padding: 20px 20px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.dash .panel-head > div:first-child { min-width: 0; }
+.dash .panel-head { padding: 20px 20px 12px; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; }
+/* The title block takes the room left by "N in archive"; only when its longest
+   word cannot fit beside the count does the count drop to its own line. */
+.dash .panel-head > div:first-child { flex: 1 1 0; min-width: min-content; }
 .dash .panel-head h2 { font-size: 22px; letter-spacing: -.025em; margin: 0 0 4px; font-weight: 700; line-height: 1.1; color: var(--ink-text); overflow-wrap: break-word; }
 .dash .panel-head p { font-size: 12.5px; color: var(--muted-light); margin: 0; line-height: 1.5; }
 .dash .section-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -266,6 +268,18 @@
   .dash .brief-row .brief-date { grid-column: 2; }
   .dash .briefs-head { flex-wrap: wrap; padding: 18px 16px 12px; }
   .dash .search { flex-grow: 100; }
+}
+
+/* Masthead industry name: scaled down to its column only when its longest word
+   would not fit (--fit = that word's width in ems, set in Dashboard.jsx), so a
+   long name never breaks mid-word. Short names keep the sizes above. Inside
+   @supports so a browser without container units keeps the plain sizes. */
+@supports (container-type: inline-size) {
+  .dash .mast-copy { container-type: inline-size; }
+  .dash .mast-copy h1 strong { font-size: min(clamp(38px, 3.6vw, 52px), 100cqw / var(--fit, 1)); }
+  @media (max-width: 760px) {
+    .dash .mast-copy h1 strong { font-size: min(34px, 100cqw / var(--fit, 1)); }
+  }
 }
 
 /* Landscape phones: only the site nav stays pinned. */

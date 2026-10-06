@@ -137,10 +137,11 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
 
   return (
     <div style={{ fontFamily: FONT }}>
-      {/* Phone-only overrides for this page (layout only). Fine print goes to
-          12px on phones, portrait and landscape; the third Premium card spans
-          the row while the Premium grid has exactly two columns, so it does
-          not sit alone (container query on the dark box: 574-867px wide). */}
+      {/* Small-screen overrides for this page (layout only, 2026-10-07). Fine
+          print goes to 12px on phones, portrait and landscape; the third
+          Premium card spans the row while the Premium grid has exactly two
+          columns, so it does not sit alone (container query on the dark box's
+          content width: 2 x 280 + 14 = 574 up to 3 x 280 + 2 x 14 = 868). */}
       <style>{`
         @media (max-width: 768px), (pointer: coarse) and (max-height: 500px) {
           .sub-fine { font-size: 12px !important; line-height: 1.45 !important; }
@@ -196,7 +197,7 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
 
       {/* 2 · Organisation intelligence */}
       <section style={{ ...S.section, paddingTop: 10, paddingBottom: embedded ? 20 : 56 }}>
-        <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 6, padding: "28px clamp(16px, 6vw, 26px) 26px", position: "relative", overflow: "hidden", containerType: "inline-size" }}>
+        <div style={{ background: BRAND.obsidian, color: "#fff", borderRadius: 6, padding: "28px clamp(16px, 10vw - 13px, 26px) 26px", position: "relative", overflow: "hidden", containerType: "inline-size" }}>
           
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>♛ Organisation intelligence · Premium</div>
           <h2 style={{ ...S.h2, color: "#fff", textWrap: "balance" }}>Industry intelligence first. Organisation intelligence when you need it.</h2>

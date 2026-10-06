@@ -249,16 +249,20 @@ const HUB_CSS = `
 @media(max-width:360px){.hubft .rf-long{display:none}}
 /* Centred on the report's 44px reader bar on short landscape screens (reportLock.js). */
 @media (orientation:landscape) and (max-height:500px){.hubft .rf-back{top:7px}}
-.hubft .rframe{width:100%;border:none;display:block;height:calc(100vh - 64px);height:calc(100dvh - 64px)}
-/* Short landscape screens: a picture no taller than the screen under the nav. */
-@media (orientation:landscape) and (max-height:500px){.hubft .hero .lead .img,.hubft .band .feat .img,.hubft .spot .img,.hubft .decon .img,.hubft .art-img{max-width:calc((100vh - 64px) * 1.5);max-width:calc((100dvh - 64px) * 1.5);margin-left:auto;margin-right:auto}}
+.hubft .rframe{width:100%;border:none;display:block;height:calc(100vh - var(--nav-h,64px));height:calc(100dvh - var(--nav-h,64px))}
+/* Short landscape screens: a picture no taller than the screen under the nav.
+   width:100% because the hero lead is a flex column, where auto side margins
+   would otherwise shrink the frame to nothing. */
+@media (orientation:landscape) and (max-height:500px){.hubft .hero .lead .img,.hubft .band .feat .img,.hubft .spot .img,.hubft .decon .img,.hubft .art-img{width:100%;max-width:calc((100vh - var(--nav-h,64px)) * 1.5);max-width:calc((100dvh - var(--nav-h,64px)) * 1.5);margin-left:auto;margin-right:auto}}
 /* Reports sit inside main.wrap already: no second inset. */
 .hubft .reports>.wrap{padding-left:0;padding-right:0}
 /* Section heads on phones: Deconstructed keeps its square beside the title;
    centred heads keep their gold rules and stay centred when they wrap. */
 @media(max-width:680px){.hubft .decon .sh.l{flex-wrap:nowrap}.hubft .decon .sh.l .sq{flex:none}.hubft .decon .sh.l h2{min-width:0}.hubft .sh:not(.l) .ln{min-width:16px}.hubft .sh:not(.l) h2{text-align:center}}
-/* Live stays pinned at the end of the category strip while it scrolls. */
-@media(max-width:1262px){.hubft .catnav .live{position:sticky;right:0;z-index:1;padding-left:18px!important;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)!important}}
+/* Live stays pinned at the end of the category strip while it scrolls. It
+   sticks at the strip's content edge, so a white shadow covers the gutter to
+   its right, where the scrolled categories would otherwise show through. */
+@media(max-width:1262px){.hubft .catnav .live{position:sticky;right:0;z-index:1;padding-left:18px!important;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)!important;box-shadow:48px 0 0 #fff}}
 `;
 
 function HubStyles() {
