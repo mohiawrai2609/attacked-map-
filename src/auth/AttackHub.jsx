@@ -40,20 +40,20 @@ const CAT_SHORT = {
   STR: "Strategic", TEC: "Technology", TPR: "Third Party",
 };
 const CATEGORY_IMG = {
-  CYB: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1000&q=70&auto=format&fit=crop",
-  DAT: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1000&q=70&auto=format&fit=crop",
-  FIN: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&q=70&auto=format&fit=crop",
-  GEO: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1000&q=70&auto=format&fit=crop",
-  REG: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1000&q=70&auto=format&fit=crop",
-  PHY: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1000&q=70&auto=format&fit=crop",
-  PPL: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1000&q=70&auto=format&fit=crop",
-  TEC: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1000&q=70&auto=format&fit=crop",
-  STR: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=1000&q=70&auto=format&fit=crop",
-  REP: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1000&q=70&auto=format&fit=crop",
-  TPR: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1000&q=70&auto=format&fit=crop",
-  OPS: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1000&q=70&auto=format&fit=crop",
-  ENV: "https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=1000&q=70&auto=format&fit=crop",
-  _default: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1000&q=70&auto=format&fit=crop",
+  CYB: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1000&h=667&q=70&auto=format&fit=crop",
+  DAT: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1000&h=667&q=70&auto=format&fit=crop",
+  FIN: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&h=667&q=70&auto=format&fit=crop",
+  GEO: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1000&h=667&q=70&auto=format&fit=crop",
+  REG: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1000&h=667&q=70&auto=format&fit=crop",
+  PHY: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1000&h=667&q=70&auto=format&fit=crop",
+  PPL: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1000&h=667&q=70&auto=format&fit=crop",
+  TEC: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1000&h=667&q=70&auto=format&fit=crop",
+  STR: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=1000&h=667&q=70&auto=format&fit=crop",
+  REP: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1000&h=667&q=70&auto=format&fit=crop",
+  TPR: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1000&h=667&q=70&auto=format&fit=crop",
+  OPS: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1000&h=667&q=70&auto=format&fit=crop",
+  ENV: "https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=1000&h=667&q=70&auto=format&fit=crop",
+  _default: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1000&h=667&q=70&auto=format&fit=crop",
 };
 const PAGE_SIZE = 12;
 
@@ -70,7 +70,7 @@ const EXTRA_POOL = [
   "1473341304170-971dccb5ac1e", "1486406146926-c627a92ad1ab", "1581092160562-40aa08e78837",
   "1589578527966-fdac0f44566c", "1444723121867-7a241cacace9", "1581094794329-c8112a89af12",
   "1504384764586-bb4cdc1707b0", "1526628953301-3e589a6a8b74",
-].map(id => `https://images.unsplash.com/photo-${id}?w=1000&q=70&auto=format&fit=crop`);
+].map(id => `https://images.unsplash.com/photo-${id}?w=1000&h=667&q=70&auto=format&fit=crop`);
 const IMG_POOL = [...Object.keys(CATEGORY_IMG).filter(k => k !== "_default").map(k => CATEGORY_IMG[k]), ...EXTRA_POOL];
 function hashId(id) { let h = 5381; const s = String(id); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h; }
 const imLead = (a) => a.image_url || CATEGORY_IMG[a.primary_category] || CATEGORY_IMG._default;
@@ -327,12 +327,13 @@ function NewsImage({ a, lead }) {
   return <Framed src={primary} alt={a.headline || ""} whole={whole} setWhole={setWhole} onFail={() => setFailed(true)} />;
 }
 
-// The 3:2 frame. On load, a picture more than 4% off 3:2 switches to "whole":
-// contained, over a blurred, enlarged copy of itself that fills the frame.
+// The 3:2 frame. On load, a picture more than 0.5% off 3:2 switches to "whole":
+// contained, over a blurred, enlarged copy of itself that fills the frame. (At
+// 4% the 1.52:1 photos still lost ~2.5 px a side; owner: hide nothing.)
 function Framed({ src, alt, whole, setWhole, onFail }) {
   const onLoad = (e) => {
     const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
-    if (w && h) setWhole(Math.abs(w / h - FRAME) / FRAME > 0.04);
+    if (w && h) setWhole(Math.abs(w / h - FRAME) / FRAME > 0.005);
   };
   return (
     <span className="nimg">
