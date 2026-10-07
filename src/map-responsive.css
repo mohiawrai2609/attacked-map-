@@ -91,6 +91,36 @@
   }
 }
 
+/* The "Click any incident..." caption sits mid-map. On the phone layout the
+   playback date bar, and on short landscape screens the Filters / Industry /
+   Region / Timeline panels, sliced it into stray lines ("classification, /
+   controls.", "ee GUARD classification..."). Hide it while they are open. */
+@media (max-width: 768px), (max-height: 500px) {
+  body:has(.map-date-overlay) .map-hint { visibility: hidden !important; }
+}
+@media (max-height: 500px) {
+  body:has(.r-mappanel) .map-hint { visibility: hidden !important; }
+}
+/* Narrow portrait phones: the date bar at the bottom covered the zoom column
+   except its top edge (390) or its "+" (280). Hide the column while a day is
+   shown; pinch zoom still works. (From 616px the bar clears the column.) */
+@media (max-width: 615px) and (min-height: 501px) {
+  body:has(.map-date-overlay) div:has(> button[title="Zoom in"]) { visibility: hidden; }
+}
+/* Short portrait phones (SE 320x568): once it shows the playback slider, the
+   Timeline panel ends over the caption and the zoom column, cutting the
+   caption's first line and the "-" button in half. Hide both meanwhile. */
+@media (max-width: 768px) and (min-height: 501px) and (max-height: 620px) {
+  body:has(.map-archive .map-range) .map-hint,
+  body:has(.map-archive .map-range) div:has(> button[title="Zoom in"]) { visibility: hidden !important; }
+}
+/* Landscape phones: a short Industry / Region list ended mid-way down the
+   Filters drawer behind it, slicing its "Industry & more" label. Give the
+   list the drawer's full height (a long list already had it). */
+@media (max-width: 768px) and (max-height: 500px) {
+  .map-sublist { min-height: calc(100vh - 124px); }
+}
+
 /* Phones: the "Click any incident..." hint was centred with no width, so it
    shrank to half the screen (4-5 lines at 280-360). Let it use the space
    right of the zoom buttons. */
@@ -208,4 +238,50 @@ body:has(.map-tour) .map-hint { display: none; }
   body:has(.map-fleet) .scene-panel.slot-tl { left: 360px; }
   body:has(.map-fleet) .scene-panel.slot-bl { left: 360px; bottom: 76px; }
   body:has(.map-fleet):has(.scene-panel) .map-hint { display: none; }
+}
+
+/* Left drawer (Filters, its Industry / Region lists, Detailed filters,
+   Timeline) open while an incident is shown. The left scene panels (z 99)
+   open in the drawer's corner: with slot-bl at 84px the drawer the user had
+   just opened showed only as a 60px strip of sliced text, and with the tour
+   open the panel also hid the Timeline's x and playback controls. From 1280px
+   there is room beside the 340px drawer, so open the panels there. On
+   narrower or short screens, with the wider lists, or during playback (the
+   date bar runs across that space) keep them hidden until the drawer closes.
+   The FLEET list has its own rules above. */
+@media (min-width: 1280px) and (max-width: 1879px) and (min-height: 600px) {
+  body:has(.map-filters, .map-archive):not(:has(.map-fleet)) .scene-panel:is(.slot-bl, .slot-tl) { left: 380px; }
+  body:has(.map-filters, .map-archive):not(:has(.map-fleet)):not(:has(.map-tour)) .scene-panel.slot-bl { bottom: 76px; }
+  body:has(.map-filters, .map-archive):not(:has(.map-fleet)):has(.scene-panel) .map-hint { display: none; }
+  body:has(.map-sublist, .map-popover):not(:has(.map-fleet)) .scene-panel:is(.slot-bl, .slot-tl),
+  body:has(.map-filters, .map-archive):has(.map-date-overlay):not(:has(.map-fleet)) .scene-panel:is(.slot-bl, .slot-tl) { visibility: hidden; }
+}
+@media (min-width: 769px) and (max-width: 1279px), (min-width: 769px) and (max-height: 599px) {
+  body:has(.map-filters, .map-archive, .map-sublist, .map-popover):not(:has(.map-fleet)) .scene-panel:is(.slot-bl, .slot-tl) { visibility: hidden; }
+}
+/* Timeline open during playback, 769-1207px: the centred date bar (z 65) sat
+   over the Timeline panel's refresh and x. Start it right of the panel; from
+   1208px max() gives the centred position unchanged. */
+@media (min-width: 769px) and (min-height: 501px) {
+  body:has(.map-archive) .map-date-overlay {
+    left: max(380px, calc(50vw - 240px)) !important; transform: none !important;
+    width: min(480px, calc(100vw - 404px)) !important;
+  }
+}
+
+/* Portrait phones: an Industry / Region list shorter than the Filters drawer
+   behind it sliced the drawer's "Industry & more" label in half, and the
+   Detailed-filters popover left the drawer's button edges peeking out below
+   it. The list / popover replaces the drawer while it is open (each has its
+   own x); the drawer comes back when it closes. */
+@media (max-width: 768px) and (min-height: 501px) {
+  body:has(.map-sublist, .map-popover) .map-filters { visibility: hidden !important; }
+}
+/* Short landscape screens in the desktop layout (844x390): the same list
+   sliced the drawer's "Industry & more" label, and with an incident open the
+   half-width right panel (from x 434) covered the 440px list's counts and x.
+   Hide the drawer behind the list, and keep the list left of that panel. */
+@media (min-width: 769px) and (max-height: 500px) {
+  body:has(.map-sublist, .map-popover) .map-filters { visibility: hidden !important; }
+  body:has(.scene-panel) .map-sublist { max-width: calc(50vw - 46px); }
 }

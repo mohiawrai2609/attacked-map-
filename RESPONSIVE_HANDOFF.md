@@ -1,4 +1,24 @@
-# Responsiveness pass — handoff (2026-10-07 15:50: RESUMED a fourth time in the Claude desktop app; latest safe backup = commit 90b3844 on responsive-wip, local only)
+# Responsiveness pass — handoff (2026-10-08 05:20: ALL AREAS FIXED AND CHECKED — waiting for the owner to test)
+
+## Status (read this first)
+
+- Branch `responsive-wip` (local commits, NOT pushed; `main` untouched). Backup patch: `D:/attacked-dev/resp/responsive-wip.patch`.
+- Every area fixed and independently checked: chrome (nav/menu/footer/sign-in), landing, hub, reports, account/legal,
+  dashboard (+ Subscribe modal), admin (6 tabs), Attack Map (phones + tablets/desktops).
+- Final sweep, all 29 page states x 23 sizes (`D:/attacked-dev/resp/final/`, comparison `final/_compare.txt`) vs main-base:
+  sideways 31 -> 0, cut text 63 -> 0, overlaps 246 -> 18 (all = the floating report "Reading now" pill over text),
+  tap targets <24px 2626 -> 32 (all = the two sign-in checkboxes inside full-width labels). No page worse anywhere.
+- Owner test list: `RESPONSIVE_TEST_CHECKLIST.md`.
+- Owner decisions still open: (1) Attack Map guided tour no longer auto-starts on screens <=500px tall in the desktop
+  layout (it covered both panels); (2) dashboard filter-chip wall on phones and duplicated article summary left as is.
+- NOT done yet (needs the owner): merge to main, port to `cards-only-on-live` (D:/attacked-dev/wt-cards), deploy.
+  Deploy only when the owner says "deploy". Before any deploy/bake: `node scripts/apply-report-responsive.mjs --write`
+  then `node scripts/verify-report-responsive.mjs` (public/reports is gitignored).
+
+---
+
+## History (older notes)
+
 
 ## Latest state (4th resume, 2026-10-07 afternoon) — read this first
 
