@@ -30,7 +30,7 @@ function CookieControls() {
     setWin(null); setDone(true); setBusy(false);
   }
   return (
-    <section id="choices" style={{ marginTop: 34, padding: "20px 22px", border: "1px solid rgba(14,17,22,.12)", borderRadius: 6, background: "#F5F2E9" }}>
+    <section id="choices" style={{ marginTop: 34, scrollMarginTop: "calc(var(--nav-h, 64px) + 16px)", padding: "20px 22px", border: "1px solid rgba(14,17,22,.12)", borderRadius: 6, background: "#F5F2E9" }}>
       <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0E1116" }}>Your privacy choices</h2>
       <p style={{ margin: "10px 0 0", fontSize: 14.5, lineHeight: 1.65, color: "#5B5F66" }}>
         {win

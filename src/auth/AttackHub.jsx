@@ -239,30 +239,44 @@ const HUB_CSS = `
 @media(max-width:560px){.hubft .goldband .in{grid-template-columns:1fr}.hubft .goldband .c{padding:20px 22px;border-left:none;border-top:1px solid rgba(20,19,15,.18)}.hubft .goldband .c:first-child{border-top:none}.hubft .goldband .lede{max-width:none}}
 /* Filter bar on phones: count left on its own row, full-width select, both dates on one row. */
 @media(max-width:560px){.hubft .filterbar{justify-content:flex-start}.hubft .filterbar .cnt{flex:1 1 100%}.hubft .filterbar select{flex:1 1 100%;width:100%;min-width:0}.hubft .filterbar .dr{flex:1 1 100%;min-width:0}.hubft .filterbar .dr input{flex:1 1 0;min-width:0}}
-/* iOS zooms into a focused control under 16px; only WebKit on iOS matches this. */
-@supports (-webkit-touch-callout:none){@media(max-width:560px){.hubft .filterbar select,.hubft .filterbar input[type="date"]{font-size:16px!important}}}
+/* Galaxy Fold cover (<=300px): a little more room for the date text beside the
+   calendar icon, and the Deconstructed button keeps its arrow on its line. */
+@media(max-width:300px){.hubft .filterbar .dr{gap:4px!important}.hubft .filterbar .dr input{padding:6px 4px!important}.hubft .decon .btn{padding-left:14px;padding-right:14px}}
+/* Tablets and landscape phones (561-980px, where the layout is stacked and the
+   bar wraps): the count starts at the left edge instead of floating mid-row
+   with the controls. */
+@media(min-width:561px) and (max-width:980px){.hubft .filterbar .cnt{margin-right:auto!important}}
+/* iOS zooms into a focused control under 16px; only WebKit on iOS matches this.
+   Portrait phones and phones held sideways (landscape height <=500px). */
+@supports (-webkit-touch-callout:none){@media(max-width:560px),(max-height:500px){.hubft .filterbar select,.hubft .filterbar input[type="date"]{font-size:16px!important}.hubft .filterbar select{max-width:100%}}}
 /* "More in X" buttons: a taller hit area, same layout (the margins cancel the padding). */
 .hubft .sh.l button.more{padding-top:12px;padding-bottom:12px;margin-top:-12px;margin-bottom:-12px}
 /* Report view: the Hub's back button and the report frame. */
 .hubft .rf-back{top:12px;left:24px}
 @media(max-width:560px){.hubft .rf-back{left:13px}}
 @media(max-width:360px){.hubft .rf-long{display:none}}
-/* Centred on the report's 44px reader bar on short landscape screens (reportLock.js). */
-@media (orientation:landscape) and (max-height:500px){.hubft .rf-back{top:7px}}
+/* Centred on the report's 44px reader bar on short landscape screens (reportLock.js).
+   The bar shrinks when the FRAME is <=500px tall, and the frame is the window
+   minus the nav (64px on windows over 500px tall), hence 564px here. */
+@media (orientation:landscape) and (max-height:564px){.hubft .rf-back{top:7px}}
 .hubft .rframe{width:100%;border:none;display:block;height:calc(100vh - var(--nav-h,64px));height:calc(100dvh - var(--nav-h,64px))}
-/* Short landscape screens: a picture no taller than the screen under the nav.
+/* Landscape phones: a picture no taller than the screen under the nav.
    width:100% because the hero lead is a flex column, where auto side margins
-   would otherwise shrink the frame to nothing. */
-@media (orientation:landscape) and (max-height:500px){.hubft .hero .lead .img,.hubft .band .feat .img,.hubft .spot .img,.hubft .decon .img,.hubft .art-img{width:100%;max-width:calc((100vh - var(--nav-h,64px)) * 1.5);max-width:calc((100dvh - var(--nav-h,64px)) * 1.5);margin-left:auto;margin-right:auto}}
-/* Reports sit inside main.wrap already: no second inset. */
-.hubft .reports>.wrap{padding-left:0;padding-right:0}
+   would otherwise shrink the frame to nothing. max-width:980px keeps short
+   desktop windows (devtools docked, split screen) on the desktop layout. */
+@media (orientation:landscape) and (max-height:500px) and (max-width:980px){.hubft .hero .lead .img,.hubft .band .feat .img,.hubft .spot .img,.hubft .decon .img,.hubft .art-img{width:100%;max-width:calc((100vh - var(--nav-h,64px)) * 1.5);max-width:calc((100dvh - var(--nav-h,64px)) * 1.5);margin-left:auto;margin-right:auto}}
+/* Reports and GUARD Analysis sit inside main.wrap already: no second inset. */
+.hubft .reports>.wrap,.hubft .analysis>.wrap{padding-left:0;padding-right:0}
 /* Section heads on phones: Deconstructed keeps its square beside the title;
    centred heads keep their gold rules and stay centred when they wrap. */
-@media(max-width:680px){.hubft .decon .sh.l{flex-wrap:nowrap}.hubft .decon .sh.l .sq{flex:none}.hubft .decon .sh.l h2{min-width:0}.hubft .sh:not(.l) .ln{min-width:16px}.hubft .sh:not(.l) h2{text-align:center}}
+@media(max-width:680px){.hubft .decon .sh.l{flex-wrap:nowrap;align-items:flex-start}.hubft .decon .sh.l .sq{flex:none;margin-top:23px}.hubft .decon .sh.l h2{min-width:0}.hubft .sh:not(.l) .ln{min-width:16px}.hubft .sh:not(.l) h2{text-align:center}}
 /* Live stays pinned at the end of the category strip while it scrolls. It
    sticks at the strip's content edge, so a white shadow covers the gutter to
-   its right, where the scrolled categories would otherwise show through. */
-@media(max-width:1262px){.hubft .catnav .live{position:sticky;right:0;z-index:1;padding-left:18px!important;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)!important;box-shadow:48px 0 0 #fff}}
+   its right, where the scrolled categories would otherwise show through.
+   At every width: the category list comes from the feed, so the strip can
+   overflow on laptops too. When it does not overflow, sticky does nothing and
+   Live stays at the end (the extra padding comes out of its auto margin). */
+.hubft .catnav .live{position:sticky;right:0;z-index:1;padding-left:18px!important;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)!important;box-shadow:48px 0 0 #fff}
 `;
 
 function HubStyles() {

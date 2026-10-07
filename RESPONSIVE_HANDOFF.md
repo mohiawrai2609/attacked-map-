@@ -1,4 +1,29 @@
-# Responsiveness pass — handoff (2026-10-07: RESUMED a third time, fix workflow wf_935f688b-2ed running on branch responsive-wip; last safe backup = commit 00c52f4)
+# Responsiveness pass — handoff (2026-10-07 15:50: RESUMED a fourth time in the Claude desktop app; latest safe backup = commit 90b3844 on responsive-wip, local only)
+
+## Latest state (4th resume, 2026-10-07 afternoon) — read this first
+
+- Re-measure (step 3 below) WAS done by the VS Code session: `D:/attacked-dev/resp/wip-check/` (13:07-13:39).
+  Versus main-base: sideways scroll 31 -> 12 (all 12 on admin pages), cut text 63 -> 12, tap targets <24px 2626 -> 82.
+  Attack Map shows a few more text overlaps (guided-tour card over the top-right panel); not yet judged.
+- Commit 90b3844 (local, not pushed) adds three Attack Map tap-target edits made in the VS Code session.
+- IMPORTANT: `public/reports/` is gitignored. The reports fixer already injected a `<style id="attacked-resp">`
+  block into all 310 baked reports (script: `D:/attacked-dev/resp/fix/reports/apply-baked.mjs`). Untouched
+  originals: `D:/attacked-dev/dist-check/reports/` (only difference = that block).
+- New: `D:/attacked-dev/rtools/sweep-q.mjs` = queue wrapper for sweep.mjs (max 2 sweeps at once; this PC has
+  <1 GB free RAM and C: is full). Agents must use it instead of sweep.mjs.
+- Running now: read-only workflow wf_d58c8c80-e17 (script copy `D:/attacked-dev/resp/resp_triage_wf.js`):
+  per-area triage of every finding -> `D:/attacked-dev/resp/triage/<area>.json`, and the first Attack Map
+  review (phones / tablets+desktops, then a verifier) -> `D:/attacked-dev/resp/findings/map.json`.
+- DONE (17:31): triage of all 7 areas -> `D:/attacked-dev/resp/triage/<area>.json` (+ `_workflow_result.json`).
+  chrome 10/11 fixed, landing 15/16, hub 13/16, reports 9/13, account-legal 10/10, dashboard 16/17 (+13 new minor/1 critical:
+  SubscribeModal unstyled), admin 0/13. The dev server died at ~15:50 (VS Code session), so the map review was code-only:
+  `D:/attacked-dev/resp/mapreview/_first_attempt_code_only.json` (19 findings, unverified).
+- Dev server now runs from the Claude desktop app (preview "attackedmap-dev", port 5173).
+- RUNNING (from ~17:50): fix workflow wf_f710a4b6-176, script copy `D:/attacked-dev/resp/resp_fix2_wf.js` (args = the
+  8 areas, see the script's call in this session). Map: live verify -> `findings/map-small.json`, `map-large.json`, then
+  2 fix passes. Every area: fix -> independent check -> up to 2 refixes; reports in `D:/attacked-dev/resp/fix2/<area>/report.json`
+  and `check2/<area>-rN/report.json`. Then cross-area integrator.
+- After it: one full sweep vs main-base and a visual pass, then hand to the owner for testing (no deploy).
 
 Owner's request (2026-10-06): before deploying, check EVERY page and section on every
 phone, tablet and laptop size, and fix responsiveness properly (landing, Attack Hub,

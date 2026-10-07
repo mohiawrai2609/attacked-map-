@@ -54,16 +54,21 @@ export function lockReportForFreeReader(doc, onSubscribe) {
 //   - prepareReportFrame() below, for CMS reports saved before this and for
 //     the API srcdoc shown in the Hub and the dashboard.
 // It only adds rules for sizes the shell got wrong; every other size renders
-// exactly as before.
+// exactly as before. The baked files get it from
+// scripts/apply-report-responsive.mjs (run it with --write after any change
+// here, then scripts/verify-report-responsive.mjs).
 export const REPORT_RESPONSIVE_CSS = [
-  "/* attacked-resp v1 (2026-10-07) */",
+  "/* attacked-resp v2 (2026-10-07) */",
   // 769-1080: one column, but keep the 720px reading measure
   "@media(max-width:1080px){.r-doc{grid-template-columns:minmax(0,720px)}}",
   // 1081-1279: narrower rails so the article is ~590-720px, not 504px
   "@media(min-width:1081px) and (max-width:1279px){.r-doc{grid-template-columns:200px minmax(0,720px) 170px;gap:32px;padding:0 28px}}",
-  // short laptops: the sticky rail never runs past the screen; its Download PDF stays in view
-  "@media(min-width:1081px){.r-rail{max-height:calc(100vh - 88px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.r-rail-cta{position:sticky;bottom:0;z-index:1}}",
+  // short laptops: the sticky rail never runs past the screen; its Download PDF
+  // stays in view, and anything still scrolling under it fades out, not sliced
+  "@media(min-width:1081px){.r-rail{max-height:calc(100vh - 88px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.r-rail-cta{position:sticky;bottom:0;z-index:1;box-shadow:0 -18px 14px -8px var(--paper,#fff)}}",
   "@media(min-width:1081px) and (max-height:860px){.r-rail{padding:28px 0 24px;gap:18px}}",
+  // the CTA blurb only where the tightened rail is still taller than the screen
+  "@media(min-width:1081px) and (max-height:780px),(min-width:1081px) and (max-width:1279px) and (max-height:860px){.r-rail-cta p{display:none}}",
   // phones: cause cards, control rows, small reading text, pull quote, padding
   "@media(max-width:560px){",
   ".r-cause-top{display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px 12px;padding:16px}",
@@ -75,15 +80,29 @@ export const REPORT_RESPONSIVE_CSS = [
   ".r-ctrl .r-code{justify-self:start}",
   ".r-ctrl-obj,.r-ctrl-lnk{grid-column:1}",
   ".r-chip,.r-stat .s,.r-assessment,.r-cat-blurb,.r-vendor-dom{font-size:12px}",
-  ".r-vendor-type,.r-vendor-ctrl-ac,.r-chips-h,.r-mobnav-pill .rm-lab{font-size:10px}",
+  ".r-vendor-type,.r-vendor-ctrl-ac,.r-chips-h,.r-mobnav-pill .rm-lab,.r-vendor-map{font-size:10px}",
   ".r-pull{font-size:21px;padding-left:16px;margin:28px 0}",
   ".r-takeaway{padding:20px 18px}.r-takeaway p{font-size:16px}",
   ".r-ctrlcard,.r-scenario{padding:18px 16px}",
   "}",
   // the jump pill never wider than a 280px screen
   ".r-mobnav-pill{min-width:min(286px,calc(100vw - 30px))}",
-  // landscape phones: thinner reader bar, pill closer to the edge
-  "@media(orientation:landscape) and (max-height:500px){.reader-bar{height:44px}.reader-scroll{top:44px}.r-mobnav-pill{bottom:8px;padding:7px 16px}.r-mobnav-sheet{bottom:58px}}",
+  // landscape phones: thinner reader bar, pill closer to the edge, and the
+  // same small-text sizes as a portrait phone (no layout change)
+  "@media(orientation:landscape) and (max-height:500px){.reader-bar{height:44px}.reader-scroll{top:44px}.r-mobnav-pill{bottom:8px;padding:7px 16px}.r-mobnav-sheet{bottom:58px}" +
+    ".r-chip,.r-stat .s,.r-assessment,.r-cat-blurb,.r-vendor-dom{font-size:12px}.r-vendor-type,.r-vendor-ctrl-ac,.r-chips-h,.r-mobnav-pill .rm-lab,.r-vendor-map{font-size:10px}}",
+  // vendor cards: a control code never splits across lines. Cards narrower
+  // than ~478px (every 2-up card, phones) put the type pill and the code chip
+  // on their own row under the vendor name; wider cards keep the one-row head.
+  ".r-vendor{min-width:0;container-type:inline-size}",
+  ".r-vendor-map,.r-vendor-type{white-space:nowrap}",
+  ".r-vendor-head{flex-wrap:wrap;row-gap:8px}",
+  ".r-vendor-head>div{flex:1 1 140px;min-width:0;overflow-wrap:anywhere}",
+  "@container (max-width:439px){.r-vendor-head>div{flex-basis:calc(100% - 43px)}.r-vendor-right{flex:1 1 100%;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-left:43px}.r-vendor-map{align-self:auto}}",
+  "@container (max-width:255px){.r-vendor-right{margin-left:0}}",
+  "@container (max-width:205px){.r-vendor-map{white-space:normal}}",
+  // print / Download PDF: never the floating jump pill
+  "@media print{.r-mobnav{display:none!important}}",
 ].join("\n");
 
 // CMS reports saved before 2026-10-07 have no jump-to-section pill, and the

@@ -184,7 +184,7 @@ export function AdminInbox() {
       {/* Header strip */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "baseline",
-        marginBottom: 18,
+        marginBottom: 18, flexWrap: "wrap", gap: 12,
       }}>
         <h1 style={{
           fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 28,
@@ -201,6 +201,7 @@ export function AdminInbox() {
           border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 4,
           fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
           letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+          whiteSpace: "nowrap",
         }}>
           ↻ Refresh
         </button>
@@ -211,7 +212,7 @@ export function AdminInbox() {
           status colour so the eye lands on Pending first. */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
         gap: 10, marginBottom: 16,
       }}>
         {[
@@ -380,7 +381,7 @@ export function AdminInbox() {
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                   marginBottom: 6, gap: 12,
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minWidth: 0, overflowWrap: "anywhere" }}>
                     <span style={{
                       padding: "3px 9px", borderRadius: 3,
                       background: `${accentColor}22`, border: `1px solid ${accentColor}55`,
@@ -391,7 +392,7 @@ export function AdminInbox() {
                     <span style={{ fontSize: 15, fontWeight: 700, color: BRAND.white }}>
                       {headlineName}
                     </span>
-                    <span style={{ color: BRAND.textMuted, fontSize: 12 }}>·</span>
+                    <span className="adm-sep" style={{ color: BRAND.textMuted, fontSize: 12 }}>·</span>
                     <span style={{ fontSize: 13, color: BRAND.textSecondary }}>
                       {headlineCompany}
                     </span>
@@ -408,33 +409,33 @@ export function AdminInbox() {
                 <div style={{
                   display: "flex", gap: 12, flexWrap: "wrap",
                   fontSize: 12, color: BRAND.textSecondary,
-                  marginBottom: 10,
+                  marginBottom: 10, minWidth: 0, overflowWrap: "anywhere",
                 }}>
                   <span><b style={{ color: BRAND.textMuted, fontWeight: 600 }}>Role:</b> {headlineRole}</span>
-                  <span>·</span>
+                  <span className="adm-sep">·</span>
                   <span><b style={{ color: BRAND.textMuted, fontWeight: 600 }}>Email:</b> {item.email}</span>
                   {isPartner && item.sector && (
                     <>
-                      <span>·</span>
+                      <span className="adm-sep">·</span>
                       <span><b style={{ color: BRAND.textMuted, fontWeight: 600 }}>Sector:</b> {item.sector}</span>
                     </>
                   )}
                   {!isPartner && item.categories && item.categories.length > 0 && (
                     <>
-                      <span>·</span>
+                      <span className="adm-sep">·</span>
                       <span><b style={{ color: BRAND.textMuted, fontWeight: 600 }}>Categories:</b> {item.categories.join(", ")}</span>
                     </>
                   )}
                   {(item.linkedin_url || (isPartner && item.linkedin_url) || (!isPartner && item.website)) && (
                     <>
-                      <span>·</span>
+                      <span className="adm-sep">·</span>
                       {item.linkedin_url && (
                         <a href={item.linkedin_url} target="_blank" rel="noopener noreferrer"
-                           style={{ color: BRAND.gold, textDecoration: "none" }}>↗ LinkedIn</a>
+                           style={{ color: BRAND.gold, textDecoration: "none", padding: "4px 0", margin: "-4px 0" }}>↗ LinkedIn</a>
                       )}
                       {!isPartner && item.website && (
                         <a href={item.website} target="_blank" rel="noopener noreferrer"
-                           style={{ color: BRAND.gold, textDecoration: "none", marginLeft: 6 }}>↗ Website</a>
+                           style={{ color: BRAND.gold, textDecoration: "none", padding: "4px 0", margin: "-4px 0 -4px 6px" }}>↗ Website</a>
                       )}
                     </>
                   )}
@@ -479,7 +480,7 @@ export function AdminInbox() {
                     {isExpanded ? "Hide detail" : "Show detail"}
                   </button>
 
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
                     {/* Decided applications show a status badge instead of
                         action buttons — they were already actioned, no
                         re-decide flow needed. */}

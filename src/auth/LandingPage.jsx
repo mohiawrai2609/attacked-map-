@@ -423,6 +423,13 @@ export function LandingPage() {
           .welcome-ov { padding: 12px !important; }
           .welcome-card { padding-left: 20px !important; padding-right: 20px !important; }
         }
+        /* Landscape phones (two-column hero on a screen under 500px tall): the
+           text column starts at the top instead of centring against the taller
+           globe + card column, so the headline is on the first screen. */
+        @media (min-width: 769px) and (max-height: 500px) {
+          .landing-root .lp-hero { padding-top: 40px !important; }
+          .landing-root .r-herotext { align-self: start; }
+        }
       `}</style>
       <a href="#main-content" className="landing-skip-link">Skip to content</a>
 
@@ -462,7 +469,7 @@ export function LandingPage() {
 
       {/* ───────────────────────── HERO ───────────────────────── */}
       <main id="main-content" tabIndex={-1} style={{ outline: "none" }}>
-      <section aria-label="Introduction" className="r-pad r-pad-y" style={{
+      <section aria-label="Introduction" className="r-pad r-pad-y lp-hero" style={{
         position: "relative",
         background: BRAND.black,
         padding: "96px 36px 84px",
@@ -534,22 +541,38 @@ export function LandingPage() {
                 The columns (flex-basis 240 + 180, plus the 2px border) also stack
                 whenever the card is narrower than 422px — tablets and landscape
                 phones on the two-column hero — so the height is released there
-                too (container query on the wrapper). */}
+                too (container query on the wrapper). Wherever the height is
+                auto, both columns reserve their largest clamped size (headline
+                3 lines + meta 2 lines; summary 5 lines), so the card keeps one
+                height as the sample rotates and the page below never jumps. */}
             <style>{`
               .livesample-wrap { container-type: inline-size; }
               .livesample { height: 210px; }
               .livesample > div { overflow: hidden; }
-              @container (max-width: 421.98px) { .livesample { height: auto; } }
-              @supports not (container-type: inline-size) {
-                @media (min-width: 769px) and (max-width: 1199px) { .livesample { height: auto; } }
+              /* Keep the entity · country · industry line to 2 lines at every width. */
+              .livesample-meta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+              @container (max-width: 421.98px) {
+                .livesample { height: auto; }
+                .livesample-body { min-height: 98px; }
+                .livesample-side { min-height: calc(53px + 7.75 * 11.5px); }
               }
-              /* At the fixed height, keep the entity · country · industry line to 2 lines. */
-              @media (min-width: 701px) {
-                .livesample-meta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+              @supports not (container-type: inline-size) {
+                @media (min-width: 769px) and (max-width: 1199px) {
+                  .livesample { height: auto; }
+                  .livesample-body { min-height: 98px; }
+                  .livesample-side { min-height: calc(53px + 7.75 * 11.5px); }
+                }
               }
               @media (max-width: 700px) {
                 .livesample { height: auto; }
                 .livesample-sum { font-size: 13px !important; }
+                .livesample-body { min-height: 98px; }
+                .livesample-side { min-height: calc(53px + 7.75 * 13px); }
+              }
+              /* Narrowest phones: slightly tighter tracking keeps "Live sample ·
+                 date" on one line, so the header is 2 lines, not 3. */
+              @media (max-width: 300px) {
+                .livesample-tag { letter-spacing: 0.06em !important; }
               }
             `}</style>
             <div
@@ -566,7 +589,7 @@ export function LandingPage() {
               }}>
               <div style={{ flex: "1 1 240px", minWidth: 0, padding: "16px 18px" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", columnGap: 10, rowGap: 4, marginBottom: 10 }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.t2 }}>
+                  <span className="livesample-tag" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.t2 }}>
                     <span style={{ width: 6, height: 6, borderRadius: 0, background: BRAND.gold }} />
                     Live sample · {fmtDay(intel.latestDay) || "today"}
                   </span>
@@ -578,16 +601,18 @@ export function LandingPage() {
                       <span style={{ padding: "3px 9px", borderRadius: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: `${sevColor}1f`, color: sevColor, border: `1px solid ${sevColor}55` }}>{SEVERITY_LABEL[hero.severity] || "—"}</span>
                       <span style={{ padding: "3px 9px", borderRadius: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: "rgba(255,255,255,0.06)", color: BRAND.t2, border: `1px solid ${BRAND.border}` }}>{hero.primary_category || "OPS"}</span>
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, letterSpacing: "-0.01em", marginBottom: 8, color: BRAND.white, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{hero.headline}</div>
-                    <div className="livesample-meta" style={{ fontSize: 11, color: BRAND.tmuted, fontWeight: 600, letterSpacing: "0.03em" }}>
-                      {[hero.entity, hero.country, hero.industry || hero.sector].filter(Boolean).join("  ·  ")}
+                    <div className="livesample-body">
+                      <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, letterSpacing: "-0.01em", marginBottom: 8, color: BRAND.white, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{hero.headline}</div>
+                      <div className="livesample-meta" style={{ fontSize: 11, color: BRAND.tmuted, fontWeight: 600, letterSpacing: "0.03em" }}>
+                        {[hero.entity, hero.country, hero.industry || hero.sector].filter(Boolean).join("  ·  ")}
+                      </div>
                     </div>
                   </>
                 ) : (
                   <div style={{ padding: "18px 0", color: BRAND.tmuted, fontSize: 13 }}>Loading latest intelligence…</div>
                 )}
               </div>
-              <div style={{ flex: "1 1 180px", padding: "16px 18px", borderLeft: `1px solid ${BRAND.border}`, background: "rgba(252,189,0,0.04)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div className="livesample-side" style={{ flex: "1 1 180px", padding: "16px 18px", borderLeft: `1px solid ${BRAND.border}`, background: "rgba(252,189,0,0.04)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.gold, marginBottom: 8 }}>What happened</div>
                 <div className="livesample-sum" style={{ fontSize: 11.5, lineHeight: 1.55, color: BRAND.t2, display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {hero?.summary || "Geolocated and GUARD-classified, with the blast radius traced to the named companies in scope."}

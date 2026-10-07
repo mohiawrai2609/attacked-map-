@@ -160,7 +160,7 @@ export function UnsubscribePage({ token }) {
                 color: BRAND.white, lineHeight: 1.15, margin: "0 0 14px",
               }}>That link didn't work.</h1>
               <p style={{ fontSize: 13.5, color: BRAND.t2, lineHeight: 1.55, overflowWrap: "anywhere" }}>
-                {state.error ||"The unsubscribe token is invalid or expired."}
+                {state.error || "The unsubscribe token is invalid or expired."}
               </p>
               <p style={{ fontSize: 12, color: BRAND.tmuted, lineHeight: 1.55, marginTop: 18 }}>
                 Sign in to your account and update preferences directly, or reply to any

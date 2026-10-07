@@ -19,7 +19,7 @@ import { ReportPageEditor } from "./ReportPageEditor";
 const BRAND = { gold: "#FCBD00", obsidian: "#1A1A1A", card: "#242424", deep: "#0E1116", white: "#FFFFFF", muted: "#A6A8AD", dim: "#8E9198", border: "#383838" };
 const SEVS = [[5, "Critical"], [4, "High"], [3, "Medium"], [2, "Low"], [1, "Minimal"]];
 
-const inp = { width: "100%", boxSizing: "border-box", background: BRAND.deep, color: BRAND.white, border: `1px solid ${BRAND.border}`, borderRadius: 4, padding: "9px 11px", fontFamily: "Inter, sans-serif", fontSize: 13, outline: "none" };
+const inp = { width: "100%", minWidth: 0, boxSizing: "border-box", background: BRAND.deep, color: BRAND.white, border: `1px solid ${BRAND.border}`, borderRadius: 4, padding: "9px 11px", fontFamily: "Inter, sans-serif", fontSize: 13, outline: "none" };
 const lbl = { display: "block", fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: BRAND.muted, margin: "0 0 6px" };
 const btn = (primary, extra = {}) => ({ padding: "9px 14px", borderRadius: 4, border: `1px solid ${primary ? BRAND.gold : BRAND.border}`, background: primary ? BRAND.gold : "transparent", color: primary ? BRAND.obsidian : BRAND.white, fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer", ...extra });
 const pill = (on, color = BRAND.gold) => ({ display: "inline-block", padding: "2px 8px", borderRadius: 3, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", background: on ? `${color}22` : "transparent", border: `1px solid ${on ? color : BRAND.border}`, color: on ? color : BRAND.muted });
@@ -63,6 +63,14 @@ export function AdminReports() {
   const [incident, setIncident] = useState(null);        // { id, headline } once looked up
   const [preview, setPreview] = useState(true);
   const fileRef = useRef(null);
+  // Below 1200px the editor stacks under the report list (admin-responsive.css),
+  // so opening or starting a report scrolls it into view. A counter, not a
+  // flag: open() sets its state after an await, and each open should scroll.
+  const editorRef = useRef(null);
+  const [reveal, setReveal] = useState(0);
+  useEffect(() => {
+    if (reveal && window.matchMedia("(max-width: 1199px)").matches) editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [reveal]);
 
   const toast = (m) => { setMsg(m); setTimeout(() => setMsg(null), 3500); };
 
@@ -82,6 +90,7 @@ export function AdminReports() {
 
   function startNew() {
     setEditing({ id: null, status: "draft" }); setData(emptyData()); setBrand({ ...DEFAULT_BRAND }); setIncident(null); setTab("content");
+    setReveal((n) => n + 1);
   }
   async function open(row) {
     setBusy(true);
@@ -89,6 +98,7 @@ export function AdminReports() {
       const r = await adminGetReport(row.id);
       if (!r) throw new Error("Report not found");
       setEditing({ id: r.id, status: r.status }); setData(fromRow(r)); setBrand({ ...DEFAULT_BRAND, ...(r.brand || {}) }); setIncident(null); setTab("content");
+      setReveal((n) => n + 1);
       if (r.incident_id != null) lookupIncident(String(r.incident_id));
     } catch (e) { toast(e.message); } finally { setBusy(false); }
   }
@@ -186,7 +196,7 @@ export function AdminReports() {
       {msg && <div style={{ background: `${BRAND.gold}22`, border: `1px solid ${BRAND.gold}`, color: BRAND.white, padding: "10px 14px", borderRadius: 4, marginBottom: 14, fontSize: 13 }}>{msg}</div>}
       {err && <div style={{ background: "rgba(255,59,48,0.14)", border: "1px solid #FF3B30", padding: "10px 14px", borderRadius: 4, marginBottom: 14, fontSize: 13 }}>{err}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: editing ? "300px 1fr" : "1fr", gap: 18, alignItems: "start" }}>
+      <div className="adm-rep-grid" style={{ display: "grid", gridTemplateColumns: editing ? "300px 1fr" : "1fr", gap: 18, alignItems: "start" }}>
         {/* LIST */}
         <div style={{ background: BRAND.obsidian, border: `1px solid ${BRAND.border}`, borderRadius: 6, overflow: "hidden" }}>
           {loading ? <div style={{ padding: 40, textAlign: "center", color: BRAND.dim }}>Loading…</div>
@@ -205,7 +215,7 @@ export function AdminReports() {
 
         {/* EDITOR */}
         {editing && (
-          <div style={{ display: "grid", gridTemplateColumns: preview ? "minmax(380px, 1fr) minmax(420px, 1.2fr)" : "1fr", gap: 18, alignItems: "start" }}>
+          <div ref={editorRef} className="adm-rep-editor" style={{ display: "grid", gridTemplateColumns: preview ? "minmax(380px, 1fr) minmax(420px, 1.2fr)" : "1fr", gap: 18, alignItems: "start", scrollMarginTop: 12 }}>
             <div style={{ background: BRAND.obsidian, border: `1px solid ${BRAND.border}`, borderRadius: 6, padding: 18 }}>
               <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
                 {[["content", "Content"], ["design", "Design & brand"], ["upload", "Upload HTML"]].map(([id, t]) => (
@@ -220,7 +230,7 @@ export function AdminReports() {
                   <div><label style={lbl}>Title</label><input style={inp} value={data.title} onChange={set("title")} placeholder="The headline of the report" /></div>
                   <div><label style={lbl}>Subtitle</label><input style={inp} value={data.subtitle} onChange={set("subtitle")} placeholder="One sentence under the title" /></div>
                   <div><label style={lbl}>Dek (standfirst)</label><textarea style={{ ...inp, minHeight: 60 }} value={data.dek} onChange={set("dek")} placeholder="Two or three sentences that set up the piece" /></div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className="adm-rep-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <div><label style={lbl}>Industry</label><select style={inp} value={data.industry} onChange={set("industry")}><option value="">Select</option>{INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
                     <div><label style={lbl}>GUARD category</label><select style={inp} value={data.category} onChange={set("category")}><option value="">Select</option>{CATEGORIES.map(([c, n]) => <option key={c} value={c}>{c} · {n}</option>)}</select></div>
                     <div><label style={lbl}>Severity</label><select style={inp} value={data.severity} onChange={set("severity")}>{SEVS.map(([v, n]) => <option key={v} value={v}>S{v} · {n}</option>)}</select></div>
@@ -261,7 +271,7 @@ export function AdminReports() {
 
               {tab === "design" && (
                 <div style={{ display: "grid", gap: 14 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className="adm-rep-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <div><label style={lbl}>Accent colour</label><div style={{ display: "flex", gap: 8 }}><input type="color" value={brand.accent} onChange={(e) => setBrand({ ...brand, accent: e.target.value })} style={{ width: 44, height: 36, border: "none", background: "none", padding: 0 }} /><input style={inp} value={brand.accent} onChange={(e) => setBrand({ ...brand, accent: e.target.value })} /></div></div>
                     <div><label style={lbl}>Theme</label><select style={inp} value={brand.theme} onChange={(e) => setBrand({ ...brand, theme: e.target.value })}><option value="light">Light (paper)</option><option value="dark">Dark (obsidian)</option></select></div>
                     <div><label style={lbl}>Typeface</label><select style={inp} value={brand.font} onChange={(e) => setBrand({ ...brand, font: e.target.value })}>{REPORT_FONTS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select></div>
@@ -280,10 +290,10 @@ export function AdminReports() {
               )}
 
               {tab === "upload" && (
-                <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 12 }}>
                   <div style={{ fontSize: 13, color: BRAND.muted, lineHeight: 1.6 }}>Upload a finished report file (a baked briefing from the pipeline, or any standalone HTML). It is stored as-is; the Design tab's brand settings are layered on top. Switching back to Author keeps your sections.</div>
-                  <input type="file" accept=".html,.htm,text/html" onChange={onHtmlFile} style={{ color: BRAND.white }} />
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input type="file" accept=".html,.htm,text/html" onChange={onHtmlFile} style={{ color: BRAND.white, maxWidth: "100%", minHeight: 24 }} />
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <span style={pill(data.mode === "html")}>{data.mode === "html" ? `HTML file · ${Math.round((data.uploadedHtml || "").length / 1024)} KB` : "Author mode"}</span>
                     {data.mode === "html" && <button style={btn(false, { padding: "6px 10px" })} onClick={() => setData((d) => ({ ...d, mode: "author" }))}>Switch to Author</button>}
                   </div>

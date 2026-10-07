@@ -216,7 +216,7 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", columnGap: 14, rowGap: 8, marginTop: 6 }}>
             <button type="submit" disabled={busy} style={{
               padding: "11px 22px", background: busy ? "rgba(252,189,0,0.55)" : C.gold, color: C.obsidian,
               border: "none", borderRadius: 4, cursor: busy ? "default" : "pointer",

@@ -69,7 +69,7 @@ const SERIF = FONT; // brand: Inter everywhere, headings included
 const S = {
   section: { maxWidth: 1180, margin: "0 auto", padding: "34px 24px" },
   eyebrow: { fontFamily: MONO, fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: BRAND.goldDeep, fontWeight: 700 },
-  h2: { fontFamily: SERIF, fontSize: 34, lineHeight: 1.08, fontWeight: 500, margin: "6px 0 8px", letterSpacing: "-0.01em", color: BRAND.ink },
+  h2: { fontFamily: SERIF, fontSize: "clamp(26px, 7.6vw, 34px)", lineHeight: 1.08, fontWeight: 500, margin: "6px 0 8px", letterSpacing: "-0.01em", color: BRAND.ink },
   lede: { fontFamily: FONT, fontSize: 14.5, lineHeight: 1.6, color: BRAND.inkSoft, maxWidth: 720, margin: 0 },
   grid: (min) => ({ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`, gap: 14, marginTop: 22 }),
   card: { background: "#fff", border: `1px solid ${BRAND.line}`, borderRadius: 6, padding: "22px 22px 20px", display: "flex", flexDirection: "column", minWidth: 0, fontFamily: FONT },
@@ -138,12 +138,13 @@ export function SubscriptionPlans({ embedded = false, onSignIn, onDashboard }) {
   return (
     <div style={{ fontFamily: FONT }}>
       {/* Small-screen overrides for this page (layout only, 2026-10-07). Fine
-          print goes to 12px on phones, portrait and landscape; the third
+          print goes to 12px on phones and on every touch screen (tablets too);
+          mouse laptops and desktops keep the design sizes. The third
           Premium card spans the row while the Premium grid has exactly two
           columns, so it does not sit alone (container query on the dark box's
           content width: 2 x 280 + 14 = 574 up to 3 x 280 + 2 x 14 = 868). */}
       <style>{`
-        @media (max-width: 768px), (pointer: coarse) and (max-height: 500px) {
+        @media (max-width: 768px), (pointer: coarse) {
           .sub-fine { font-size: 12px !important; line-height: 1.45 !important; }
         }
         @container (min-width: 574px) and (max-width: 867.98px) {
@@ -237,7 +238,7 @@ export function SubscribePage() {
       <header style={{ background: BRAND.obsidian, color: "#fff", padding: "54px 24px 46px", borderBottom: `1px solid ${BRAND.border}` }}>
         <div style={{ maxWidth: 1132, margin: "0 auto" }}>
           <div style={{ ...S.eyebrow, color: BRAND.gold }}>Subscribe · Attacked.ai</div>
-          <h1 style={{ fontFamily: SERIF, fontSize: 52, lineHeight: 1.02, fontWeight: 500, margin: "10px 0 14px", letterSpacing: "-0.015em", maxWidth: 820 }}>One corpus. Three ways in.</h1>
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(36px, 11vw, 52px)", lineHeight: 1.02, fontWeight: 500, margin: "10px 0 14px", letterSpacing: "-0.015em", maxWidth: 820 }}>One corpus. Three ways in.</h1>
           <p style={{ ...S.lede, color: "rgba(255,255,255,.72)", fontSize: 16 }}>The Attack Map for your industry, the organisation-level intelligence behind it, and the reports, listings and licences that stand on their own.</p>
           {user && <div style={{ marginTop: 18, fontFamily: MONO, fontSize: 11, color: "rgba(255,255,255,.6)" }}>Signed in as {user.email} · {subscriber ? "Subscriber" : "Free"}</div>}
         </div>

@@ -11,7 +11,7 @@
 // admin_briefings_setup.sql — if that hasn't been run, saves surface a clear
 // "run the setup" error instead of failing silently.
 // ─────────────────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { GCP } from "../lib/backend";
 import { uploadMedia } from "../lib/gcpAuth";
@@ -51,6 +51,14 @@ export function AdminBriefings() {
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null);        // { type: 'ok'|'err', text }
+
+  // At 768px and below the list and the editor stack (.r-grid), and the editor
+  // opens under a 70vh list: picking an incident scrolls it into view. Keyed on
+  // the id, so save() (a new object, same id) does not scroll again.
+  const editorRef = useRef(null);
+  useEffect(() => {
+    if (sel && window.matchMedia("(max-width: 768px)").matches) editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [sel?._source, sel?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load incidents (both regular + vendor-intel) so any hub card can be edited.
   useEffect(() => {
@@ -171,10 +179,10 @@ export function AdminBriefings() {
                   color: BRAND.white, fontFamily: "Inter, sans-serif",
                 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 5 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: BRAND.gold, letterSpacing: "0.08em" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: BRAND.gold, letterSpacing: "0.08em" }}>
                       {SEVERITY_LABEL[r.severity] || "—"}
                     </span>
-                    <span style={{ fontSize: 9.5, color: BRAND.tmuted }}>{r._day || ""}</span>
+                    <span style={{ fontSize: 10.5, color: BRAND.tmuted }}>{r._day || ""}</span>
                     {r._source === "vi" && (
                       <span style={{ fontSize: 8.5, color: BRAND.tmuted, border: `1px solid ${BRAND.border}`, borderRadius: 3, padding: "1px 5px" }}>VI</span>
                     )}
@@ -197,7 +205,7 @@ export function AdminBriefings() {
       </div>
 
       {/* RIGHT — editor */}
-      <div>
+      <div ref={editorRef} style={{ scrollMarginTop: 12 }}>
         {!sel ? (
           <div style={{
             padding: 50, textAlign: "center", color: BRAND.tmuted, fontSize: 13,
@@ -274,12 +282,13 @@ export function AdminBriefings() {
             </div>
 
             {/* ACTIONS */}
-            <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 22 }}>
+            <div style={{ display: "flex", gap: 12, rowGap: 8, alignItems: "center", marginTop: 22, flexWrap: "wrap" }}>
               <button onClick={save} disabled={busy} style={{
                 padding: "11px 24px", borderRadius: 4, cursor: busy ? "default" : "pointer",
                 background: BRAND.gold, color: BRAND.obsidian, border: "none",
                 fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 700,
                 letterSpacing: "0.06em", textTransform: "uppercase", opacity: busy ? 0.6 : 1,
+                whiteSpace: "nowrap",
               }}>{busy ? "Saving…" : "Save briefing"}</button>
               {msg && (
                 <span style={{ fontSize: 12, color: msg.type === "ok" ? BRAND.ok : BRAND.danger }}>

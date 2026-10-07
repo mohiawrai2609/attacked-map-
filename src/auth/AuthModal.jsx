@@ -256,11 +256,14 @@ export function AuthModal({ open, onClose, intent = null }) {
     </div>
   );
 
+  // overscrollBehavior: once the card has been scrolled to its end, further
+  // swipes no longer scroll the page underneath. .am-overlay also locks the
+  // page's own scroll on touch screens while the modal is open (responsive.css).
   return (
-    <div onClick={close} style={{
+    <div className="am-overlay" onClick={close} style={{
       position: "fixed", inset: 0, zIndex: 9999, background: "rgba(14,17,22,0.55)",
       backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start",
-      justifyContent: "center", padding: "3vh 18px", overflowY: "auto",
+      justifyContent: "center", padding: "3vh 18px", overflowY: "auto", overscrollBehavior: "contain",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
         width: "min(500px, 100%)", background: C.paper,
@@ -395,7 +398,7 @@ export function AuthModal({ open, onClose, intent = null }) {
           <>
             <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Enter your code.</h2>
             <p style={{ marginTop: 12, marginBottom: 20, fontSize: 13.5, color: C.ink3, lineHeight: 1.55 }}>
-              We emailed your code to <b style={{ color: C.ink }}>{cleanEmail}</b>{sentAt ? <> at <b style={{ color: C.ink }}>{sentAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</b></> : null}. Use the newest email — each new code cancels the one before — and enter it within an hour.
+              We emailed your code to <b style={{ color: C.ink, overflowWrap: "anywhere" }}>{cleanEmail}</b>{sentAt ? <> at <b style={{ color: C.ink }}>{sentAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</b></> : null}. Use the newest email — each new code cancels the one before — and enter it within an hour.
               {/* Until the Magic Link template in Supabase carries {{ .Token }}, a
                   reader whose address already has an account receives a link
                   instead of a code. Say so, and make the link useful. */}
@@ -403,7 +406,7 @@ export function AuthModal({ open, onClose, intent = null }) {
             </p>
             <form onSubmit={submitCode}>
               <label style={label}>Verification code</label>
-              <input type="text" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={10} placeholder="••••••••"
+              <input className="am-code" type="text" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={10} placeholder="••••••••"
                 value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 10)); error && setError(null); }}
                 style={{ ...field, textAlign: "center", fontSize: 24, fontWeight: 700, letterSpacing: "0.35em", padding: 14, marginBottom: 6 }} onFocus={onFocus} onBlur={onBlur} />
               {error && <div style={{ margin: "8px 0", fontSize: 12, color: C.err }}>{error}</div>}

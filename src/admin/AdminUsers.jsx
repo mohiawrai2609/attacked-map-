@@ -225,7 +225,7 @@ export function AdminUsers() {
           borderRadius: 6, overflow: "hidden",
         }}>
           {/* Table header */}
-          <div style={{
+          <div className="adm-uhead" style={{
             display: "grid",
             gridTemplateColumns: "minmax(220px, 2fr) 110px minmax(140px, 1fr) 120px 160px",
             gap: 12, padding: "12px 18px",
@@ -247,7 +247,7 @@ export function AdminUsers() {
             const tierMeta = TIER_OPTIONS.find(t => t.v === u.tier) || { label: u.tier?.toUpperCase() || "—", color: BRAND.textMuted };
             const isBusy = busy === u.id;
             return (
-              <div key={u.id} style={{
+              <div key={u.id} className="adm-urow" style={{
                 display: "grid",
                 gridTemplateColumns: "minmax(220px, 2fr) 110px minmax(140px, 1fr) 120px 160px",
                 gap: 12, padding: "14px 18px",
@@ -257,14 +257,18 @@ export function AdminUsers() {
               }}>
                 {/* User col */}
                 <div style={{ minWidth: 0 }}>
+                  {/* The email ellipsizes on its own, so the YOU badge stays whole
+                      when the column is narrow (tablets, phone cards). */}
                   <div style={{
+                    display: "flex", alignItems: "center", gap: 8, minWidth: 0,
                     fontSize: 13.5, fontWeight: 600, color: BRAND.white,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
-                    {u.email}
+                    <span style={{
+                      minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>{u.email}</span>
                     {isMe && (
                       <span style={{
-                        marginLeft: 8, fontSize: 9, fontWeight: 700,
+                        flexShrink: 0, fontSize: 9, fontWeight: 700,
                         padding: "1px 6px", borderRadius: 2,
                         background: "rgba(252,189,0,0.15)", color: BRAND.gold,
                         letterSpacing: "0.10em",
@@ -320,6 +324,7 @@ export function AdminUsers() {
                 {/* Tier dropdown */}
                 <div>
                   <select
+                    aria-label="Change tier"
                     value={u.tier}
                     disabled={isBusy}
                     onChange={(e) => changeTier(u.id, e.target.value, u.email, u.tier)}

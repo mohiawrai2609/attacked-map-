@@ -57,7 +57,7 @@ export function SubscribeModal({ open, onClose, onDone, onSignIn }) {
             <div className="unlock-list">{UNLOCKS.map(([b, s, n]) => <div key={b} className="unlock"><div className="tick">✓</div><div><b>{b}</b><span>{s}</span></div><span className="n">{n}</span></div>)}</div>
             {msg && <p style={{ fontSize: 12, color: /now a subscriber|unlocked/i.test(msg) ? "#1E7A3D" : "#B21F31", margin: "0 0 12px" }}>{msg}</p>}
             <div className="modal-actions">
-              <span className="note">{user ? "Switches on now. Switch off any time." : "Create an account first; it takes a minute."} <a href="/?subscribe" style={{ color: "var(--gold-deep)", fontWeight: 700 }}>All plans and products →</a></span>
+              <span className="note">{user ? "Switches on now. Switch off any time." : "Create an account first; it takes a minute."} <a href="/?subscribe" style={{ color: "var(--gold-text)", fontWeight: 700 }}>All plans and products →</a></span>
               <button className="secondary" onClick={onClose}>Not now</button>
               {subscriber
                 ? <a className="primary" style={{ display: "inline-flex", alignItems: "center" }} href="/?dashboard">Open my dashboard →</a>

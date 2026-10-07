@@ -72,9 +72,7 @@ export function SubscriptionsPage() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#FFFFFF" }}>
-      <div style={{ background: "#0E1116" }}>
-        <SiteNav active="subscriptions" />
-      </div>
+      <SiteNav active="subscriptions" />
 
       {/* No inner scrollbar — the iframe grows to its exact content height
           (measured at ~6084px) so the whole page is one clean scroll: app nav,

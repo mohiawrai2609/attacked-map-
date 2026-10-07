@@ -145,7 +145,27 @@
 
 /* Sign-up modal fine print (field hints, email consent) is 11px inline; lift
    it to 12px on phones (portrait, and landscape via the height test) and
-   small tablets only. Desktop keeps the design. */
-@media (max-width: 768px), (max-height: 500px) {
+   small tablets only. The height test is for touch screens only, so a short
+   desktop window (devtools docked) keeps the design. */
+@media (max-width: 768px), (max-height: 500px) and (pointer: coarse) {
   .am-fine { font-size: 12px !important; }
+}
+
+/* Sign-in code field: 24px digits tracked 0.35em. This project sends 8-digit
+   codes (the field takes up to 10), and on the narrowest phones that tracking
+   pushed the last digits out of the box. Tighter tracking there only. */
+@media (max-width: 359px) {
+  .am-code { letter-spacing: 0.16em !important; }
+}
+@media (max-width: 300px) {
+  .am-code { font-size: 22px !important; letter-spacing: 0.1em !important; padding-left: 8px !important; padding-right: 8px !important; }
+}
+
+/* Sign-in / sign-up modal open on a touch screen: the page underneath stays
+   put (swipes on the backdrop used to scroll it). Only <html> is locked, so
+   the sticky navbar and the scroll position are untouched; touch screens
+   have overlay scrollbars, so nothing shifts. Mouse-driven desktops keep
+   their scrollbar and their layout. */
+@media (pointer: coarse) {
+  html:has(.am-overlay) { overflow: hidden; }
 }
