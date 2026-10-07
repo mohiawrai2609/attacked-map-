@@ -1,0 +1,194 @@
+/* Attack Map — layout fixes for phones, landscape phones, tablets, laptops
+   and desktops. Loaded by GlobalAttackMap.jsx. Phone rules are scoped to
+   <=768px wide or <=500px tall; tablet/desktop rules (end of file) to
+   >=769px wide and >=600px tall, or to touch screens. */
+
+/* Adaptive-controls rows: the desktop grid (28px | 100px | 1fr | 76px) leaves
+   the control statement an 8-160px column on a phone. Put number, ID and pills
+   on the first line and give the statement the full width below. */
+@media (max-width: 768px), (max-height: 500px) {
+  .ac-row {
+    grid-template-columns: 24px minmax(0, 1fr) auto !important;
+    column-gap: 10px !important;
+    row-gap: 6px !important;
+  }
+  .ac-row > :nth-child(3) { grid-column: 1 / -1; grid-row: 2; }
+  .ac-row > :nth-child(4) { flex-direction: row !important; align-items: center !important; flex-wrap: wrap; justify-content: flex-end; }
+
+  /* Filter HUD (drawer + Industry/Region lists + detailed filters) sits under
+     the globe's zoom column (z 25) — lift it above. */
+  .map-hud-tl { z-index: 30 !important; }
+
+  /* Close (x) buttons on the filter panels: 18-22px boxes -> 40px targets. */
+  .map-x {
+    min-width: 40px !important; min-height: 40px !important;
+    display: inline-flex !important; align-items: center; justify-content: center;
+    margin: -8px -8px -8px 0;
+  }
+  /* Detailed-filters severity pills were 22px tall. */
+  .map-sev { min-height: 32px !important; }
+}
+
+/* Landscape phones wider than 768px (844x390, 915x412) get the desktop corner
+   panels: fixed 380/460px widths made the paired panels overlap and capped the
+   top-right body at ~40-90px. Give each panel half the width and the full
+   height below the map HUD. */
+@media (min-width: 769px) and (max-height: 500px) {
+  .scene-panel {
+    width: calc(50vw - 40px) !important;
+    max-height: calc(100vh - 140px) !important;
+  }
+  .scene-panel.slot-br, .scene-panel.slot-bl { bottom: 12px !important; }
+
+  /* Bottom control strip: tighter buttons so the one-row strip clears the
+     Risk-level box at 844px. */
+  .map-ctrl-strip button { padding-left: 7px !important; padding-right: 7px !important; }
+
+  /* With an incident open the two panels fill the map; the hint and the
+     control strip behind them only showed as cut fragments in the 24px gap. */
+  body:has(.scene-panel) .map-hint,
+  body:has(.scene-panel) .map-ctrl-strip { visibility: hidden !important; }
+
+  /* Playback date bar: move it off the Timeline panel header (left) to the
+     right-hand side of the map. */
+  .map-date-overlay {
+    left: auto !important; right: 16px !important; transform: none !important;
+    width: min(420px, calc(100vw - 400px)) !important;
+  }
+}
+
+/* Portrait phones: the playback date bar sat over the Timeline panel header
+   (its x and refresh) and the map bar. Pin it to the bottom of the map. */
+@media (max-width: 768px) and (min-height: 501px) {
+  .map-date-overlay {
+    top: auto !important;
+    bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Landscape phones in the phone layout (667x375 etc.): the Timeline panel
+   filled the width, so the playback date bar covered its header wherever it
+   went. Keep the panel on the left and put the date bar beside it. */
+@media (max-width: 768px) and (max-height: 500px) {
+  .r-mappanel.map-archive { right: auto !important; width: min(380px, 56vw) !important; }
+  .map-date-overlay {
+    top: 108px !important; left: auto !important; right: 10px !important;
+    transform: none !important;
+    width: calc(100vw - min(380px, 56vw) - 30px) !important;
+    max-height: calc(100vh - 124px); overflow-y: auto;
+  }
+}
+
+/* Phones: the "Click any incident..." hint was centred with no width, so it
+   shrank to half the screen (4-5 lines at 280-360). Let it use the space
+   right of the zoom buttons. */
+@media (max-width: 600px) {
+  .map-hint { left: 80px !important; right: 12px !important; transform: none !important; max-width: none !important; }
+}
+
+/* Phone map bar: the live count and the shown day were one ellipsised line
+   ("3 li..."). Put the day on its own line and trim the three buttons. */
+@media (max-width: 480px) {
+  .map-bar-count { white-space: normal !important; line-height: 1.15; }
+  .map-bar-count > span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .map-bar-sep { display: none !important; }
+  .map-bar-date { font-size: 11px; font-weight: 600; color: #A6A8AD; }
+}
+@media (max-width: 360px) {
+  .map-bar { gap: 6px !important; }
+  .map-bar-btn { padding-left: 7px !important; padding-right: 7px !important; letter-spacing: 0.02em !important; }
+  .map-bar-date { font-size: 10.5px; }
+}
+@media (max-width: 300px) {
+  .map-bar { gap: 5px !important; padding-left: 8px !important; padding-right: 8px !important; }
+  .map-bar-btn { padding-left: 6px !important; padding-right: 6px !important; letter-spacing: 0 !important; font-size: 10px !important; }
+}
+
+/* Narrow portrait tablets (769-899px): the one-row control strip (now at its
+   natural width) reaches the Risk-level box — lift the box above the strip. */
+@media (min-width: 769px) and (max-width: 899px) and (min-height: 600px) {
+  .map-legend { bottom: 80px !important; }
+}
+
+/* ── Touch targets on every touch screen (phones and touch tablets) ──────── */
+@media (pointer: coarse), (max-width: 768px), (max-height: 500px) {
+  /* Teaser / gate "Subscribe Enterprise" links: 44px tall on touch, with the
+     underline kept against the text (a bottom border would float under the
+     44px box). Mouse screens keep the original thin link. */
+  .map-touch44 {
+    min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+    padding: 0 8px !important; border-bottom: 0 !important;
+    text-decoration: underline !important; text-decoration-color: rgba(255,255,255,0.25) !important;
+    text-underline-offset: 3px;
+  }
+  .map-readmore { min-height: 44px; padding: 0 8px !important; }
+  /* Guided-tour "Replay" was an 18px-tall text button. */
+  .map-tour-replay { min-height: 32px; padding: 0 8px; }
+}
+@media (pointer: coarse) {
+  .map-x {
+    min-width: 40px !important; min-height: 40px !important;
+    display: inline-flex !important; align-items: center; justify-content: center;
+    margin: -8px -8px -8px 0;
+  }
+  .map-sev { min-height: 32px !important; }
+}
+
+/* ── Tablets, laptops and desktops (>=769px wide, >=600px tall) ──────────── */
+/* Bottom-left scene panel: clear the globe's zoom column (x 24-68). */
+@media (min-width: 769px) and (min-height: 600px) {
+  body .scene-panel.slot-bl { left: 84px; }
+}
+/* Below 1680px the bottom panels sat on the control strip (bottom 24, ~41px
+   tall): lift them above it. The "Hover the dots..." caption behind them was
+   only ever visible as a sliced fragment, so it is hidden while a panel is
+   open at these widths. */
+@media (min-width: 769px) and (max-width: 1679px) and (min-height: 600px) {
+  body .scene-panel.slot-bl, body .scene-panel.slot-br { bottom: 76px; }
+  body:has(.scene-panel) .map-hint { display: none; }
+}
+/* Guided tour open: the card (bottom 96, ~170-215px tall, centred, up to
+   760px wide) covered the scene panels it narrates below ~1880px. Keep the
+   panels above the card; their bodies scroll. */
+@media (min-width: 769px) and (max-width: 1879px) and (min-height: 600px) {
+  body:has(.map-tour) .scene-panel.slot-tr { max-height: calc(100vh - 444px); }
+  body:has(.map-tour) .scene-panel.slot-tl { max-height: min(60vh, calc(100vh - 444px)); }
+  body:has(.map-tour) .scene-panel.slot-bl,
+  body:has(.map-tour) .scene-panel.slot-br { bottom: 316px; max-height: min(60vh, calc(100vh - 444px)); }
+}
+/* The caption sits under the tour card at every size (a 6px sliver showed). */
+body:has(.map-tour) .map-hint { display: none; }
+
+/* Portrait tablets 769-959px (iPad Air 820, Surface 912): the top-right and
+   bottom-left panels of scenes 1 and 3 cannot sit side by side, so split the
+   height between them. */
+@media (min-width: 769px) and (max-width: 959px) and (min-height: 700px) {
+  body .scene-panel.slot-tr { max-height: calc(50vh - 100px); }
+  body .scene-panel.slot-bl { max-height: calc(50vh - 120px); }
+  body:has(.map-tour) .scene-panel.slot-tr,
+  body:has(.map-tour) .scene-panel.slot-bl { max-height: calc(50vh - 232px); }
+}
+/* iPad Air portrait: the tour card (96vw) covered the zoom buttons. */
+@media (min-width: 769px) and (max-width: 899px) and (min-height: 600px) {
+  .map-tour > div { max-width: calc(100vw - 176px); }
+}
+
+/* FLEET list (left 24-344): keep the Detailed-filters popover (state kept)
+   from peeking out beside it, end it above the control strip where the two
+   meet, and open the left scene panels beside it where there is room. */
+@media (min-width: 769px) and (min-height: 501px) {
+  body:has(.map-fleet) .map-popover,
+  body:has(.map-fleet) .map-filters { visibility: hidden !important; }
+}
+@media (min-width: 769px) and (max-width: 1279px) and (min-height: 600px) {
+  .map-fleet { bottom: 76px !important; }
+  /* The list used to cover the zoom column and the caption completely; now
+     that it ends higher they only peeked out as fragments beside / below it. */
+  body:has(.map-fleet) .map-hint,
+  body:has(.map-fleet) div:has(> button[title="Zoom in"]) { visibility: hidden; }
+}
+@media (min-width: 1240px) and (min-height: 600px) {
+  body:has(.map-fleet) .scene-panel.slot-tl { left: 360px; }
+  body:has(.map-fleet) .scene-panel.slot-bl { left: 360px; bottom: 76px; }
+  body:has(.map-fleet):has(.scene-panel) .map-hint { display: none; }
+}

@@ -10,6 +10,7 @@ import { readerToken as fetchReaderToken, onReaderToken } from "./lib/authClient
 import { Logo } from "./auth/Logo.jsx";
 import { SiteNav } from "./auth/SiteNav.jsx";
 import Globe3D from "./Globe3D.jsx";
+import "./map-responsive.css";
 // World atlas + topojson are BUNDLED (not loaded from a CDN at runtime) so the
 // continents always render — a blocked/slow CDN used to leave the map empty.
 import { feature as topoFeature } from "topojson-client";
@@ -4286,13 +4287,13 @@ function GateBlock({ title, sub, count, countLabel }) {
           href="/?pricing"
           target="_blank"
           rel="noopener noreferrer"
+          className="map-touch44"
           style={{
             fontFamily: "'Inter', sans-serif", fontSize: 9.5,
             color: "rgba(255,255,255,0.7)", letterSpacing: "0.10em",
             textTransform: "uppercase", fontWeight: 600,
             textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.25)",
-            minHeight: 44, display: "inline-flex", alignItems: "center",
-            justifyContent: "center", padding: "0 8px",
+            paddingBottom: 1,
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#FCBD00"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.25)"; }}
@@ -4387,13 +4388,13 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
           href="/?pricing"
           target="_blank"
           rel="noopener noreferrer"
+          className="map-touch44"
           style={{
             fontFamily: "'Inter', sans-serif", fontSize: 9.5,
             color: "rgba(255,255,255,0.7)", letterSpacing: "0.10em",
             textTransform: "uppercase", fontWeight: 600,
             textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.25)",
-            minHeight: 44, display: "inline-flex", alignItems: "center",
-            justifyContent: "center", padding: "0 8px",
+            paddingBottom: 1,
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#FCBD00"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.25)"; }}
@@ -4579,7 +4580,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
         {cards.map((card, i) => (
           <div key={`${card.slot}-${i}`} style={{
             flex: "0 0 100%", width: "100%", scrollSnapAlign: "start",
-            overflowY: "auto", padding: "16px 16px 84px",
+            overflowY: "auto", padding: autoPlay && auto ? "16px 16px 200px" : "16px 16px 84px",
           }}>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#fff", marginBottom: 14 }}>
               {card.label}
@@ -4591,7 +4592,7 @@ function MobileIncidentCards({ incident, cards, onClose, autoPlay, onSkip }) {
 
       {/* Guided-preview caption — same plain-language explanation the desktop
           tour uses for each card. Sits above the footer; only during preview. */}
-      {autoPlay && (
+      {autoPlay && auto && (
         <div style={{
           position: "absolute", left: 12, right: 12, bottom: 66, zIndex: 2,
           background: "rgba(16,16,18,0.94)", backdropFilter: "blur(10px)",
@@ -5155,8 +5156,8 @@ function ClassificationBody({ incident, sev, cat }) {
             "{summaryText}"
           </div>
           {summaryText.length > 320 && (
-            <button onClick={() => setShowFullSummary(s => !s)} style={{
-              marginTop: 5, minHeight: 44, padding: "0 8px", background: "transparent", border: "none",
+            <button className="map-readmore" onClick={() => setShowFullSummary(s => !s)} style={{
+              marginTop: 5, padding: 0, background: "transparent", border: "none",
               color: BRAND.gold, fontFamily: "Inter, sans-serif", fontSize: 9.5,
               fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
               cursor: "pointer",
@@ -6021,7 +6022,7 @@ function AdaptiveControlsBody({ incident, objs, masters, acts, bps, total }) {
           const fc = fitColor(r.fit);
           const rowDelay = 150 + i * 70;
           return (
-            <div key={i} style={{
+            <div key={i} className="ac-row" style={{
               display: "grid", gridTemplateColumns: "28px 100px 1fr 76px",
               gap: 12,
               // Generous vertical breathing room (demo has ~14px padding
@@ -8680,7 +8681,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
   const orphans = diag ? Math.max(0, diag.storedSweepCount - archiveIndex.length) : 0;
 
   return (
-    <div className="r-mappanel" style={{
+    <div className="r-mappanel map-archive" style={{
       // Compact floating card — same look/placement as the Filters panel
       // (top-left), not a full-height right drawer.
       position: "fixed", top: 108, left: 24, width: 340,
@@ -8971,7 +8972,7 @@ function GuidedTour({ incident, onFeature, onClose, light }) {
   const pct = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 200, display: "flex", justifyContent: "center", padding: "0 16px 96px", pointerEvents: "none" }}>
+    <div className="map-tour" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 200, display: "flex", justifyContent: "center", padding: "0 16px 96px", pointerEvents: "none" }}>
       <div style={{ pointerEvents: "auto", width: "min(760px, 96vw)", background: light ? "rgba(255,255,255,0.98)" : "rgba(16,16,18,0.94)", backdropFilter: "blur(18px)", border: light ? "1px solid #E7E7E9" : "1px solid rgba(252,189,0,0.30)", borderRadius: 0, boxShadow: light ? "0 24px 70px rgba(14,17,22,0.18)" : "0 24px 70px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
         <div style={{ height: 3, background: light ? "rgba(14,17,22,0.08)" : "rgba(255,255,255,0.08)" }}>
           <div style={{ height: "100%", width: pct + "%", background: "#FCBD00", transition: "width 300ms ease" }} />
@@ -8993,7 +8994,7 @@ function GuidedTour({ incident, onFeature, onClose, light }) {
               <button onClick={() => { if (step < STEPS.length - 1) setStep(step + 1); else finish(); }} style={_tourNav(false, light)}>{step < STEPS.length - 1 ? "Next ›" : "Finish ✓"}</button>
               <button onClick={() => setPlaying(p => !p)} style={_tourNav(false, light)}>{playing ? "⏸ Pause" : "▶ Play"}</button>
             </div>
-            <button onClick={() => { tokenRef.current++; setStep(0); setPlaying(true); }} style={{ background: "none", border: "none", color: light ? "rgba(14,17,22,0.5)" : "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>↻ Replay</button>
+            <button className="map-tour-replay" onClick={() => { tokenRef.current++; setStep(0); setPlaying(true); }} style={{ background: "none", border: "none", color: light ? "rgba(14,17,22,0.5)" : "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>↻ Replay</button>
           </div>
         </div>
       </div>
@@ -9675,7 +9676,9 @@ export default function GlobalAttackMap() {
     let deepLink = null;
     try { deepLink = new URLSearchParams(window.location.search).get("incident"); } catch { /* noop */ }
     if (deepLink) { tourStartedRef.current = true; return; }
-    if (tourIncident && !booting && !isMobile) {
+    // Short landscape phones (844x390 etc.) get the desktop layout, but the
+    // ~165px tour card would cover the panels it narrates — skip it there.
+    if (tourIncident && !booting && !isMobile && window.innerHeight > 500) {
       tourStartedRef.current = true;
       setTourActive(true);
     }
@@ -10242,7 +10245,7 @@ export default function GlobalAttackMap() {
           Replaces the desktop floating HUD clusters: a live count + date pill
           and three sheet triggers (Filters / Layers / Archive). ───── */}
       {isMobile && sweep && (
-        <div style={{
+        <div className="map-bar" style={{
           position: "relative", zIndex: 40,
           display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
           background: "rgba(14,17,22,0.92)", backdropFilter: "blur(12px)",
@@ -10250,16 +10253,16 @@ export default function GlobalAttackMap() {
         }}>
           <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 7, height: 7, borderRadius: 0, background: BRAND.gold, boxShadow: "0 0 8px rgba(252,189,0,0.6)", flexShrink: 0 }} />
-            <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {visibleIncidents.length} live{currentDate ? ` · ${currentDate}` : ""}
+            <span className="map-bar-count" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
+              <span>{visibleIncidents.length} live</span>{currentDate ? <><span className="map-bar-sep"> · </span><span className="map-bar-date">{currentDate}</span></> : null}
             </span>
           </div>
           {[
-            { k: "filters", label: "Filters", active: filtersOpen, on: () => { setFiltersOpen(o => !o); setShowLayers(false); setShowArchive(false); } },
-            { k: "layers", label: "Layers", active: showLayers, on: () => { setShowLayers(o => !o); setFiltersOpen(false); setShowArchive(false); } },
-            { k: "archive", label: "Timeline", active: showArchive, on: () => { setShowArchive(o => !o); setFiltersOpen(false); setShowLayers(false); } },
+            { k: "filters", label: "Filters", active: filtersOpen, on: () => { setFiltersOpen(o => !o); setShowLayers(false); setShowArchive(false); setShowListPanel(false); } },
+            { k: "layers", label: "Layers", active: showLayers, on: () => { setShowLayers(o => !o); setFiltersOpen(false); setShowArchive(false); setShowListPanel(false); } },
+            { k: "archive", label: "Timeline", active: showArchive, on: () => { setShowArchive(o => !o); setFiltersOpen(false); setShowLayers(false); setShowListPanel(false); } },
           ].map(b => (
-            <button key={b.k} onClick={b.on} style={{
+            <button key={b.k} className="map-bar-btn" onClick={b.on} style={{
               flexShrink: 0, padding: "7px 12px", borderRadius: 0, cursor: "pointer",
               background: b.active ? BRAND.gold : "rgba(252,189,0,0.10)",
               border: `1px solid ${BRAND.borderGold}`,
@@ -10274,13 +10277,13 @@ export default function GlobalAttackMap() {
       {/* MOBILE — floating "Browse incidents" button (tapping dots is hard on a
           phone, so offer the list as the primary way in). Hidden while a detail
           or sheet is open. */}
-      {isMobile && sweep && !selectedId && !showListPanel && !showArchive && !showLayers && (
+      {isMobile && sweep && !selectedId && !showListPanel && !showArchive && !showLayers && !filtersOpen && !industryPanelOpen && !regionPanelOpen && !showFilterPopover && (
         <button onClick={() => setShowListPanel(true)} style={{
           position: "fixed", bottom: "calc(18px + env(safe-area-inset-bottom))", left: "50%", transform: "translateX(-50%)",
           zIndex: 45, padding: "12px 22px", borderRadius: 0, cursor: "pointer",
           background: BRAND.gold, color: BRAND.obsidian, border: "none",
           fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: "0.04em",
-          boxShadow: "0 10px 28px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: 8,
+          boxShadow: "0 10px 28px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
         }}>☰ Browse incidents</button>
       )}
 
@@ -10587,7 +10590,7 @@ export default function GlobalAttackMap() {
             })()}
 
           {filtersOpen && (
-            <div className="r-mappanel" style={{
+            <div className="r-mappanel map-filters" style={{
               position: "absolute", top: 42, left: 0, width: 340,
               maxHeight: "72vh", overflowY: "auto", padding: 16,
               background: "rgba(20,20,22,0.96)", backdropFilter: "blur(20px)",
@@ -10596,7 +10599,7 @@ export default function GlobalAttackMap() {
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <span style={{ fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase" }}>Filters</span>
-                <button onClick={() => setFiltersOpen(false)} style={{ background: "none", border: "none", color: BRAND.textSecondary, fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+                <button className="map-x" onClick={() => setFiltersOpen(false)} style={{ background: "none", border: "none", color: BRAND.textSecondary, fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
               </div>
               <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9.5, color: BRAND.gold, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Severity</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
@@ -10770,7 +10773,7 @@ export default function GlobalAttackMap() {
                   }}>
                     ◈ Filter by Industry · {presentIndustries.length} present
                   </div>
-                  <button onClick={() => setIndustryPanelOpen(false)} style={{
+                  <button className="map-x" onClick={() => setIndustryPanelOpen(false)} style={{
                     background: "none", border: "none", color: BRAND.textSecondary,
                     fontSize: 18, cursor: "pointer",
                   }}>×</button>
@@ -10868,7 +10871,7 @@ export default function GlobalAttackMap() {
                   }}>
                     ◈ Filter by Region · {presentCountries.length} present
                   </div>
-                  <button onClick={() => setRegionPanelOpen(false)} style={{
+                  <button className="map-x" onClick={() => setRegionPanelOpen(false)} style={{
                     background: "none", border: "none", color: BRAND.textSecondary,
                     fontSize: 18, cursor: "pointer",
                   }}>×</button>
@@ -10930,7 +10933,7 @@ export default function GlobalAttackMap() {
 
           {/* Detailed filter popover — search + full severity + confidence */}
           {showFilterPopover && (
-            <div className="r-mappanel" style={{
+            <div className="r-mappanel map-popover" style={{
               position: "absolute", top: 64, left: 24, width: 360,
               padding: 18,
               background: "rgba(26,26,26,0.95)", backdropFilter: "blur(20px)",
@@ -10943,7 +10946,7 @@ export default function GlobalAttackMap() {
                 <div style={{ fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.gold, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600 }}>
                   ◇ DETAILED FILTERS
                 </div>
-                <button onClick={() => setShowFilterPopover(false)}
+                <button className="map-x" onClick={() => setShowFilterPopover(false)}
                   style={{ width: 22, height: 22, padding: 0, background: "transparent", color: BRAND.textMuted, border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 0, cursor: "pointer", fontSize: 12 }}>×</button>
               </div>
               {/* Search */}
@@ -10979,7 +10982,7 @@ export default function GlobalAttackMap() {
                   if (count === 0) return null;
                   const s = SEVERITY[level];
                   return (
-                    <button key={level}
+                    <button key={level} className="map-sev"
                       onClick={() => setActiveSeverities(prev => {
                         const n = new Set(prev);
                         if (n.has(level)) n.delete(level); else n.add(level);
@@ -11008,7 +11011,7 @@ export default function GlobalAttackMap() {
                   const count = incidents.filter(i => i.confidence === level).length;
                   if (count === 0) return null;
                   return (
-                    <button key={level}
+                    <button key={level} className="map-sev"
                       onClick={() => setActiveConfidences(prev => {
                         const n = new Set(prev);
                         if (n.has(level)) n.delete(level); else n.add(level);
@@ -11075,7 +11078,7 @@ export default function GlobalAttackMap() {
               the old LIVE counter card. Hidden while an incident is open so it
               never sits behind the scene panels. ─── */}
           {!selectedId && (
-          <div className="r-hide" style={{
+          <div className="r-hide map-legend" style={{
             position: "absolute", bottom: 24, right: 24, zIndex: 20,
             padding: "9px 12px 10px", minWidth: 120,
             background: "rgba(26,26,26,0.92)", backdropFilter: "blur(14px)",
@@ -11104,7 +11107,7 @@ export default function GlobalAttackMap() {
               into four logical groups by thin vertical dividers:
                 1. Severity legend  · 2. Map mode  · 3. View mode  · 4. Layer toggles */}
           <div className="map-ctrl-strip r-hide" style={{
-            position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)",
+            position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", width: "max-content",
             display: "flex", alignItems: "center",
             padding: "6px 8px",
             background: "rgba(36,36,36,0.85)", backdropFilter: "blur(12px)",
@@ -11186,7 +11189,7 @@ export default function GlobalAttackMap() {
           {/* Sits ABOVE the control strip (bottom: 90 vs strip's bottom: 24)
               so the two never overlap. Constrained to centre-only width so
               the strip on the left edge can claim its space without fighting. */}
-          <div style={{
+          <div className="map-hint" style={{
             position: "absolute", bottom: 90, left: "50%", transform: "translateX(-50%)",
             padding: "8px 18px",
             background: "rgba(14,17,22,0.7)", backdropFilter: "blur(12px)",
@@ -11211,7 +11214,7 @@ export default function GlobalAttackMap() {
 
       {/* ───── INCIDENT LIST PANEL (slides in from left) ───── */}
       {sweep && showListPanel && (
-        <div className="r-mappanel" style={{
+        <div className="r-mappanel map-fleet" style={{
           position: "fixed", top: 64, left: 24, bottom: 24, width: 320,
           zIndex: 50,
         }}>
@@ -11266,7 +11269,7 @@ export default function GlobalAttackMap() {
       {/* Auto-play date overlay — the current day, shown large over the map and
           updated in sync as playback steps date-by-date. */}
       {(playing || briefPlaying) && currentDate && (
-        <div style={{
+        <div className="map-date-overlay" style={{
           position: "fixed", top: 92, left: "50%", transform: "translateX(-50%)", zIndex: 65,
           display: "flex", flexDirection: "column", gap: 8, padding: "12px 20px", width: "min(480px, 90vw)",
           background: "rgba(10,10,12,0.92)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
