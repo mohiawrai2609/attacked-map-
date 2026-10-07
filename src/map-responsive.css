@@ -18,6 +18,9 @@
   /* Filter HUD (drawer + Industry/Region lists + detailed filters) sits under
      the globe's zoom column (z 25) — lift it above. */
   .map-hud-tl { z-index: 30 !important; }
+  /* The Industry and Region lists open from the Filters drawer but sit
+     outside the HUD (z 20): keep them above the lifted drawer. */
+  .map-sublist { z-index: 31 !important; }
 
   /* Close (x) buttons on the filter panels: 18-22px boxes -> 40px targets. */
   .map-x {
@@ -48,6 +51,9 @@
      control strip behind them only showed as cut fragments in the 24px gap. */
   body:has(.scene-panel) .map-hint,
   body:has(.scene-panel) .map-ctrl-strip { visibility: hidden !important; }
+  /* The globe's zoom column (x 24-68) is covered by the left panel (x 28)
+     except for a 4px sliver at its edge. */
+  body:has(.scene-panel) div:has(> button[title="Zoom in"]) { visibility: hidden; }
 
   /* Playback date bar: move it off the Timeline panel header (left) to the
      right-hand side of the map. */
@@ -64,6 +70,12 @@
     top: auto !important;
     bottom: calc(16px + env(safe-area-inset-bottom)) !important;
   }
+}
+/* Short portrait phones (SE 320x568, fold 280x653): the 5-6 line day summary
+   made the bar tall enough to cover the Timeline panel's slider. Keep it to
+   four lines; the rest scrolls inside the bar. */
+@media (max-width: 768px) and (min-height: 501px) and (max-height: 720px) {
+  .map-date-overlay > div + div { max-height: calc(4 * 1.45em + 8px); overflow-y: auto; }
 }
 
 /* Landscape phones in the phone layout (667x375 etc.): the Timeline panel
@@ -122,6 +134,11 @@
     text-underline-offset: 3px;
   }
   .map-readmore { min-height: 44px; padding: 0 8px !important; }
+  /* Peer-card source links (8.5px text) were 10-23px tall targets. Pad the
+     hit area; the negative margin keeps the text where it was. */
+  .map-src { display: block; padding: 6px 0; margin: -6px 0; }
+  /* Timeline playback slider: the native range input was 16px tall. */
+  .map-range { min-height: 28px; }
   /* Guided-tour "Replay" was an 18px-tall text button. */
   .map-tour-replay { min-height: 32px; padding: 0 8px; }
 }

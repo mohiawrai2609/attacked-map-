@@ -5866,7 +5866,7 @@ function PeerWatchlistBody({ peers, total }) {
                   color: "rgba(255,255,255,0.4)", lineHeight: 1.5,
                 }}>
                   {srcUrl ? (
-                    <a href={srcUrl} target="_blank" rel="noopener noreferrer"
+                    <a className="map-src" href={srcUrl} target="_blank" rel="noopener noreferrer"
                       style={{ color: "rgba(252,189,0,0.7)", textDecoration: "none" }}>
                       ⌖ {toText(srcCitation)}
                     </a>
@@ -8832,7 +8832,7 @@ function ArchivePanel({ archiveIndex, currentDate, onLoad, onDelete, onClose, bu
                     </button>
                   </div>
                 </div>
-                <input type="range" min={0} max={timeline.playDates.length - 1} value={timeline.playPos}
+                <input className="map-range" type="range" min={0} max={timeline.playDates.length - 1} value={timeline.playPos}
                   onChange={e => timeline.onScrub(Number(e.target.value))}
                   style={{ width: "100%", accentColor: BRAND.gold, cursor: "pointer" }} />
                 <div style={{ marginTop: 3, fontFamily: "Inter, sans-serif", fontSize: 9, color: BRAND.textMuted, letterSpacing: "0.04em", textAlign: "right" }}>
@@ -10756,7 +10756,7 @@ export default function GlobalAttackMap() {
             const presentIndustries = [...counts.entries()].sort((a, b) => b[1] - a[1]);
             const untaggedCount = visibleIncidents.filter(i => !i.industry).length;
             return (
-              <div className="r-mappanel" style={{
+              <div className="r-mappanel map-sublist" style={{
                 position: "absolute", top: 64, left: 24, width: 440,
                 maxHeight: "70vh", overflowY: "auto",
                 padding: 16,
@@ -10854,7 +10854,7 @@ export default function GlobalAttackMap() {
             }
             const presentCountries = [...counts.entries()].sort((a, b) => b[1] - a[1]);
             return (
-              <div className="r-mappanel" style={{
+              <div className="r-mappanel map-sublist" style={{
                 position: "absolute", top: 64, left: 24, width: 380,
                 maxHeight: "70vh", overflowY: "auto",
                 padding: 16,
