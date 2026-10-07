@@ -23,7 +23,17 @@
   8 areas, see the script's call in this session). Map: live verify -> `findings/map-small.json`, `map-large.json`, then
   2 fix passes. Every area: fix -> independent check -> up to 2 refixes; reports in `D:/attacked-dev/resp/fix2/<area>/report.json`
   and `check2/<area>-rN/report.json`. Then cross-area integrator.
-- After it: one full sweep vs main-base and a visual pass, then hand to the owner for testing (no deploy).
+- 2026-10-08 00:50: that run was STOPPED (a hung sweep had blocked a queue slot for 3 h; owner asked to go fast).
+  Fixes of 7 areas were done and are in commit 8eaa3c9 (local). Landing check passed. Map tablet/desktop findings
+  saved to `findings/map-large.json`; map phone verifier was cut off (use code-only findings + `mapreview/small-live`).
+  sweep-q.mjs now: 3 slots, kills any sweep running > 9 min.
+- RUNNING (from 00:55): FAST workflow wf_a891a328-9dd, script `D:/attacked-dev/resp/resp_fast_wf.js`, args
+  `D:/attacked-dev/resp/fast_args_compact.json` (rebuild with `node D:/attacked-dev/resp/build_fast_args.mjs`).
+  9 key devices, 1 refix round, outputs in `D:/attacked-dev/resp/fast/`. Then a full 23-device sweep and hand-off.
+- 2026-10-08 01:53: the session closed and the fast run stopped. Done by then (reports in `D:/attacked-dev/resp/fast/`): checks PASSED for account-legal, admin, chrome, reports (+landing earlier); dashboard refix done; hub needs a refix; map phone pass was mid-edit.
+- 01:58: RESUMED the same run (wf_a891a328-9dd) with the exact launch args `D:/attacked-dev/resp/fast_args_launched.json` + a map resume note (`fast_args_resume.json`). Finished agents replay from cache.
+- Baked reports: `public/reports` is gitignored. After any re-bake / before a deploy run
+  `node scripts/apply-report-responsive.mjs --write` then `node scripts/verify-report-responsive.mjs`.
 
 Owner's request (2026-10-06): before deploying, check EVERY page and section on every
 phone, tablet and laptop size, and fix responsiveness properly (landing, Attack Hub,

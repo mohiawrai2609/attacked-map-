@@ -271,12 +271,18 @@ const HUB_CSS = `
    centred heads keep their gold rules and stay centred when they wrap. */
 @media(max-width:680px){.hubft .decon .sh.l{flex-wrap:nowrap;align-items:flex-start}.hubft .decon .sh.l .sq{flex:none;margin-top:23px}.hubft .decon .sh.l h2{min-width:0}.hubft .sh:not(.l) .ln{min-width:16px}.hubft .sh:not(.l) h2{text-align:center}}
 /* Live stays pinned at the end of the category strip while it scrolls. It
-   sticks at the strip's content edge, so a white shadow covers the gutter to
-   its right, where the scrolled categories would otherwise show through.
+   sticks at the strip's content edge, so a white block of its own covers the
+   gutter to its right, where the scrolled categories would otherwise show
+   through. Being part of Live, the block also takes the taps there (a shadow
+   would let them reach the hidden category). Its width is the strip's side
+   padding (.hubft .wrap, or .r-pad at 768px and under), so it never makes the
+   strip scroll further. bottom:-2px also covers Live's 2px bottom border row.
    At every width: the category list comes from the feed, so the strip can
    overflow on laptops too. When it does not overflow, sticky does nothing and
    Live stays at the end (the extra padding comes out of its auto margin). */
-.hubft .catnav .live{position:sticky;right:0;z-index:1;padding-left:18px!important;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)!important;box-shadow:48px 0 0 #fff}
+.hubft .catnav .live{position:sticky;right:0;z-index:1;padding-left:18px!important;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)!important}
+.hubft .catnav .live::after{content:"";position:absolute;top:0;bottom:-2px;left:100%;width:clamp(18px,4vw,44px);background:#fff}
+@media(max-width:768px){.hubft .catnav .live::after{width:20px}}
 `;
 
 function HubStyles() {

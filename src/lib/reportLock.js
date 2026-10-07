@@ -58,9 +58,10 @@ export function lockReportForFreeReader(doc, onSubscribe) {
 // scripts/apply-report-responsive.mjs (run it with --write after any change
 // here, then scripts/verify-report-responsive.mjs).
 export const REPORT_RESPONSIVE_CSS = [
-  "/* attacked-resp v2 (2026-10-07) */",
-  // 769-1080: one column, but keep the 720px reading measure
-  "@media(max-width:1080px){.r-doc{grid-template-columns:minmax(0,720px)}}",
+  "/* attacked-resp v3 (2026-10-08) */",
+  // 769-1080: one column, but keep the 720px reading measure; the stacked
+  // document ends clear of the floating jump pill (~70px above the bottom)
+  "@media(max-width:1080px){.r-doc{grid-template-columns:minmax(0,720px)}.reader .r-doc{padding-bottom:96px}}",
   // 1081-1279: narrower rails so the article is ~590-720px, not 504px
   "@media(min-width:1081px) and (max-width:1279px){.r-doc{grid-template-columns:200px minmax(0,720px) 170px;gap:32px;padding:0 28px}}",
   // short laptops: the sticky rail never runs past the screen; its Download PDF
@@ -85,8 +86,10 @@ export const REPORT_RESPONSIVE_CSS = [
   ".r-takeaway{padding:20px 18px}.r-takeaway p{font-size:16px}",
   ".r-ctrlcard,.r-scenario{padding:18px 16px}",
   "}",
-  // the jump pill never wider than a 280px screen
+  // the jump pill never wider than a 280px screen; in a host frame taller than
+  // the host's screen it rides up by --host-cut (set by prepareReportFrame)
   ".r-mobnav-pill{min-width:min(286px,calc(100vw - 30px))}",
+  ".r-mobnav{bottom:var(--host-cut,0px)}",
   // landscape phones: thinner reader bar, pill closer to the edge, and the
   // same small-text sizes as a portrait phone (no layout change)
   "@media(orientation:landscape) and (max-height:500px){.reader-bar{height:44px}.reader-scroll{top:44px}.r-mobnav-pill{bottom:8px;padding:7px 16px}.r-mobnav-sheet{bottom:58px}" +
@@ -102,7 +105,7 @@ export const REPORT_RESPONSIVE_CSS = [
   "@container (max-width:255px){.r-vendor-right{margin-left:0}}",
   "@container (max-width:205px){.r-vendor-map{white-space:normal}}",
   // print / Download PDF: never the floating jump pill
-  "@media print{.r-mobnav{display:none!important}}",
+  "@media print{.r-mobnav{display:none!important}.reader .r-doc{padding-bottom:0}}",
 ].join("\n");
 
 // CMS reports saved before 2026-10-07 have no jump-to-section pill, and the
@@ -155,6 +158,25 @@ export function prepareReportFrame(frame, { subscriber, onSubscribe, readerName 
   if (!rs) { rs = doc.createElement("style"); rs.id = "attacked-resp"; doc.head.appendChild(rs); }
   if (rs.textContent !== REPORT_RESPONSIVE_CSS) rs.textContent = REPORT_RESPONSIVE_CSS;
   try { addMobileNav(doc); } catch { /* noop */ }
+  // The pill is fixed to the frame's own bottom. Where the frame runs past the
+  // host's screen (the dashboard on a landscape phone: 136-142px), lift it by
+  // the hidden part so it is on screen without scrolling the page first.
+  const host = frame.ownerDocument && frame.ownerDocument.defaultView;
+  if (host && !frame.__pillKeep) {
+    const keep = () => {
+      if (!frame.isConnected) { host.removeEventListener("scroll", keep, true); host.removeEventListener("resize", keep); return; }
+      try {
+        const r = frame.getBoundingClientRect();
+        const cut = Math.max(0, Math.min(r.height - 80, Math.round(r.bottom - 1 - host.innerHeight)));
+        frame.contentDocument.documentElement.style.setProperty("--host-cut", cut + "px");
+      } catch { /* noop */ }
+    };
+    frame.__pillKeep = keep;
+    // capture: also hears scrolling inside the host's own scroll containers
+    host.addEventListener("scroll", keep, { passive: true, capture: true });
+    host.addEventListener("resize", keep);
+  }
+  if (frame.__pillKeep) frame.__pillKeep();
   // Reports store their HTML when saved, so ones published before 2026-10-05
   // still crop the hero to 420px tall (12.7% of a 3:2 picture lost on desktop).
   // Same rule as reportTemplate.js now has: whole picture, 3:2 frame.
