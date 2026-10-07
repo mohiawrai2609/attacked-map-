@@ -4291,7 +4291,8 @@ function GateBlock({ title, sub, count, countLabel }) {
             color: "rgba(255,255,255,0.7)", letterSpacing: "0.10em",
             textTransform: "uppercase", fontWeight: 600,
             textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.25)",
-            paddingBottom: 1,
+            minHeight: 44, display: "inline-flex", alignItems: "center",
+            justifyContent: "center", padding: "0 8px",
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#FCBD00"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.25)"; }}
@@ -4391,7 +4392,8 @@ function TeaserFooter({ shown, total, itemLabel = "entries" }) {
             color: "rgba(255,255,255,0.7)", letterSpacing: "0.10em",
             textTransform: "uppercase", fontWeight: 600,
             textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.25)",
-            paddingBottom: 1,
+            minHeight: 44, display: "inline-flex", alignItems: "center",
+            justifyContent: "center", padding: "0 8px",
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#FFFFFF"; e.currentTarget.style.borderBottomColor = "#FCBD00"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.25)"; }}
@@ -5154,7 +5156,7 @@ function ClassificationBody({ incident, sev, cat }) {
           </div>
           {summaryText.length > 320 && (
             <button onClick={() => setShowFullSummary(s => !s)} style={{
-              marginTop: 5, padding: 0, background: "transparent", border: "none",
+              marginTop: 5, minHeight: 44, padding: "0 8px", background: "transparent", border: "none",
               color: BRAND.gold, fontFamily: "Inter, sans-serif", fontSize: 9.5,
               fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
               cursor: "pointer",

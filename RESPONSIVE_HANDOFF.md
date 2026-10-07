@@ -1,4 +1,4 @@
-# Responsiveness pass — handoff (stopped twice on 2026-10-07 at the owner's request; latest backup = 2nd WIP commit on branch responsive-wip)
+# Responsiveness pass — handoff (2026-10-07: RESUMED a third time, fix workflow wf_935f688b-2ed running on branch responsive-wip; last safe backup = commit 00c52f4)
 
 Owner's request (2026-10-06): before deploying, check EVERY page and section on every
 phone, tablet and laptop size, and fix responsiveness properly (landing, Attack Hub,
