@@ -4999,9 +4999,9 @@ function MapIncidentImage({ incident, height = 150 }) {
     );
   }
 
-  // AI-generated image based on the exact incident headline
-  const aiPrompt = encodeURIComponent(`${incident.headline || ""}, realistic news photography, editorial`);
-  const generatedImg = `https://image.pollinations.ai/prompt/${aiPrompt}?width=800&height=500&nologo=true`;
+  // No live generator in the browser (its free tier now refuses these requests
+  // with 402): the stored picture, a hand-made one, else the category photo.
+  const generatedImg = incidentImage({ id: incident.id, primary_category: incident._cat || incident.primary_category });
 
   // The stored picture (incidents.image_url, written once per incident by the
   // incident-images function or an admin) wins; the local overrides and the

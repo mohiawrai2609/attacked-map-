@@ -105,7 +105,8 @@ export function incidentPhoto(i) {
   if (i?.image_url) return i.image_url;
   const h = i?.headline || "";
   for (const [needle, src] of LOCAL_BY_HEADLINE) if (h.includes(needle)) return src;
-  if (!h) return incidentImage(i);
-  const prompt = encodeURIComponent(`${h}, realistic news photography, editorial`);
-  return `https://image.pollinations.ai/prompt/${prompt}?width=800&height=500&nologo=true`;
+  // No live generator: its free tier now refuses anonymous requests with the
+  // options we used (402, 2026-09-30), which left a broken image. The category
+  // photo is the fallback until the backend has stored a picture.
+  return incidentImage(i);
 }
