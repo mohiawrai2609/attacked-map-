@@ -124,3 +124,51 @@
     flex-basis: 100% !important; max-width: 100% !important; min-width: 0 !important;
   }
 }
+
+/* Footer links on touch screens: the bare 15px text run was a 19px-tall tap
+   target. Pad each link to 31px and take the same 12px back out of the row
+   gaps and margins, so the links sit exactly where they did. Mouse-only
+   laptops and desktops are untouched. */
+@media (pointer: coarse) {
+  .r-foot-link { display: inline-block; padding: 6px 0; }
+  /* "Your privacy choices" switch (22px tall): the same 6px above and below,
+     so it lands where it did too. */
+  .r-foot-toggle { padding-top: 6px !important; padding-bottom: 6px !important; }
+  .r-foot-right > div:nth-child(1) { margin-top: -6px !important; }
+  .r-foot-right > div:nth-child(-n+3) { row-gap: 2px !important; }
+  .r-foot-right > div:nth-child(2), .r-foot-right > div:nth-child(3) { margin-top: 2px !important; }
+  .r-foot-right > div:nth-child(4) { margin-top: 30px !important; }
+}
+
+/* Footer subscribe form on the narrowest phones (Galaxy Fold cover screen):
+   a slimmer Submit leaves the email field room for its placeholder. */
+@media (max-width: 300px) {
+  .r-foot-submit { padding-left: 18px !important; padding-right: 18px !important; }
+}
+
+/* Sign-up modal fine print (field hints, email consent) is 11px inline; lift
+   it to 12px on phones (portrait, and landscape via the height test) and
+   small tablets only. The height test is for touch screens only, so a short
+   desktop window (devtools docked) keeps the design. */
+@media (max-width: 768px), (max-height: 500px) and (pointer: coarse) {
+  .am-fine { font-size: 12px !important; }
+}
+
+/* Sign-in code field: 24px digits tracked 0.35em. This project sends 8-digit
+   codes (the field takes up to 10), and on the narrowest phones that tracking
+   pushed the last digits out of the box. Tighter tracking there only. */
+@media (max-width: 359px) {
+  .am-code { letter-spacing: 0.16em !important; }
+}
+@media (max-width: 300px) {
+  .am-code { font-size: 22px !important; letter-spacing: 0.1em !important; padding-left: 8px !important; padding-right: 8px !important; }
+}
+
+/* Sign-in / sign-up modal open on a touch screen: the page underneath stays
+   put (swipes on the backdrop used to scroll it). Only <html> is locked, so
+   the sticky navbar and the scroll position are untouched; touch screens
+   have overlay scrollbars, so nothing shifts. Mouse-driven desktops keep
+   their scrollbar and their layout. */
+@media (pointer: coarse) {
+  html:has(.am-overlay) { overflow: hidden; }
+}

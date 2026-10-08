@@ -17,6 +17,7 @@ import { AdminFeedback } from "./AdminFeedback";
 import { AdminBriefings } from "./AdminBriefings";
 import { AdminReports } from "./AdminReports";
 import { Logo } from "../auth/Logo";
+import "./admin-responsive.css";
 
 const BRAND = {
   gold: "#FCBD00",
@@ -121,7 +122,7 @@ export function AdminDashboard() {
       <FontLoader />
 
       {/* HEADER */}
-      <header className="r-pad" style={{
+      <header className="r-pad adm-head" style={{
         padding: "16px 32px",
         borderBottom: `1px solid ${BRAND.borderSubtle}`,
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -131,8 +132,8 @@ export function AdminDashboard() {
           <Logo size="sm" />
           {/* Divider + quiet console label — no emoji, no novelty color.
               A single gold status dot carries the "live ops surface" cue. */}
-          <span style={{ width: 1, height: 22, background: BRAND.borderSubtle }} />
-          <span style={{
+          <span className="adm-head-label" style={{ width: 1, height: 22, background: BRAND.borderSubtle }} />
+          <span className="adm-head-label" style={{
             display: "inline-flex", alignItems: "center", gap: 7,
             fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
             color: BRAND.textSecondary, letterSpacing: "0.16em", textTransform: "uppercase",
@@ -145,7 +146,7 @@ export function AdminDashboard() {
           </span>
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          <a href="/" style={{
+          <a href="/" className="adm-head-back" style={{
             fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
             color: BRAND.textSecondary, letterSpacing: "0.10em",
             textTransform: "uppercase", textDecoration: "none",
@@ -158,7 +159,7 @@ export function AdminDashboard() {
       </header>
 
       {/* TAB BAR */}
-      <nav className="r-pad r-scrollx" style={{
+      <nav className="r-pad r-scrollx adm-tabs" style={{
         display: "flex", gap: 4,
         padding: "0 32px",
         borderBottom: `1px solid ${BRAND.borderSubtle}`,

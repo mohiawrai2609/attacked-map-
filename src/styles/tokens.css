@@ -64,6 +64,16 @@
   --ease: cubic-bezier(.4,0,.2,1);
 }
 
+/* Phones held sideways (375-430px tall): a 52px navbar, so the sticky bar
+   plus a page's own sticky bar (the report reader bar, the dashboard topbar)
+   no longer take a third of the screen. What sits under the bar (dashboard
+   topbar and sidebar, the Hub's report frame, legal anchors) reads --nav-h
+   or measures the bar, so it follows; the logo, burger and links stay
+   centred (site-nav.css align-items:center). */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root { --nav-h: 52px; }
+}
+
 ::selection { background: var(--gold); color: var(--on-gold); }
 
 /* Deliberately not here: the html/body reset and the global box-sizing that

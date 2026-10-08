@@ -64,7 +64,7 @@ export function SiteFooter() {
     transition: "color 160ms ease",
   };
   const NavLink = ({ label, href, ext }) => (
-    <a href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}
+    <a className="r-foot-link" href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}
       style={navLinkStyle}
       onMouseEnter={e => { e.currentTarget.style.color = BRAND.gold; }}
       onMouseLeave={e => { e.currentTarget.style.color = BRAND.white; }}
@@ -111,7 +111,7 @@ export function SiteFooter() {
                   onFocus={e => { if (state !== "error") e.currentTarget.style.borderColor = "#9CA3AF"; }}
                   onBlur={e => { if (state !== "error") e.currentTarget.style.borderColor = "#4B5563"; }}
                 />
-                <button type="submit" style={{
+                <button type="submit" className="r-foot-submit" style={{
                   padding: "13px 32px", background: BRAND.gold, color: BRAND.obsidian,
                   border: "none", borderRadius: 0, cursor: "pointer",
                   fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700,
@@ -131,8 +131,10 @@ export function SiteFooter() {
             </div>
           </div>
 
-          {/* RIGHT — utility links in fixed reference rows (5 / 3 / 1) + social */}
-          <div className="r-foot-right" style={{ flex: "1 1 600px", maxWidth: 740 }}>
+          {/* RIGHT — utility links in fixed reference rows (5 / 3 / 1) + social.
+              marginLeft auto: when the columns wrap (tablets, ~769-1170px) the
+              block still ends at the right edge instead of mid-page. */}
+          <div className="r-foot-right" style={{ flex: "1 1 600px", maxWidth: 740, marginLeft: "auto" }}>
             {/* Row 1 */}
             <div style={{
               display: "flex", flexWrap: "wrap", justifyContent: "flex-end",
@@ -142,9 +144,11 @@ export function SiteFooter() {
               <NavLink label="Scam warning" href="/?legal=scam" />
               <NavLink label="FAQ" href="/?legal=faq" />
               <NavLink label="Privacy policy" href="/?legal=privacy" />
-              {/* Your privacy choices — toggle */}
+              {/* Your privacy choices — toggle. r-foot-toggle: padded like the
+                  links on touch screens (responsive.css), a 22px target otherwise. */}
               <button
                 type="button"
+                className="r-foot-toggle"
                 onClick={() => setPrivacyOn(v => !v)}
                 aria-pressed={privacyOn}
                 style={{
@@ -182,11 +186,14 @@ export function SiteFooter() {
             </div>
 
             {/* Social icons */}
-            <div style={{ marginTop: 36, display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end" }}>
+            {/* Five 40px circles + four gaps must fit the phone column (vw - 40px):
+                the gap is 12px from 288px up and shrinks only below that (10px at
+                280), so the circles never squash and no other size changes. */}
+            <div style={{ marginTop: 36, display: "flex", gap: "clamp(8px, 25vw - 60px, 12px)", alignItems: "center", justifyContent: "flex-end" }}>
               {Object.entries(SOCIAL).map(([name, url]) => (
                 <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}
                   style={{
-                    width: 40, height: 40, borderRadius: "50%",
+                    width: 40, height: 40, flex: "none", borderRadius: "50%",
                     border: `1px solid ${BRAND.white}`, color: BRAND.white, background: "transparent",
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     transition: "color 160ms ease, background 160ms ease",

@@ -299,19 +299,19 @@ export function ReportPageEditor({ html, brand, onChange, height = "78vh" }) {
 
               {!selKey && <div style={{ fontSize: 11.5, color: "#FF9F0A" }}>This element cannot be given a stable address, so a change to it would not survive saving. Pick the panel or heading around it instead.</div>}
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))", gap: 8, opacity: selKey ? 1 : 0.45, pointerEvents: selKey ? "auto" : "none" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(118px, calc(50% - 4px)), 1fr))", gap: 8, opacity: selKey ? 1 : 0.45, pointerEvents: selKey ? "auto" : "none" }}>
                 <div>
                   <label style={label}>Text colour</label>
                   <div style={{ display: "flex", gap: 4 }}>
                     <input type="color" value={current?.color || "#141414"} onChange={(e) => setStyle("color", e.target.value)} style={{ width: 32, height: 28, border: "none", background: "none", padding: 0, cursor: "pointer" }} />
-                    <button onClick={() => setStyle("color", "")} style={{ ...chip(false), padding: "4px 7px", fontWeight: 400 }} title="Back to the report's own colour">⨯</button>
+                    <button onClick={() => setStyle("color", "")} style={{ ...chip(false), padding: "4px 7px", fontWeight: 400, minWidth: 24 }} title="Back to the report's own colour">⨯</button>
                   </div>
                 </div>
                 <div>
                   <label style={label}>Background</label>
                   <div style={{ display: "flex", gap: 4 }}>
                     <input type="color" value={current?.bg || "#ffffff"} onChange={(e) => setStyle("background-color", e.target.value)} style={{ width: 32, height: 28, border: "none", background: "none", padding: 0, cursor: "pointer" }} />
-                    <button onClick={() => setStyle("background-color", "")} style={{ ...chip(false), padding: "4px 7px", fontWeight: 400 }} title="Back to the report's own background">⨯</button>
+                    <button onClick={() => setStyle("background-color", "")} style={{ ...chip(false), padding: "4px 7px", fontWeight: 400, minWidth: 24 }} title="Back to the report's own background">⨯</button>
                   </div>
                 </div>
                 <div style={{ gridColumn: "span 2" }}>
@@ -323,7 +323,7 @@ export function ReportPageEditor({ html, brand, onChange, height = "78vh" }) {
                 </div>
                 <div>
                   <label style={label}>Size · {current?.size || 16}px</label>
-                  <input type="range" min="9" max="72" value={current?.size || 16} onChange={(e) => setStyle("font-size", e.target.value + "px")} style={{ width: "100%", accentColor: UI.gold }} />
+                  <input type="range" min="9" max="72" value={current?.size || 16} onChange={(e) => setStyle("font-size", e.target.value + "px")} style={{ width: "100%", height: 24, margin: 0, accentColor: UI.gold }} />
                 </div>
                 <div>
                   <label style={label}>Weight</label>
@@ -340,8 +340,8 @@ export function ReportPageEditor({ html, brand, onChange, height = "78vh" }) {
                 <div>
                   <label style={label}>Style</label>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={() => setStyle("font-style", current?.italic ? "" : "italic")} style={{ ...chip(current?.italic), fontStyle: "italic" }}>I</button>
-                    <button onClick={() => setStyle("text-decoration-line", current?.underline ? "" : "underline")} style={{ ...chip(current?.underline), textDecoration: "underline" }}>U</button>
+                    <button onClick={() => setStyle("font-style", current?.italic ? "" : "italic")} style={{ ...chip(current?.italic), fontStyle: "italic", minWidth: 24 }}>I</button>
+                    <button onClick={() => setStyle("text-decoration-line", current?.underline ? "" : "underline")} style={{ ...chip(current?.underline), textDecoration: "underline", minWidth: 24 }}>U</button>
                   </div>
                 </div>
               </div>

@@ -60,6 +60,7 @@ const ICONS = {
   book: <><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v18H7.5A3.5 3.5 0 0 0 4 23z" /><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H13v18h3.5A3.5 3.5 0 0 1 20 23z" /></>,
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></>,
   link: <><path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7" /></>,
+  sidebar: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></>,
 };
 const Icon = ({ name, style }) => <span className="icon" style={style}><svg viewBox="0 0 24 24">{ICONS[name]}</svg></span>;
 
@@ -148,6 +149,13 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
   const latest = P.latest.filter((i) => i.industry !== P.industry).slice(0, 6);
   const max = Math.max(...P.cats.map((c) => c.n), 1);
   const gridRef = useRef(null);
+  // Width of the longest word of the industry name, in ems of the masthead
+  // headline (Inter 800, measured: at most .58em per letter for 11+ letter
+  // words, .63em for shorter ones). dashboard.css scales the headline down to
+  // fit its column only when that word would not fit, so "Telecommunications"
+  // stays whole on phones instead of breaking mid-word.
+  const longest = Math.max(...P.industry.split(/\s+/).map((w) => w.length));
+  const fitEm = (longest * (longest >= 11 ? 0.58 : 0.63)).toFixed(2);
   return (
     <div className="content">
       <section className="masthead no-band">
@@ -160,7 +168,7 @@ function YourIndustry({ P, name, subscriber, query, onOpen, onSubscribe, go }) {
             <span className="sep">·</span>
             <span className="mono">Updated {fmtDay(P.latestDay)}</span>
           </div>
-          <h1>{greeting}, {name}<strong>{P.industry}</strong></h1>
+          <h1>{greeting}, {name}<strong style={{ "--fit": fitEm }}>{P.industry}</strong></h1>
           <p><b>{P.total} incidents</b> in {P.industry} sit in the Attacked.ai corpus, <b>{P.week} of them this week</b> and <b>{P.critical} rated High or Critical</b>. {top ? <>The category landing hardest on your industry right now is <b>{top.name}</b> ({top.n}).</> : null} Every one is classified through the GUARD framework, geolocated, and traced to the companies in its blast radius.</p>
           <div className="mast-actions">
             <div className="mast-meta">
@@ -259,11 +267,27 @@ function ReportFrame({ i, reportRef, subscriber, onSubscribe, readerName }) {
       .catch(() => { if (!dead) setDoc(null); });
     return () => { dead = true; };
   }, [reportRef]);
+  // Frame height: the room under the report bar at the top of the page, so
+  // the whole report view fits the screen and only the frame scrolls. Where
+  // that room is too short to read in (landscape phones), the frame instead
+  // fills the screen under the pinned bars, one page scroll down.
+  // `doc` re-runs this once the iframe has mounted (it renders only after the
+  // report HTML has arrived); measured from the page top, so a scrolled page
+  // gives the same height.
   useEffect(() => {
-    const fit = () => { const fr = ref.current; if (!fr) return; setH(Math.max(480, window.innerHeight - fr.getBoundingClientRect().top - 6)); };
+    const fit = () => {
+      const fr = ref.current; if (!fr) return;
+      const top = fr.getBoundingClientRect().top + window.scrollY;
+      const nav = document.querySelector(".dash > header[role='banner']");
+      const tb = document.querySelector(".dash .topbar");
+      const pinned = (nav ? nav.offsetHeight : 64) + (tb && getComputedStyle(tb).position === "sticky" ? tb.offsetHeight : 0);
+      const room = Math.round(window.innerHeight - top - 6);
+      const cap = window.innerHeight - pinned - 8;
+      setH(room >= 300 ? room : Math.max(room, Math.min(480, cap)));
+    };
     fit(); window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [reportRef]);
+  }, [reportRef, doc]);
   useEffect(() => {
     const fr = ref.current; if (!fr) return;
     const onLoad = () => { prepareReportFrame(fr, { subscriber, onSubscribe, readerName }); };
@@ -299,7 +323,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
       <div className="content subpage article-wrap report-wrap">
         <div className="report-bar">
           <button className="back" onClick={back}>← {backLabel}</button>
-          <div className="report-bar-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><span className="mono" style={{ fontSize: 10, color: "var(--gold-deep)" }}>Full report · {reportRef}</span></div>
+          <div className="report-bar-meta"><Sev i={i} /><span className="cat">{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 11, color: "var(--muted-light)" }}>{fmtDay(i.day)}</span><span className="mono" style={{ fontSize: 11, color: "var(--gold-text, #8A6D00)" }}>Full report · {reportRef}</span></div>
           <a className="btn" href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 13, height: 13, flexBasis: 13 }} /> On map</a>
         </div>
         <ReportFrame i={i} reportRef={reportRef} subscriber={subscriber} onSubscribe={onSubscribe} readerName={readerName} />
@@ -310,7 +334,7 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
     <div className="content subpage article-wrap">
       <button className="back" onClick={back}>← {backLabel}</button>
       <article className="panel article">
-        <div className="article-meta"><Sev i={i} /><span className="cat" style={{ fontSize: 10 }}>{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{fmtDay(i.day)}</span><a className="btn" style={{ marginLeft: "auto", height: 28, fontSize: 10, padding: "0 10px" }} href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 12, height: 12, flexBasis: 12 }} /> On map</a></div>
+        <div className="article-meta"><Sev i={i} /><span className="cat">{i.cat} · {i.subcat || i.catName}</span><span className="mono" style={{ fontSize: 11, color: "var(--muted-light)" }}>{fmtDay(i.day)}</span><a className="btn" style={{ marginLeft: "auto", height: 32 }} href={mapHref(i)} target="_blank" rel="noopener"><Icon name="pin" style={{ width: 12, height: 12, flexBasis: 12 }} /> On map</a></div>
         <h1>{i.headline}</h1>
         <p className="dek">{i.summary}</p>
         <div className="article-info">{facts.map(([k, v]) => <span key={k}>{k} <b>{v}</b></span>)}</div>
@@ -321,22 +345,22 @@ function ArticleView({ i: incoming, subscriber, back, backLabel, onSubscribe, re
             {i.secondary.length ? <><h2>Secondary GUARD mappings</h2><p>{i.secondary.map((s, k) => <span key={k} className="chip" style={{ height: 26, margin: "0 6px 6px 0" }}><span className="n">{s.cat}</span>{s.name}</span>)}</p></> : null}
             {subscriber && detail && (
               <>
-                <h2>Named blast radius <span className="mono" style={{ fontSize: 12, color: "var(--gold-deep)" }}>{detail.blast.length}</span></h2>
+                <h2>Named blast radius <span className="mono" style={{ fontSize: 12, color: "var(--gold-text, #8A6D00)" }}>{detail.blast.length}</span></h2>
                 {detail.blast.length ? detail.blast.map((b) => <p key={b.id}><b>{b.name}</b>{b.country ? ` · ${b.country}` : ""}{b.exposure_group ? ` · ${b.exposure_group}` : ""}{b.reason ? <><br />{b.reason}</> : null}{b.recommended_action_for_them ? <><br /><span className="rationale" style={{ display: "inline-block", marginTop: 6 }}>{b.recommended_action_for_them}</span></> : null}</p>) : <p>No named entities recorded for this incident.</p>}
-                <h2>Adaptive GUARD controls <span className="mono" style={{ fontSize: 12, color: "var(--gold-deep)" }}>{detail.controls.length}</span></h2>
-                {detail.controls.length ? detail.controls.map((c) => <p key={c.id}><b className="mono" style={{ fontSize: 12 }}>{c.control_id}</b> {c.statement}{c.rationale ? <><br /><span style={{ color: "var(--ink-3)" }}>{c.rationale}</span></> : null}</p>) : <p>No controls mapped.</p>}
-                <h2>Peer watchlist <span className="mono" style={{ fontSize: 12, color: "var(--gold-deep)" }}>{detail.peers.length}</span></h2>
+                <h2>Adaptive GUARD controls <span className="mono" style={{ fontSize: 12, color: "var(--gold-text, #8A6D00)" }}>{detail.controls.length}</span></h2>
+                {detail.controls.length ? detail.controls.map((c) => <p key={c.id}><b className="mono" style={{ fontSize: 12 }}>{c.control_id}</b> {c.statement}{c.rationale ? <><br /><span style={{ color: "var(--muted-light)" }}>{c.rationale}</span></> : null}</p>) : <p>No controls mapped.</p>}
+                <h2>Peer watchlist <span className="mono" style={{ fontSize: 12, color: "var(--gold-text, #8A6D00)" }}>{detail.peers.length}</span></h2>
                 {detail.peers.length ? detail.peers.map((p) => <p key={p.id}><b>{p.name}</b>{p.country ? ` · ${p.country}` : ""}{p.exposure_reason ? <><br />{p.exposure_reason}</> : null}</p>) : <p>No peers flagged.</p>}
-                <h2>Historical analogues <span className="mono" style={{ fontSize: 12, color: "var(--gold-deep)" }}>{detail.analogues.length}</span></h2>
-                {detail.analogues.length ? detail.analogues.map((a) => <p key={a.id}><b>{a.event_name}</b>{a.entity ? ` · ${a.entity}` : ""}{a.year ? ` · ${a.year}` : ""}{a.summary ? <><br />{a.summary}</> : null}{a.outcome ? <><br /><span style={{ color: "var(--ink-3)" }}>Outcome: {a.outcome}</span></> : null}</p>) : <p>No analogues matched.</p>}
-                {detail.sources.length ? <><h2>Sources</h2>{detail.sources.map((s) => <p key={s.id}><a href={s.url} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>{s.title || s.url}</a>{s.publisher ? <span style={{ color: "var(--ink-3)" }}> · {s.publisher}</span> : null}</p>)}</> : null}
+                <h2>Historical analogues <span className="mono" style={{ fontSize: 12, color: "var(--gold-text, #8A6D00)" }}>{detail.analogues.length}</span></h2>
+                {detail.analogues.length ? detail.analogues.map((a) => <p key={a.id}><b>{a.event_name}</b>{a.entity ? ` · ${a.entity}` : ""}{a.year ? ` · ${a.year}` : ""}{a.summary ? <><br />{a.summary}</> : null}{a.outcome ? <><br /><span style={{ color: "var(--muted-light)" }}>Outcome: {a.outcome}</span></> : null}</p>) : <p>No analogues matched.</p>}
+                {detail.sources.length ? <><h2>Sources</h2>{detail.sources.map((s) => <p key={s.id}><a href={s.url} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>{s.title || s.url}</a>{s.publisher ? <span style={{ color: "var(--muted-light)" }}> · {s.publisher}</span> : null}</p>)}</> : null}
               </>
             )}
-            {subscriber && !detail && !err && <p className="mono" style={{ color: "var(--ink-3)" }}>Loading the subscriber layer…</p>}
+            {subscriber && !detail && !err && <p className="mono" style={{ color: "var(--muted-light)" }}>Loading the subscriber layer…</p>}
             {err && <p style={{ color: "#B21F31" }}>{err}</p>}
           </div>
           <aside>
-            <div className="facts"><h3>GUARD classification</h3><div className="fact"><span>Primary category</span><b>{i.cat} · {i.catName}</b></div><div className="fact"><span>Subcategory</span><b>{i.subcat || "—"}{i.subcode ? <> <span className="mono" style={{ fontSize: 9, color: "var(--ink-3)" }}>{i.subcode}</span></> : null}</b></div><div className="fact"><span>Severity</span><b>S{i.severity} · {i.sevLabel}</b></div><div className="fact"><span>Access</span><b>{subscriber ? "Subscriber · full view" : "Free · industry view"}</b></div></div>
+            <div className="facts"><h3>GUARD classification</h3><div className="fact"><span>Primary category</span><b>{i.cat} · {i.catName}</b></div><div className="fact"><span>Subcategory</span><b>{i.subcat || "—"}{i.subcode ? <> <span className="mono" style={{ fontSize: 11, color: "var(--muted-light)" }}>{i.subcode}</span></> : null}</b></div><div className="fact"><span>Severity</span><b>S{i.severity} · {i.sevLabel}</b></div><div className="fact"><span>Access</span><b>{subscriber ? "Subscriber · full view" : "Free · industry view"}</b></div></div>
             {!subscriber && (
               <div className="locked"><div className="lk-head">Subscriber layer · locked</div>
                 <div className="row"><span>Named blast radius</span><b>{i.n.blast}</b></div>
@@ -397,6 +421,18 @@ export function Dashboard({ initialPage = "dashboard" }) {
   const [sideOpen, setSideOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
   const toast = useCallback((m) => { setToastMsg(m); setTimeout(() => setToastMsg(null), 2400); }, []);
+  // The open profile menu also closes on Escape, and once the page has
+  // scrolled away from it (on landscape phones the topbar scrolls off while
+  // the fixed menu would stay). A tap outside closes it via .profile-backdrop.
+  useEffect(() => {
+    if (!menu) return;
+    const y0 = window.scrollY;
+    const onKey = (e) => { if (e.key === "Escape") setMenu(false); };
+    const onScroll = () => { if (Math.abs(window.scrollY - y0) > 40) setMenu(false); };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("scroll", onScroll); };
+  }, [menu]);
 
   useEffect(() => {
     if (!industry) return;
@@ -429,7 +465,7 @@ export function Dashboard({ initialPage = "dashboard" }) {
               {SECTORS.map(([s, list]) => <optgroup key={s} label={s}>{list.map((i) => <option key={i} value={i}>{i}</option>)}</optgroup>)}
             </select>
           </div>
-          {authLoading ? <p className="mono" style={{ color: "var(--ink-3)" }}>Loading your profile…</p> : null}
+          {authLoading ? <p className="mono" style={{ color: "var(--muted-light)" }}>Loading your profile…</p> : null}
         </section>
       </div></div>
     );
@@ -462,18 +498,20 @@ export function Dashboard({ initialPage = "dashboard" }) {
           )}
           <div className="side-footer">Free: every incident in your industry, classified.<br />Subscriber: who it reaches and what to do.</div>
         </aside>
+        {/* Phone drawer backdrop (CSS shows it only at <=760px): dims the page and closes the drawer on tap. */}
+        <div className={`side-backdrop ${sideOpen ? "open" : ""}`} style={{ top: navH }} onClick={() => setSideOpen(false)} aria-hidden="true" />
 
         <main className="main">
           <header className="topbar">
-            <button className="mobile-menu" onClick={() => setSideOpen(!sideOpen)}>☰</button>
+            <button className="mobile-menu" aria-label="Dashboard sections" aria-expanded={sideOpen} onClick={() => setSideOpen(!sideOpen)}><Icon name="sidebar" /></button>
             <div className="search"><svg viewBox="0 0 24 24">{ICONS.search}</svg><input type="search" placeholder="Search incidents, companies or countries…" value={query} onChange={(e) => setQuery(e.target.value)} /><span className="shortcut">⌘ K</span></div>
             <div className="top-spacer" />
             {preview && <div className="persona"><span>Preview as</span><select value={industry} onChange={(e) => setIndustry(e.target.value)}>{INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>}
-            <div className="profile" onClick={() => setMenu(!menu)}>
+            <button type="button" className="profile" aria-expanded={menu} onClick={() => setMenu(!menu)}>
               <div className="avatar">{initials}</div>
               <div className="profile-copy"><strong>{profile?.full_name || user?.email || "Preview"}</strong><span>{tierLabel(tier).toUpperCase()} · {industry}</span></div>
               <svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" /></svg>
-            </div>
+            </button>
           </header>
 
           {err && <div className="content"><div className="panel empty" style={{ color: "#B21F31" }}>Could not load your industry: {err}</div></div>}
@@ -483,12 +521,13 @@ export function Dashboard({ initialPage = "dashboard" }) {
         </main>
       </div>
 
+      {menu && <div className="profile-backdrop" onClick={() => setMenu(false)} aria-hidden="true" />}
       {menu && (
-        <div className="profile-menu open">
-          <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?profile">Profile</a>
+        <div className="profile-menu open" style={{ top: navH + 54 }}>
+          <a href="/?profile">Profile</a>
           {subscriber && user && tier !== "admin" && <button onClick={async () => { try { await setSubscribed(false); toast("Subscription switched off."); } catch (e) { toast(e.message); } setMenu(false); }}>Switch off subscription</button>}
           {!subscriber && <button onClick={() => { setMenu(false); openSubscribe(); }}>Subscribe</button>}
-          <a className="nav-btn" style={{ height: 36, color: "var(--ink-2)", fontSize: 11 }} href="/?home">Landing page</a>
+          <a href="/?home">Landing page</a>
           <button onClick={() => { setMenu(false); user ? signOut() : (window.location.href = "/?home"); }}>{user ? "Sign out" : "Exit preview"}</button>
         </div>
       )}

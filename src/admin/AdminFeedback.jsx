@@ -82,7 +82,7 @@ export function AdminFeedback() {
       {/* Header */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "baseline",
-        marginBottom: 18,
+        marginBottom: 18, flexWrap: "wrap", gap: 12,
       }}>
         <h1 style={{
           fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 28,
@@ -99,6 +99,7 @@ export function AdminFeedback() {
           border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 4,
           fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
           letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+          whiteSpace: "nowrap",
         }}>↻ Refresh</button>
       </div>
 
@@ -125,7 +126,7 @@ export function AdminFeedback() {
           }}>
             Answer rate — % of {items.length} submissions
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: 8 }}>
             {QUESTIONS.map(q => {
               const pct = Math.round((answerCounts[q.key] / Math.max(items.length, 1)) * 100);
               return (
@@ -213,6 +214,7 @@ export function AdminFeedback() {
                   background: "transparent", color: BRAND.white,
                   border: "none", cursor: "pointer", textAlign: "left",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
+                  flexWrap: "wrap", gap: 8,
                   fontFamily: "Inter, sans-serif",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -221,13 +223,13 @@ export function AdminFeedback() {
                       background: "rgba(252,189,0,0.15)", color: BRAND.gold,
                       fontSize: 10, fontWeight: 700, letterSpacing: "0.10em",
                     }}>{(item.tier_at_submission || "—").toUpperCase()}</span>
-                    <span style={{ fontSize: 13.5, fontWeight: 600 }}>{item.email}</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, overflowWrap: "anywhere" }}>{item.email}</span>
                     <span style={{ color: BRAND.textMuted, fontSize: 11 }}>
                       · {ansCount} of {QUESTIONS.length} answered
                     </span>
                   </div>
                   <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, color: BRAND.textMuted }}>{fmtDate(item.submitted_at)}</span>
+                    <span style={{ fontSize: 11, color: BRAND.textMuted, whiteSpace: "nowrap" }}>{fmtDate(item.submitted_at)}</span>
                     <span style={{
                       fontSize: 10, color: BRAND.textMuted,
                       transform: isExp ? "rotate(90deg)" : "rotate(0)",

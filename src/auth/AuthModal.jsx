@@ -209,7 +209,9 @@ export function AuthModal({ open, onClose, intent = null }) {
     fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
     cursor: disabled ? "not-allowed" : "pointer",
   });
-  const linkBtn = { background: "none", border: "none", color: C.goldDeep, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, padding: 0, textDecoration: "underline" };
+  // padding 6 / margin -6: a 28px-tall tap target whose margin box is the old
+  // 16px line, so the sentence and the row around it do not move.
+  const linkBtn = { background: "none", border: "none", color: C.goldDeep, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, padding: "6px 0", margin: "-6px 0", textDecoration: "underline" };
   const onFocus = (e) => (e.target.style.borderColor = C.gold);
   const onBlur = (e) => (e.target.style.borderColor = C.line2);
 
@@ -220,7 +222,11 @@ export function AuthModal({ open, onClose, intent = null }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 10px", color: C.ink3, fontSize: 11.5, fontFamily: "Inter, sans-serif" }}>
         <span style={{ flex: 1, height: 1, background: C.line }} />Or continue with<span style={{ flex: 1, height: 1, background: C.line }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      {/* Two columns only when each can hold "Continue with Microsoft" (~185px):
+          the 500px card keeps its pair, a phone gets one full-width column
+          (the text used to run over the next button). auto-fill, not auto-fit,
+          keeps a lone Google button at half width on desktop. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(192px, 100%), 1fr))", gap: 8 }}>
         {PROVIDERS.map(([id, label, icon]) => (
           <button key={id} type="button" disabled={busy} onClick={() => social(id, label)} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minWidth: 0,
@@ -232,11 +238,14 @@ export function AuthModal({ open, onClose, intent = null }) {
     </div>
   );
 
+  // overscrollBehavior: once the card has been scrolled to its end, further
+  // swipes no longer scroll the page underneath. .am-overlay also locks the
+  // page's own scroll on touch screens while the modal is open (responsive.css).
   return (
-    <div onClick={close} style={{
+    <div className="am-overlay" onClick={close} style={{
       position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,15,15,0.55)",
       backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start",
-      justifyContent: "center", padding: "3vh 18px", overflowY: "auto",
+      justifyContent: "center", padding: "3vh 18px", overflowY: "auto", overscrollBehavior: "contain",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
         width: "min(500px, 100%)", background: C.paper,
@@ -247,7 +256,9 @@ export function AuthModal({ open, onClose, intent = null }) {
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 10, color: C.goldDeep, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
             Attacked.ai™ · Intelligence Inbox
           </div>
-          <button onClick={close} aria-label="Close" style={{ background: "none", border: "none", color: C.ink3, fontSize: 18, cursor: "pointer", padding: 4 }}>×</button>
+          {/* 44x44 hit box. The negative margins give it the old 20x29 footprint
+              (padding 4 around the glyph), so the × and the row stay put. */}
+          <button onClick={close} aria-label="Close" style={{ background: "none", border: "none", color: C.ink3, fontSize: 18, cursor: "pointer", padding: 0, width: 44, height: 44, margin: "-7.5px -12px -7.5px 0", display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none" }}>×</button>
         </div>
 
         {/* ───────── SIGN UP ───────── */}
@@ -261,31 +272,33 @@ export function AuthModal({ open, onClose, intent = null }) {
 
             <form onSubmit={submitSignup}>
               <Field>
-                <label style={label}>Email <span style={sub}>Work email preferred</span></label>
+                <label style={label}>Email <span className="am-fine" style={sub}>Work email preferred</span></label>
                 <input type="email" required autoFocus placeholder="you@company.com" value={email}
                   onChange={(e) => { setEmail(e.target.value); error && setError(null); }} style={field} onFocus={onFocus} onBlur={onBlur} />
               </Field>
 
-              <div style={{ display: "flex", gap: 10 }}>
-                <div style={{ flex: 1, minWidth: 0 }}><Field>
+              {/* Wraps only on the narrowest phones (<~285px), where "First name" clipped. */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
+                <div style={{ flex: "1 1 96px", minWidth: 0 }}><Field>
                   <label style={label}>First name</label>
                   <input type="text" required placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} />
                 </Field></div>
-                <div style={{ flex: 1, minWidth: 0 }}><Field>
+                <div style={{ flex: "1 1 96px", minWidth: 0 }}><Field>
                   <label style={label}>Last name</label>
                   <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} />
                 </Field></div>
               </div>
 
-              <div style={{ display: "flex", gap: 10 }}>
-                <div style={{ flex: 1, minWidth: 0 }}><Field>
+              {/* Wraps below ~390px so "Your organisation" is not clipped. */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
+                <div style={{ flex: "1 1 145px", minWidth: 0 }}><Field>
                   <label style={label}>Job title</label>
                   <select required value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} style={{ ...sel, color: jobTitle ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
                     <option value="" disabled style={opt}>Select</option>
                     {ROLES.map(j => <option key={j} value={j} style={opt}>{j}</option>)}
                   </select>
                 </Field></div>
-                <div style={{ flex: 1, minWidth: 0 }}><Field>
+                <div style={{ flex: "1 1 145px", minWidth: 0 }}><Field>
                   <label style={label}>Company</label>
                   <input type="text" required placeholder="Your organisation" value={company} onChange={(e) => setCompany(e.target.value)} style={field} onFocus={onFocus} onBlur={onBlur} autoComplete="organization" />
                 </Field></div>
@@ -297,7 +310,7 @@ export function AuthModal({ open, onClose, intent = null }) {
                   Company was added back on 2026-09-21 (owner's call); it is
                   saved to profiles.company. Country stays on Profile. */}
               <Field>
-                <label style={label}>Industry <span style={sub}>drives your dashboard and daily brief</span></label>
+                <label style={label}>Industry <span className="am-fine" style={sub}>drives your dashboard and daily brief</span></label>
                 <select required value={industry} onChange={(e) => setIndustry(e.target.value)} style={{ ...sel, color: industry ? C.ink : C.ink4 }} onFocus={onFocus} onBlur={onBlur}>
                   <option value="" disabled style={opt}>Select your industry</option>
                   {SECTORS.map(([sector, list]) => (
@@ -310,7 +323,7 @@ export function AuthModal({ open, onClose, intent = null }) {
 
               <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "2px 0 10px", cursor: "pointer" }}>
                 <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 2, accentColor: C.gold }} />
-                <span style={{ fontSize: 11, color: C.ink2, lineHeight: 1.45, fontFamily: "Inter, sans-serif" }}>
+                <span className="am-fine" style={{ fontSize: 11, color: C.ink2, lineHeight: 1.45, fontFamily: "Inter, sans-serif" }}>
                   Occasional emails about Attacked.ai, including account notifications. Unsubscribe any time.
                 </span>
               </label>
@@ -344,14 +357,14 @@ export function AuthModal({ open, onClose, intent = null }) {
                 <label style={label}>Password</label>
                 <div style={{ position: "relative" }}>
                   <input type={showPw ? "text" : "password"} required placeholder="Your password" value={password} onChange={(e) => { setPassword(e.target.value); error && setError(null); }} style={{ ...field, paddingRight: 52 }} onFocus={onFocus} onBlur={onBlur} />
-                  <button type="button" onClick={() => setShowPw(v => !v)} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: C.ink3, cursor: "pointer", fontSize: 12, fontWeight: 600, padding: 4 }}>{showPw ? "Hide" : "Show"}</button>
+                  <button type="button" onClick={() => setShowPw(v => !v)} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: C.ink3, cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "8px 6px" }}>{showPw ? "Hide" : "Show"}</button>
                 </div>
               </Field>}
               {error && <div style={{ marginBottom: 12, fontSize: 12, color: C.err }}>{error}</div>}
               <button type="submit" disabled={busy} style={goldBtn(busy)}>{busy ? (usePw ? "Signing in…" : "Sending your code…") : (usePw ? "Sign in" : "Email me a code →")}</button>
             </form>
             <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, textAlign: "center" }}>
-              <button type="button" onClick={() => { setUsePw(v => !v); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: C.ink3 }}>
+              <button type="button" onClick={() => { setUsePw(v => !v); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: C.ink3, padding: "8px 6px", margin: "-7px 0" }}>
                 {usePw ? <>Prefer a code? <span style={{ color: C.goldDeep, textDecoration: "underline", fontWeight: 600 }}>Email me a code instead</span></>
                        : <>Set a password earlier? <span style={{ color: C.goldDeep, textDecoration: "underline", fontWeight: 600 }}>Sign in with it</span></>}
               </button>
@@ -365,7 +378,7 @@ export function AuthModal({ open, onClose, intent = null }) {
           <>
             <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Enter your code.</h2>
             <p style={{ marginTop: 12, marginBottom: 20, fontSize: 13.5, color: C.ink3, lineHeight: 1.55 }}>
-              We emailed your code to <b style={{ color: C.ink }}>{cleanEmail}</b>{sentAt ? <> at <b style={{ color: C.ink }}>{sentAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</b></> : null}. Use the newest email — each new code cancels the one before — and enter it within an hour.
+              We emailed your code to <b style={{ color: C.ink, overflowWrap: "anywhere" }}>{cleanEmail}</b>{sentAt ? <> at <b style={{ color: C.ink }}>{sentAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</b></> : null}. Use the newest email — each new code cancels the one before — and enter it within an hour.
               {/* Until the Magic Link template in Supabase carries {{ .Token }}, a
                   reader whose address already has an account receives a link
                   instead of a code. Say so, and make the link useful. */}
@@ -373,7 +386,7 @@ export function AuthModal({ open, onClose, intent = null }) {
             </p>
             <form onSubmit={submitCode}>
               <label style={label}>Verification code</label>
-              <input type="text" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={10} placeholder="••••••••"
+              <input className="am-code" type="text" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={10} placeholder="••••••••"
                 value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 10)); error && setError(null); }}
                 style={{ ...field, textAlign: "center", fontSize: 24, fontWeight: 700, letterSpacing: "0.35em", padding: 14, marginBottom: 6 }} onFocus={onFocus} onBlur={onBlur} />
               {error && <div style={{ margin: "8px 0", fontSize: 12, color: C.err }}>{error}</div>}
@@ -384,7 +397,7 @@ export function AuthModal({ open, onClose, intent = null }) {
             </form>
             <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between" }}>
               <button type="button" onClick={resend} disabled={busy} style={{ ...linkBtn, textDecoration: "none" }}>Resend code</button>
-              <button type="button" onClick={() => { setView(from); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: C.ink3, padding: 0 }}>Back</button>
+              <button type="button" onClick={() => { setView(from); setError(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: C.ink3, padding: "6px 0", margin: "-6px 0" }}>Back</button>
             </div>
           </>
         )}

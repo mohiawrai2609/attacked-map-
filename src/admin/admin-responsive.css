@@ -1,0 +1,82 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   admin-responsive.css — responsive overrides for the admin console
+   (src/admin/*). Imported once, from AdminDashboard.jsx.
+
+   The admin components are styled with inline style={{}} objects, so every
+   structural override here needs !important (see src/responsive.css). Every
+   selector is admin-only: the .adm-* classes exist only in src/admin, and
+   .r-tablewrap is used only by AdminUsers.jsx. Laptop and desktop sizes keep
+   their inline look; each rule below names the widths it applies to.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Header: logo + "Admin Console" label + "Back to map" need about 460px.
+   At 519px and below the label goes (the tab bar names the section), the
+   link never breaks, and below about 343px it drops to its own row. */
+@media (max-width: 519px) {
+  .adm-head { flex-wrap: wrap !important; row-gap: 10px !important; column-gap: 12px !important; }
+  .adm-head-label { display: none !important; }
+  .adm-head-back { white-space: nowrap !important; }
+}
+
+/* Tab bar: six tabs at 16px side padding are 4px too wide for 667px.
+   14px fits from 647px; phones keep the sideways strip (.r-scrollx). */
+@media (max-width: 768px) {
+  .adm-tabs > button { padding-left: 14px !important; padding-right: 14px !important; }
+}
+
+/* Reports CMS: list 300 + form 380 + preview 420 + gaps = 1136px of content.
+   Below 1200px the list sits above the editor; at 900px and below the form
+   and the live preview stack too; under 380px the paired fields stack. */
+@media (max-width: 1199px) {
+  .adm-rep-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 900px) {
+  .adm-rep-editor { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 379px) {
+  .adm-rep-2col { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* Users table: 816px of fixed tracks. From 701 to 881px the tracks tighten so
+   the whole row (Change tier included) fits with no scroller; the selector
+   (0,2,0) outranks responsive.css `.r-tablewrap > div { min-width: 720px }`. */
+@media (max-width: 881px) {
+  .r-tablewrap > .adm-uhead,
+  .r-tablewrap > .adm-urow {
+    min-width: 0 !important;
+    column-gap: 10px !important;
+    grid-template-columns: minmax(0, 2fr) 104px minmax(0, 1fr) 96px 128px !important;
+  }
+}
+/* At 700px and below each user is a 3-row card: email + last seen; company /
+   role with the tier badge; joined date with the Change-tier select. */
+@media (max-width: 700px) {
+  .r-tablewrap > .adm-uhead { display: none !important; }
+  .r-tablewrap > .adm-urow {
+    grid-template-columns: minmax(0, 1fr) 128px !important;
+    grid-template-areas: "user user" "co badge" "joined pick" !important;
+    row-gap: 8px !important;
+  }
+  .adm-urow > :nth-child(1) { grid-area: user; }
+  .adm-urow > :nth-child(2) { grid-area: badge; justify-self: end; }
+  .adm-urow > :nth-child(3) { grid-area: co; }
+  .adm-urow > :nth-child(4) { grid-area: joined; }
+  .adm-urow > :nth-child(5) { grid-area: pick; }
+}
+
+/* Stats severity distribution: five columns need about 303px; the card has
+   less than that below 400px, so it becomes 3 + 2. */
+@media (max-width: 399px) {
+  .adm-sev { grid-template-columns: repeat(3, 1fr) !important; row-gap: 14px !important; }
+}
+/* Stats content tiles (6): 3 + 3 instead of 4 + 2 or 5 + 1 on tablets. */
+@media (min-width: 541px) and (max-width: 1073px) {
+  .adm-tiles6 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+/* Inbox application cards: the "·" separators sit between flex items that wrap
+   onto their own lines on phones, where they end up stranded; the 12px gap
+   already separates the items. */
+@media (max-width: 480px) {
+  .adm-sep { display: none !important; }
+}

@@ -118,7 +118,7 @@ export function AdminStats() {
       {/* Header */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "baseline",
-        marginBottom: 18,
+        marginBottom: 18, flexWrap: "wrap", gap: 12,
       }}>
         <h1 style={{
           fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 28,
@@ -128,6 +128,9 @@ export function AdminStats() {
           <span style={{
             marginLeft: 12, fontSize: 12, fontWeight: 500,
             color: BRAND.textMuted, letterSpacing: "0.04em",
+            // One unit that moves under the title when it does not fit (an
+            // inline-block gives the line a break point after "Stats").
+            display: "inline-block", whiteSpace: "nowrap",
           }}>
             as of {fmtDate(stats.computed_at)}
           </span>
@@ -137,12 +140,13 @@ export function AdminStats() {
           border: `1px solid ${BRAND.borderSubtle}`, borderRadius: 4,
           fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 600,
           letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+          whiteSpace: "nowrap",
         }}>↻ Refresh</button>
       </div>
 
       {/* ── HERO ROW — Today + new + active ───────────────────────────── */}
       <SectionTitle>Today's Pulse</SectionTitle>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 28 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 28 }}>
         <Tile big label="New signups today" value={fmtNum(u.new_today)} color={BRAND.gold} hint={`+${u.new_7d || 0} in last 7d`} />
         <Tile big label="Active users (7d)" value={fmtNum(u.active_7d)} color={BRAND.green} hint={`of ${u.total} total`} />
         <Tile big label="Last digest" value={fmtRel(em.last_digest_sent_at)} color={BRAND.cyan} hint={em.last_digest_date ? `for ${em.last_digest_date}` : "no digest yet"} />
@@ -175,7 +179,7 @@ export function AdminStats() {
 
       {/* ── CONTENT (incidents + sweeps) ───────────────────────────────── */}
       <SectionTitle>Content</SectionTitle>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 14 }}>
+      <div className="adm-tiles6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 14 }}>
         <Tile label="Total incidents" value={fmtNum(inc.total)} color={BRAND.gold} />
         <Tile label="Last 7 days" value={fmtNum(inc.last_7d)} color={BRAND.cyan} />
         <Tile label="Last 30 days" value={fmtNum(inc.last_30d)} color={BRAND.green} />
@@ -186,7 +190,7 @@ export function AdminStats() {
 
       {/* Severity breakdown */}
       <Card title="Severity distribution" color={BRAND.textMuted}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+        <div className="adm-sev" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
           {["5","4","3","2","1"].map(sev => (
             <div key={sev} style={{ textAlign: "center" }}>
               <div style={{
@@ -303,14 +307,14 @@ function Card({ title, color, children }) {
 function Row({ k, v, highlight, muted }) {
   return (
     <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "baseline",
+      display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12,
       padding: "6px 0",
       borderBottom: `1px solid rgba(255,255,255,0.04)`,
       fontSize: 12.5,
     }}>
       <span style={{ color: muted ? BRAND.textMuted : BRAND.textSecondary }}>{k}</span>
       <span style={{
-        fontWeight: 700,
+        fontWeight: 700, textAlign: "right",
         color: highlight ? BRAND.gold : (muted ? BRAND.textMuted : BRAND.white),
       }}>{v}</span>
     </div>
