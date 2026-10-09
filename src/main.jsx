@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 // Brand system first: fonts and tokens, then the shared navigation that every
 // page renders. Page-level stylesheets (dashboard, map) read the same tokens.
@@ -17,6 +17,9 @@ import { LegalPage } from "./auth/LegalPage.jsx";
 import { ProfilePage } from "./auth/ProfilePage.jsx";
 import { AdminDashboard } from "./admin/AdminDashboard.jsx";
 import { Dashboard } from "./dashboard/Dashboard.jsx";
+import { CompleteProfile } from "./auth/CompleteProfile.jsx";
+import { GCP } from "./lib/backend";
+import * as gcpAuth from "./lib/gcpAuth";
 
 // ─────────────────────────────────────────────────────────────────────────
 // AppShell — decides what the visitor sees based on auth state.
@@ -225,6 +228,75 @@ function AppShell() {
   return <LandingPage />;
 }
 
+// The profile step (CompleteProfile.jsx), over whatever page a signed-in
+// reader lands on, until their profile has an industry. Google Cloud backend
+// only: there the sign-up questions are asked after WorkOS's hosted page.
+// Legal pages and unsubscribe links stay readable without it.
+function ProfileStep() {
+  const { user, profile, loading, saveProfileBasics, signOut } = useAuth();
+  const [hint, setHint] = useState(null);   // the name the sign-in brought
+  const show = GCP && !loading && !!user && !!profile && !profile.industry && (() => {
+    try { const q = new URLSearchParams(window.location.search); return !q.has("legal") && !q.has("unsubscribe"); }
+    catch { return true; }
+  })();
+  useEffect(() => {
+    if (!show || hint) return undefined;
+    let live = true;
+    gcpAuth.me().then((m) => { if (live) setHint(m?.name || {}); }).catch(() => { if (live) setHint({}); });
+    return () => { live = false; };
+  }, [show, hint]);
+  if (!show || !hint) return null;
+
+  async function save(fields, consent) {
+    // The opt-in first and best effort: once the profile has its industry,
+    // this step closes.
+    try { await gcpAuth.saveConsent(consent); } catch (e) { console.warn("[Profile] opt-in not saved:", e?.message || e); }
+    // onboarded_at NULL → set sends the welcome email (trg_welcome_on_onboarded).
+    return saveProfileBasics({ ...fields, ...(profile.onboarded_at ? {} : { onboarded_at: new Date().toISOString() }) });
+  }
+  return (
+    <CompleteProfile email={user.email} profile={profile} nameHint={hint} onSave={save}
+      onSignOut={async () => { await signOut(); window.location.href = "/"; }} />
+  );
+}
+
+// ?signin_error=<reason>: the API's sign-in round trips (WorkOS, Google) land
+// on /?home with it when they could not finish. Say why, once.
+const SIGNIN_ERRORS = {
+  cancelled: "Sign-in was cancelled. You can try again any time.",
+  expired: "That sign-in took too long to finish. Please start again.",
+  unverified: "We couldn't confirm that email address. Please sign in again and verify it.",
+  suspended: "This account is suspended. Email hello@attacked.ai if you think that's a mistake.",
+  domain: "That Google account can't sign in here.",
+  unavailable: "Sign-in is unavailable right now. Please try again in a few minutes.",
+};
+function SigninNotice() {
+  const [reason, setReason] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get("signin_error"); } catch { return null; }
+  });
+  if (!reason) return null;
+  function dismiss() {
+    setReason(null);
+    try {
+      const search = window.location.search.replace(/([?&])signin_error=[^&]*&?/, "$1").replace(/[?&]$/, "");
+      window.history.replaceState(null, "", window.location.pathname + search + window.location.hash);
+    } catch { /* noop */ }
+  }
+  return (
+    <div role="alert" style={{
+      position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 10000,
+      width: "min(560px, calc(100% - 32px))", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8,
+      padding: "6px 4px 6px 16px", background: "#0E1116", color: "#FFFFFF", borderLeft: "3px solid #FCBD00",
+      borderRadius: 4, boxShadow: "0 12px 40px rgba(0,0,0,.35)", fontFamily: "Inter, sans-serif", fontSize: 13.5, lineHeight: 1.5,
+    }}>
+      <span style={{ flex: 1, minWidth: 0, padding: "6px 0" }}>{SIGNIN_ERRORS[reason] || "Sign-in didn't finish. Please try again."}</span>
+      <button type="button" onClick={dismiss} aria-label="Dismiss" style={{
+        flex: "none", width: 44, height: 44, background: "none", border: 0, color: "#A6A8AD", fontSize: 18, cursor: "pointer",
+      }}>×</button>
+    </div>
+  );
+}
+
 // Last line of defence: an exception anywhere in a page used to blank the
 // whole site. Show a plain way back instead, and log what broke.
 class RootErrorBoundary extends React.Component {
@@ -255,6 +327,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <RootErrorBoundary>
       <AuthProvider>
         <AppShell />
+        <ProfileStep />
+        <SigninNotice />
       </AuthProvider>
     </RootErrorBoundary>
   </React.StrictMode>

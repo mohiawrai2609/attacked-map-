@@ -53,8 +53,17 @@ B_AVATARS="$PROJECT_ID-avatars"; B_MEDIA="$PROJECT_ID-incident-media"
 B_REPORTS="$PROJECT_ID-reports"; B_ARCHIVE="$PROJECT_ID-sweep-archive"
 FUNCTIONS=(daily-digest incident-deliver welcome-email incident-images incident-report)
 # Secrets only a person can supply (setup.sh creates them empty and stops until they have a value).
-OWNER_SECRETS=(google-client-id google-client-secret resend-api-key)
-OPTIONAL_SECRETS=(supabase-db-url supabase-service-key twilio-account-sid twilio-auth-token twilio-whatsapp-from)
+# Sign-in needs WorkOS's API key (AUTH_PROVIDER=workos) or our own Google client (AUTH_PROVIDER=own);
+# the other pair stays optional, so switching back and forth is one env var.
+AUTH_PROVIDER="${AUTH_PROVIDER:-own}"
+if [[ "$AUTH_PROVIDER" == "workos" ]]; then
+  OWNER_SECRETS=(workos-api-key resend-api-key)
+  SIGNIN_OPTIONAL=(google-client-id google-client-secret workos-webhook-secret)
+else
+  OWNER_SECRETS=(google-client-id google-client-secret resend-api-key)
+  SIGNIN_OPTIONAL=(workos-api-key workos-webhook-secret)
+fi
+OPTIONAL_SECRETS=("${SIGNIN_OPTIONAL[@]}" supabase-db-url supabase-service-key twilio-account-sid twilio-auth-token twilio-whatsapp-from)
 
 secret_has_value() { [[ $DRY == 1 ]] && return 0; $GC secrets versions list "$1" --filter=state=enabled --limit=1 --format='value(name)' 2>/dev/null | grep -q .; }
 secret_value() { if [[ $DRY == 1 ]]; then echo "dry-run-value-$1"; else $GC secrets versions access latest --secret="$1"; fi; }
@@ -127,7 +136,7 @@ step_secrets() {
   for s in "${OWNER_SECRETS[@]}" "${OPTIONAL_SECRETS[@]}"; do ensure_secret "$s"; done
 
   # Who may read which secret.
-  for s in jwt-secret anon-key service-role-key database-url internal-token ingest-token resend-api-key google-client-id google-client-secret; do grant_secret "$s" "$SA_API"; done
+  for s in jwt-secret anon-key service-role-key database-url internal-token ingest-token resend-api-key google-client-id google-client-secret workos-api-key workos-webhook-secret; do grant_secret "$s" "$SA_API"; done
   for s in pgrst-db-uri jwt-secret; do grant_secret "$s" "$SA_DATA"; done
   for s in service-role-key anon-key internal-token resend-api-key twilio-account-sid twilio-auth-token twilio-whatsapp-from; do grant_secret "$s" "$SA_FN"; done
   for s in db-admin-password db-authenticator-password db-api-password supabase-db-url; do grant_secret "$s" "$SA_MIGRATE"; done
@@ -204,6 +213,9 @@ step_deploy() {
   local s missing=()
   for s in "${OWNER_SECRETS[@]}"; do secret_has_value "$s" || missing+=("$s"); done
   if [[ ${#missing[@]} -gt 0 ]]; then echo "  Stopped: these secrets still have no value: ${missing[*]}"; exit 1; fi
+  if [[ "$AUTH_PROVIDER" == "workos" && -z "${WORKOS_CLIENT_ID:-}" ]]; then
+    echo "  Stopped: AUTH_PROVIDER=workos needs WORKOS_CLIENT_ID in config.env (README → WorkOS)"; exit 1
+  fi
 
   run $GC run deploy attacked-data --image="$AR/data:latest" --region="$REGION" --service-account="$SA_DATA" \
     --allow-unauthenticated --add-cloudsql-instances="$INSTANCE_CONN" --port=8080 --cpu=1 --memory=512Mi \
@@ -231,13 +243,21 @@ step_deploy() {
   done
   fn_urls+="}"
 
+  local api_secrets="JWT_SECRET=jwt-secret:latest,ANON_KEY=anon-key:latest,SERVICE_ROLE_KEY=service-role-key:latest,DATABASE_URL=database-url:latest,INTERNAL_TOKEN=internal-token:latest,INGEST_TOKEN=ingest-token:latest,RESEND_API_KEY=resend-api-key:latest"
+  # Sign-in secrets that have a value (pointing at an empty secret stops the deploy).
+  if secret_has_value google-client-id && secret_has_value google-client-secret; then
+    api_secrets+=",GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest"
+  fi
+  if secret_has_value workos-api-key; then api_secrets+=",WORKOS_API_KEY=workos-api-key:latest"; fi
+  if secret_has_value workos-webhook-secret; then api_secrets+=",WORKOS_WEBHOOK_SECRET=workos-webhook-secret:latest"; fi
+
   run $GC run deploy attacked-api --image="$AR/api:latest" --region="$REGION" --service-account="$SA_API" \
     --allow-unauthenticated --add-cloudsql-instances="$INSTANCE_CONN" --port=8080 --cpu=1 --memory=512Mi \
     --timeout=600 --min-instances=0 --max-instances=10 \
     --add-volume=name=reports,type=cloud-storage,bucket="$B_REPORTS",readonly=true \
     --add-volume-mount=volume=reports,mount-path=/mnt/reports \
-    --set-env-vars="^|^BACKEND=gcp|ENV=production|PUBLIC_URL=$SITE_URL|DATA_API_URL=$DATA_URL|MAIL_FROM=$MAIL_FROM|GCS_BUCKET_AVATARS=$B_AVATARS|GCS_BUCKET_MEDIA=$B_MEDIA|REPORTS_DIR=/mnt/reports|SCHEDULER_SA_EMAIL=$SA_SCHED|GOOGLE_ALLOWED_DOMAIN=${GOOGLE_ALLOWED_DOMAIN:-}|FUNCTION_URLS=$fn_urls" \
-    --set-secrets="JWT_SECRET=jwt-secret:latest,ANON_KEY=anon-key:latest,SERVICE_ROLE_KEY=service-role-key:latest,DATABASE_URL=database-url:latest,INTERNAL_TOKEN=internal-token:latest,INGEST_TOKEN=ingest-token:latest,RESEND_API_KEY=resend-api-key:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest"
+    --set-env-vars="^|^BACKEND=gcp|ENV=production|PUBLIC_URL=$SITE_URL|DATA_API_URL=$DATA_URL|MAIL_FROM=$MAIL_FROM|GCS_BUCKET_AVATARS=$B_AVATARS|GCS_BUCKET_MEDIA=$B_MEDIA|REPORTS_DIR=/mnt/reports|SCHEDULER_SA_EMAIL=$SA_SCHED|GOOGLE_ALLOWED_DOMAIN=${GOOGLE_ALLOWED_DOMAIN:-}|AUTH_PROVIDER=$AUTH_PROVIDER|WORKOS_CLIENT_ID=${WORKOS_CLIENT_ID:-}|FUNCTION_URLS=$fn_urls" \
+    --set-secrets="$api_secrets"
   local API_URL; API_URL="$(service_url attacked-api)"
   # Cloud Scheduler signs its calls for this audience.
   run $GC run services update attacked-api --region="$REGION" --update-env-vars="JOBS_AUDIENCE=$API_URL"

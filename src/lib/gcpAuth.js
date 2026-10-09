@@ -10,7 +10,10 @@
 //   getSession()           { user, session, access_token } | null
 //   getAccessToken()       for supabase-js's accessToken option
 //   onChange(cb)           called with the session (or null) when it changes
+//   authConfig()           which sign-in the API offers: { provider: "workos" | "own" }
+//   workosStart            WorkOS's hosted sign-in page (AUTH_PROVIDER=workos)
 //   emailStart / emailVerify / googleStart / logout / devDirect
+//   me / saveConsent       name hints and the email opt-in for the profile step
 
 const API = "/api";
 const HDR = { "Content-Type": "application/json", "X-Requested-With": "attacked" };
@@ -80,6 +83,34 @@ export function onToken(cb) {
   tokenListeners.add(cb);
   return () => tokenListeners.delete(cb);
 }
+
+// Which sign-in is on. AUTH_PROVIDER on the API decides, so switching back to
+// the emailed code (the rollback) needs no new build. Asked once per page load;
+// a failed ask is forgotten, so "Try again" asks afresh.
+let config = null;
+export function authConfig() {
+  if (!config) {
+    config = fetch(`${API}/auth/config`, { credentials: "same-origin" })
+      .then((r) => { if (!r.ok) throw new Error(`Sign-in is unavailable right now (${r.status}).`); return r.json(); })
+      .catch((e) => { config = null; throw e; });
+  }
+  return config;
+}
+
+// WorkOS: a full-page trip to the hosted sign-in page and back; the API sets
+// the cookie. screen is "sign-up" or "sign-in"; redirect is a same-site path.
+export function workosStart(screen = "sign-up", redirect = "/?dashboard") {
+  window.location.href = `${API}/auth/workos/start?${new URLSearchParams({ screen, redirect })}`;
+}
+
+// Who is signed in, until when, and the name their sign-in brought (or null).
+export async function me() {
+  const r = await fetch(`${API}/auth/me`, { credentials: "same-origin" });
+  return r.ok ? r.json() : null;
+}
+
+// The sign-up form's email opt-in, recorded on the account.
+export const saveConsent = (on) => post("/auth/consent", { marketing_opt_in: !!on });
 
 // Email code: start sends it, verify signs in (the API sets the cookie).
 export const emailStart = (email, meta = null) => post("/auth/email/start", { email, meta });

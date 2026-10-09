@@ -13,19 +13,34 @@ import { SiteNav } from "./SiteNav";
 import { SiteFooter } from "./SiteFooter";
 import { supabase } from "../lib/supabaseClient";
 import { clearSiteStorage, sessionWindow, SESSION_DAYS } from "../lib/cookieStorage";
+import { GCP } from "../lib/backend";
+import * as gcpAuth from "../lib/gcpAuth";
+import { useAuth } from "./AuthProvider";
 
 const fmtWhen = (d) => d.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 // "Your privacy choices": shows the current sign-in window and deletes
 // everything this site keeps in the browser (signing out this device first,
-// which also revokes its refresh token on the server).
+// which also revokes its refresh token on the server). On the Google Cloud
+// backend the sign-in is an HttpOnly cookie the page cannot read: the API says
+// when it began and ends, and signing out there revokes it and deletes it.
 function CookieControls() {
-  const [win, setWin] = useState(() => sessionWindow());
+  const { signOut } = useAuth();
+  const [win, setWin] = useState(() => (GCP ? null : sessionWindow()));
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!GCP) return undefined;
+    let live = true;
+    gcpAuth.me()
+      .then((m) => { if (live && m?.session) setWin({ since: new Date(m.session.created_at), until: new Date(m.session.expires_at) }); })
+      .catch(() => { /* signed out or offline: nothing to show */ });
+    return () => { live = false; };
+  }, []);
   async function clearAll() {
     setBusy(true);
-    try { await supabase.auth.signOut({ scope: "local" }); } catch { /* offline: storage is cleared anyway */ }
+    try { if (GCP) await signOut(); else await supabase.auth.signOut({ scope: "local" }); }
+    catch { /* offline: storage is cleared anyway */ }
     clearSiteStorage();
     setWin(null); setDone(true); setBusy(false);
   }
@@ -72,11 +87,27 @@ const BRAND = {
 };
 const CONTACT_EMAIL = "hello@attacked.ai";
 
+// What the browser keeps, per backend. Google Cloud: the API's HttpOnly
+// __session cookie (api/app/gcp/deps.py, 30 days); sign-in itself happens on
+// WorkOS's hosted page. Supabase: src/lib/cookieStorage.js.
+const STORED = GCP ? [
+  ["__session", "Cookie", "Keeps you signed in. It holds a random value that only our server can read (page scripts cannot see it), not your account details.", "30 days from when you sign in, then deleted. Removed at once when you sign out."],
+  ["attacked_welcome_seen", "Local storage", "Remembers that you closed the welcome message, so it does not appear on every visit. Holds only the value “1”.", "Until you clear this site’s data."],
+] : [
+  ["attackmap.auth.0, attackmap.auth.1", "Cookie", "Keeps you signed in: your sign-in tokens and basic account details (email, name, organisation, industry).", "3 days from when you sign in, then deleted. Removed at once when you sign out."],
+  ["attackmap.session_start", "Cookie", "Records when you signed in, so the 3-day limit applies even while you keep using the site.", "Up to 30 days. Removed when you sign out."],
+  ["attacked_welcome_seen", "Local storage", "Remembers that you closed the welcome message, so it does not appear on every visit. Holds only the value “1”.", "Until you clear this site’s data."],
+];
+
+const THIRD_PARTY_FILES = "To draw the map and pictures, your browser fetches files directly from a few providers: satellite imagery from Esri (ArcGIS), the 3D map engine from Cloudflare (cdnjs), some incident pictures from Unsplash, and, only when an incident carries a video, YouTube’s privacy-enhanced player (youtube-nocookie.com). These providers see your IP address when they send a file, as any website would.";
+
 const PAGES = {
   privacy: {
     title: "Privacy policy",
     body: [
-      ["What we collect", "When you sign up we store your email address and the access tier you hold. When you use the map we record basic, non-identifying usage so we can keep the service reliable. We do not sell your data."],
+      ["What we collect", GCP
+        ? "When you sign up we store your email address, the profile details you give us and the access tier you hold. Signing in runs through WorkOS, our sign-in provider, which handles your email address and the way you sign in on our behalf. When you use the map we record basic, non-identifying usage so we can keep the service reliable. We do not sell your data."
+        : "When you sign up we store your email address and the access tier you hold. When you use the map we record basic, non-identifying usage so we can keep the service reliable. We do not sell your data."],
       ["How we use it", "To deliver the Daily Brief and product updates you ask for, to operate and secure the platform, and to respond when you contact us."],
       ["Your control", "You can unsubscribe from any email using the link in its footer, and you can ask us to delete your account and associated data at any time."],
       ["Contact", `Questions about your data? Email ${CONTACT_EMAIL} and we'll respond.`],
@@ -91,20 +122,21 @@ const PAGES = {
       ["Contact", `For licensing or enterprise terms, email ${CONTACT_EMAIL}.`],
     ],
   },
-  // Matches what the site actually stores (src/lib/cookieStorage.js,
-  // LandingPage's welcome flag). Update both together.
+  // Matches what the site actually stores (STORED above: the API's cookie on
+  // Google Cloud, src/lib/cookieStorage.js on Supabase, LandingPage's welcome
+  // flag). Update them together.
   cookies: {
     title: "Cookie policy",
-    updated: "30 September 2026",
+    updated: GCP ? "8 October 2026" : "30 September 2026",
     body: [
-      ["In short", "Attacked.ai uses a few first-party cookies that keep you signed in, and nothing else. There are no advertising, analytics or tracking cookies, and nothing is shared with other websites. Because every item below is strictly necessary for the service you asked for, we do not show a consent banner."],
-      ["What we store in your browser", [
-        ["attackmap.auth.0, attackmap.auth.1", "Cookie", "Keeps you signed in: your sign-in tokens and basic account details (email, name, organisation, industry).", "3 days from when you sign in, then deleted. Removed at once when you sign out."],
-        ["attackmap.session_start", "Cookie", "Records when you signed in, so the 3-day limit applies even while you keep using the site.", "Up to 30 days. Removed when you sign out."],
-        ["attacked_welcome_seen", "Local storage", "Remembers that you closed the welcome message, so it does not appear on every visit. Holds only the value “1”.", "Until you clear this site’s data."],
-      ]],
-      ["How long you stay signed in", "A sign-in lasts 3 days. Behind the scenes a short-lived access token is renewed about every hour while you use the site; after 3 days you are asked to sign in again with a new code. Signing out ends the sign-in immediately on this device."],
-      ["Third-party services", "To draw the map and pictures, your browser fetches files directly from a few providers: satellite imagery from Esri (ArcGIS), the 3D map engine from Cloudflare (cdnjs), some incident pictures from Unsplash, and, only when an incident carries a video, YouTube’s privacy-enhanced player (youtube-nocookie.com). These providers see your IP address when they send a file, as any website would. They do not set cookies on attackedmap.vercel.app; YouTube may use its own storage on its own domain if you play a video."],
+      ["In short", `Attacked.ai uses ${GCP ? "one first-party cookie that keeps" : "a few first-party cookies that keep"} you signed in, and nothing else. There are no advertising, analytics or tracking cookies, and nothing is shared with other websites. Because every item below is strictly necessary for the service you asked for, we do not show a consent banner.`],
+      ["What we store in your browser", STORED],
+      ["How long you stay signed in", GCP
+        ? "A sign-in lasts 30 days. Behind the scenes a short-lived access token is renewed about every hour while you use the site; after 30 days you are asked to sign in again. Signing out ends the sign-in immediately on this device."
+        : "A sign-in lasts 3 days. Behind the scenes a short-lived access token is renewed about every hour while you use the site; after 3 days you are asked to sign in again with a new code. Signing out ends the sign-in immediately on this device."],
+      ["Third-party services", GCP
+        ? `Signing in happens on a page run by WorkOS, our sign-in provider, at its own address; WorkOS may use its own cookies there to keep the sign-in secure. ${THIRD_PARTY_FILES} None of these providers set cookies on this site; YouTube may use its own storage on its own domain if you play a video.`
+        : `${THIRD_PARTY_FILES} They do not set cookies on attackedmap.vercel.app; YouTube may use its own storage on its own domain if you play a video.`],
       ["Your choices", "Use the control below to see your current sign-in and to delete everything this site keeps in your browser. You can also clear or block cookies in your browser settings. Blocking our cookies means you cannot stay signed in."],
       ["Contact", `Questions about cookies or your data? Email ${CONTACT_EMAIL}.`],
     ],

@@ -9,6 +9,11 @@
 //             accounts that set one before 2026-09-22).
 //   social  → Continue with Google / LinkedIn / GitHub / Microsoft on both
 //             screens (Supabase OAuth; providers enabled in the dashboard).
+//   hosted  → Google Cloud backend with WorkOS on (the API's AUTH_PROVIDER):
+//             the modal only hands the reader to WorkOS's hosted page, on its
+//             sign-up or sign-in screen (`screen` prop). The questions below are
+//             asked afterwards, once, by CompleteProfile.jsx. Testing mode on
+//             localhost keeps the form (straight in, no code).
 //
 // The 6-digit code is emailed via Supabase's "Confirm signup" / "Magic Link"
 // templates — both must include {{ .Token }} (see supabase_email_templates/
@@ -17,11 +22,12 @@
 // NOTE: the "I'm not a robot" checkbox is a client-side gate matching the
 // reference; real bot protection needs Supabase Auth captcha config.
 // ─────────────────────────────────────────────────────────────────────────
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth, DIRECT_SIGNIN } from "./AuthProvider";
 import { supabase } from "../lib/supabaseClient";
 import { SECTORS, ROLES } from "../lib/taxonomy";
 import { GCP } from "../lib/backend";
+import { authConfig } from "../lib/gcpAuth";
 
 // Light / paper palette — white + ink + strong gold brand accent.
 const C = {
@@ -75,8 +81,32 @@ const PROVIDERS = GCP ? ALL_PROVIDERS.filter(([id]) => id === "google")
 // intent="subscribe": the reader pressed Subscribe while signed out. Once the
 // session exists we send them back to the subscription page with
 // ?activate=subscriber, which finishes the switch for them.
-export function AuthModal({ open, onClose, intent = null }) {
-  const { signInWithPassword, signIn, directSignIn, signInWithProvider, verifyCode, saveProfileBasics } = useAuth();
+// screen="sign-in": opened by a "Sign in" button; picks the hosted page's screen.
+export function AuthModal({ open, onClose, intent = null, screen = "sign-up" }) {
+  const { signInWithPassword, signIn, directSignIn, signInWithProvider, startHostedSignIn, verifyCode, saveProfileBasics } = useAuth();
+
+  // Google Cloud backend: ask the API which sign-in is on (null while asking,
+  // "workos", "own", or { error }). With WorkOS the browser leaves for the
+  // hosted page at once; the card stays (with a button) for a reader who comes
+  // back with the browser's Back button.
+  const asksApi = GCP && !DIRECT_SIGNIN;
+  const [hosted, setHosted] = useState(null);
+  const [ask, setAsk] = useState(0);              // bumped by "Try again"
+  const hostedScreen = screen === "sign-in" ? "sign-in" : "sign-up";
+  const back = intent === "subscribe" ? "/?subscribe&activate=subscriber" : "/?dashboard";
+  useEffect(() => {
+    if (!open || !asksApi) return undefined;
+    let live = true;
+    authConfig()
+      .then((c) => {
+        if (!live) return;
+        if (c && c.provider === "workos") { setHosted("workos"); startHostedSignIn(hostedScreen, back); }
+        else setHosted("own");
+      })
+      .catch((e) => { if (live) setHosted({ error: e?.message || "Sign-in is unavailable right now." }); });
+    return () => { live = false; };
+  }, [open, asksApi, ask, hostedScreen, back, startHostedSignIn]);
+  const handOff = asksApi && hosted !== "own";
 
   const [view, setView] = useState("signup"); // "signup" | "signin" | "code"
   const [from, setFrom] = useState("signup");  // which screen sent the code
@@ -260,7 +290,7 @@ export function AuthModal({ open, onClose, intent = null }) {
   // swipes no longer scroll the page underneath. .am-overlay also locks the
   // page's own scroll on touch screens while the modal is open (responsive.css).
   return (
-    <div className="am-overlay" onClick={close} style={{
+    <div className="am-overlay" onClick={() => close()} style={{
       position: "fixed", inset: 0, zIndex: 9999, background: "rgba(14,17,22,0.55)",
       backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start",
       justifyContent: "center", padding: "3vh 18px", overflowY: "auto", overscrollBehavior: "contain",
@@ -276,11 +306,33 @@ export function AuthModal({ open, onClose, intent = null }) {
           </div>
           {/* 44x44 hit box. The negative margins give it the old 20x29 footprint
               (padding 4 around the glyph), so the × and the row stay put. */}
-          <button onClick={close} aria-label="Close" style={{ background: "none", border: "none", color: C.ink3, fontSize: 18, cursor: "pointer", padding: 0, width: 44, height: 44, margin: "-7.5px -12px -7.5px 0", display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none" }}>×</button>
+          <button onClick={() => close()} aria-label="Close" style={{ background: "none", border: "none", color: C.ink3, fontSize: 18, cursor: "pointer", padding: 0, width: 44, height: 44, margin: "-7.5px -12px -7.5px 0", display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none" }}>×</button>
         </div>
 
+        {/* ───────── HAND-OFF to WorkOS's hosted page ───────── */}
+        {handOff && (
+          <>
+            <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>{hostedScreen === "sign-in" ? "Sign in" : "Create an account"}</h2>
+            {hosted && hosted.error ? (
+              <>
+                <p role="alert" style={{ marginTop: 10, marginBottom: 16, fontSize: 13.5, color: C.err, fontFamily: "Inter, sans-serif", lineHeight: 1.55 }}>{hosted.error}</p>
+                <button type="button" onClick={() => { setHosted(null); setAsk((n) => n + 1); }} style={goldBtn(false)}>Try again</button>
+              </>
+            ) : (
+              <>
+                <p style={{ marginTop: 10, marginBottom: 16, fontSize: 13.5, color: C.ink3, fontFamily: "Inter, sans-serif", lineHeight: 1.55 }}>
+                  Taking you to our secure sign-in page. You&rsquo;ll come straight back here once you&rsquo;re in.
+                </p>
+                <button type="button" disabled={hosted !== "workos"} onClick={() => startHostedSignIn(hostedScreen, back)} style={goldBtn(hosted !== "workos")}>
+                  {hosted === "workos" ? "Continue to sign-in →" : "Opening…"}
+                </button>
+              </>
+            )}
+          </>
+        )}
+
         {/* ───────── SIGN UP ───────── */}
-        {view === "signup" && (
+        {!handOff && view === "signup" && (
           <>
             <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Create an account</h2>
             <p style={{ marginTop: 6, marginBottom: 14, fontSize: 12.5, color: C.ink3, fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>
@@ -360,7 +412,7 @@ export function AuthModal({ open, onClose, intent = null }) {
         )}
 
         {/* ───────── SIGN IN ───────── */}
-        {view === "signin" && (
+        {!handOff && view === "signin" && (
           <>
             <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Sign in</h2>
             <p style={{ marginTop: 6, marginBottom: 14, fontSize: 12.5, color: C.ink3, fontFamily: "Inter, sans-serif" }}>
@@ -394,7 +446,7 @@ export function AuthModal({ open, onClose, intent = null }) {
         )}
 
         {/* ───────── CODE ───────── */}
-        {view === "code" && (
+        {!handOff && view === "code" && (
           <>
             <h2 style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 22, color: C.ink, lineHeight: 1.2, marginTop: 8, letterSpacing: "-0.015em" }}>Enter your code.</h2>
             <p style={{ marginTop: 12, marginBottom: 20, fontSize: 13.5, color: C.ink3, lineHeight: 1.55 }}>

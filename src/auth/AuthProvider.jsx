@@ -195,6 +195,14 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   }, []);
 
+  // WorkOS (GCP, AUTH_PROVIDER=workos): send the reader to the hosted sign-in
+  // page. screen: "sign-up" | "sign-in"; back: the same-site path to land on.
+  // The API sets the session cookie on the way back, like the Google trip.
+  const startHostedSignIn = useCallback((screen, back) => {
+    if (!GCP) throw new Error("Hosted sign-in runs on the Google Cloud backend only.");
+    gcpAuth.workosStart(screen, back);
+  }, []);
+
   // Create an account with a password (McKinsey-style signup). The form fields
   // ride along as user metadata; the basics are copied to `profiles` after the
   // email code is verified. Supabase then emails a 6-digit "Confirm signup" code.
@@ -396,7 +404,7 @@ export function AuthProvider({ children }) {
   else if (user) tier = profile?.tier || "free";
 
   return (
-    <AuthContext.Provider value={{ user, tier, subscriber: isSubscriber(tier), loading, signIn, directSignIn, signInWithProvider, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, setSubscribed, refreshProfile }}>
+    <AuthContext.Provider value={{ user, tier, subscriber: isSubscriber(tier), loading, signIn, directSignIn, signInWithProvider, startHostedSignIn, signUpWithPassword, signInWithPassword, verifyCode, saveProfileBasics, uploadAvatar, signOut, profile, setEmailSubscribed, setSubscribed, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

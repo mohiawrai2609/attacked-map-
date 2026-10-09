@@ -10,7 +10,8 @@ Two backends, chosen with BACKEND:
   gcp — everything on Google Cloud (deploy/gcp/README.md):
       Cloud SQL holds the data, our own PostgREST (the attacked-data Cloud Run
       service) serves /rest/v1 exactly as Supabase did, and THIS service signs
-      people in (Google + emailed code), holds their sessions, sends mail through
+      people in (WorkOS's hosted page when AUTH_PROVIDER=workos, otherwise
+      Google + emailed code), holds their sessions, sends mail through
       Resend and drains the outbox the database queues HTTP calls into. The
       Supabase-named settings below are then filled from the GCP ones:
         supabase_url              <- DATA_API_URL      (our PostgREST)
@@ -77,6 +78,14 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     google_client_secret: str | None = None
     google_allowed_domain: str | None = None         # e.g. attacked.ai to allow only a Workspace domain
+    # Who signs people in: "workos" = WorkOS AuthKit's hosted page (gcp/workos.py),
+    # with the emailed-code and Google routes switched off; "own" = those routes.
+    # Flipping it back is the rollback: no rebuild, the page asks /api/auth/config.
+    auth_provider: str = "own"                       # own | workos
+    workos_api_key: str | None = None                # sk_live_… (Secret Manager: workos-api-key)
+    workos_client_id: str | None = None              # client_… (public, but per environment)
+    workos_webhook_secret: str | None = None         # Webhooks → endpoint secret (workos-webhook-secret)
+    workos_api_base: str = "https://api.workos.com"
     resend_api_key: str | None = None
     mail_from: str = "Attacked.ai <brief@attacked.ai>"
     internal_token: str | None = None                # API -> functions (x-internal-token)
@@ -93,6 +102,11 @@ class Settings(BaseSettings):
     @property
     def gcp(self) -> bool:
         return self.backend == "gcp"
+
+    @property
+    def workos(self) -> bool:
+        """WorkOS is the front door (and the only one)."""
+        return self.gcp and self.auth_provider == "workos"
 
     @property
     def secure_cookies(self) -> bool:
@@ -139,6 +153,11 @@ def load_settings() -> Settings:
             raise RuntimeError("JWT_SECRET must be at least 32 characters")
         if s.env != "local" and s.dev_direct_signin:
             raise RuntimeError("DEV_DIRECT_SIGNIN is for local testing only")
+        s.auth_provider = (s.auth_provider or "own").strip().lower()
+        if s.auth_provider not in {"own", "workos"}:
+            raise RuntimeError("AUTH_PROVIDER must be own or workos")
+        if s.auth_provider == "workos" and not (s.workos_api_key and s.workos_client_id):
+            raise RuntimeError("AUTH_PROVIDER=workos needs WORKOS_API_KEY and WORKOS_CLIENT_ID (Secret Manager / env)")
     else:
         web = _web_env()
         s.supabase_url = s.supabase_url or web.get("VITE_SUPABASE_URL", "")

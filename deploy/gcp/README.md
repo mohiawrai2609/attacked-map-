@@ -17,8 +17,13 @@ choice is in the production guide the team received with it.
 | Timers | Cloud Scheduler | `attacked-outbox`, `-incident-deliver`, `-cleanup`, `-daily-digest`, `-incident-images` | `api/app/routers/gcp_jobs.py` |
 | Secrets | Secret Manager | see the table below | |
 | Build + deploy | Cloud Build + Artifact Registry | repo `attacked` | `deploy/gcp/cloudbuild.yaml` |
-| Sign-in | Our API: Google (OpenID Connect) + emailed code | | `api/app/routers/gcp_auth.py` |
-| Email delivery | Resend (the only non-Google service) | | `api/app/gcp/mailer.py`, `supabase/functions/_shared/mail.ts` |
+| Sign-in | WorkOS AuthKit (hosted page) in front of our API's sessions; fallback: our own Google + emailed code | `AUTH_PROVIDER` on `attacked-api` | `api/app/gcp/workos.py`, `api/app/routers/gcp_auth.py` |
+| Email delivery | Resend | | `api/app/gcp/mailer.py`, `supabase/functions/_shared/mail.ts` |
+
+WorkOS and Resend are the only services outside Google Cloud. WorkOS only
+proves who someone is: the API then opens its own session (the `__session`
+cookie, 30 days) and ends the one WorkOS opened, so the database, row-level
+security, tiers and sign-out work exactly as with the emailed code.
 
 Firebase Hosting forwards three paths to Cloud Run, so the site, the data API
 and the backend share one origin (no CORS, and the sign-in cookie is
@@ -32,9 +37,17 @@ first-party):
 
 1. **Google Cloud project with billing** at console.cloud.google.com. Note the project id.
 2. **Resend account** (resend.com): Domains → Add `attacked.ai` → add the DNS records it shows (SPF, DKIM) plus a DMARC record `_dmarc TXT "v=DMARC1; p=quarantine; rua=mailto:dmarc@attacked.ai"` → wait for Verified → API Keys → create one with **Sending access** only.
-3. **Google sign-in** (in the same Google Cloud project): APIs & Services → OAuth consent screen → External; app name Attacked.ai, support email, logo, home page, **privacy policy URL and terms URL** (must be live, final pages on your domain), authorised domain. Then Credentials → Create credentials → OAuth client ID → Web application → Authorised redirect URI `https://<SITE>/api/auth/google/callback` (add `http://localhost:5173/api/auth/google/callback` for local testing). Copy the client id and secret. Publishing the consent screen for everyone needs Google's brand verification (a few days).
-4. **Firebase**: console.firebase.google.com → Add project → pick the existing Google Cloud project → Hosting → Get started.
-5. **Make the GitHub repo private** before connecting Cloud Build to it (the old ingest token is in its history).
+3. **Google sign-in** (in the same Google Cloud project): APIs & Services → OAuth consent screen → External; app name Attacked.ai, support email, logo, home page, **privacy policy URL and terms URL** (must be live, final pages on your domain), authorised domain. Then Credentials → Create credentials → OAuth client ID → Web application. Authorised redirect URIs: the one the WorkOS dashboard shows under Authentication → Google OAuth (WorkOS signs people in with this client), plus `https://<SITE>/api/auth/google/callback` if you keep our own Google sign-in as the fallback (add `http://localhost:5173/api/auth/google/callback` for local testing). Copy the client id and secret. Publishing the consent screen for everyone needs Google's brand verification (a few days).
+4. **WorkOS** (dashboard.workos.com, the **Production** environment; Staging is for localhost, with `http://localhost:5173` in place of `https://<SITE>`, and is already set up apart from its sign-in methods: `deploy/gcp/WORKOS.md` has the IDs, the state and the full checklist):
+   - Redirects: Redirect URI `https://<SITE>/api/auth/workos/callback` (make it the default), Sign-in endpoint `https://<SITE>/api/auth/workos/start`, Sign-out redirect `https://<SITE>/?home`.
+   - Authentication: **Magic Auth** on (the emailed 6-digit code); **Password** off; **Google OAuth** on with the client from step 3; **Microsoft OAuth** on with your own Entra app (Azure portal → App registrations; WorkOS shows the redirect URI). WorkOS's shared demo keys work in Staging only.
+   - Radar (bot protection): on.
+   - Branding: copy Staging's (already set). Every value, the brand-panel HTML/CSS and what WorkOS cannot do are in `deploy/gcp/WORKOS.md`. Upload the logo and favicon in the dashboard. Custom domains: `auth.attacked.ai` for the sign-in page and attacked.ai for the code emails (each needs DNS records WorkOS shows).
+   - Sessions: nothing to set. The API ends WorkOS's session right after sign-in; ours lasts `SESSION_DAYS` (30).
+   - Webhooks: endpoint `https://<SITE>/api/webhooks/workos`, events `user.updated` and `user.deleted`. Copy its signing secret.
+   - API Keys: copy the **Client ID** (`client_…`) into `WORKOS_CLIENT_ID` in config.env and keep the **API key** (`sk_live_…`) for Secret Manager below.
+5. **Firebase**: console.firebase.google.com → Add project → pick the existing Google Cloud project → Hosting → Get started.
+6. **Make the GitHub repo private** before connecting Cloud Build to it (the old ingest token is in its history).
 
 ## Set up (Cloud Shell, from the repo root)
 
@@ -42,11 +55,14 @@ first-party):
     bash deploy/gcp/setup.sh --dry-run                         # read what it will do
     bash deploy/gcp/setup.sh apis registry accounts secrets sql buckets
 
-Add the three secrets only a person can supply (setup prints the commands):
+Add the secrets only a person can supply (setup prints the ones still missing):
 
+    printf '%s' 'sk_live_…'       | gcloud secrets versions add workos-api-key --data-file=-
+    printf '%s' '<signing secret>' | gcloud secrets versions add workos-webhook-secret --data-file=-
+    printf '%s' 're_…'            | gcloud secrets versions add resend-api-key --data-file=-
+    # Only for our own Google sign-in (the fallback):
     printf '%s' '<client id>'     | gcloud secrets versions add google-client-id --data-file=-
     printf '%s' '<client secret>' | gcloud secrets versions add google-client-secret --data-file=-
-    printf '%s' 're_…'            | gcloud secrets versions add resend-api-key --data-file=-
 
 Upload the reports (they are on the owner's PC, not in git):
 
@@ -71,7 +87,9 @@ Then:
 | `db-authenticator-password`, `db-api-password` | the two logins above | setup.sh | migrate job |
 | `internal-token` | API → functions, and manual job runs | setup.sh | api, functions |
 | `ingest-token` | `/api/ingest` for the sweeper | setup.sh | api |
-| `google-client-id`, `google-client-secret` | Google sign-in | **you** | api |
+| `workos-api-key` | WorkOS API key (`sk_live_…`): exchanges sign-in codes, ends WorkOS sessions | **you** | api |
+| `workos-webhook-secret` | checks the signature on WorkOS's webhooks (optional until webhooks are on) | **you** | api |
+| `google-client-id`, `google-client-secret` | our own Google sign-in (`AUTH_PROVIDER=own`, the fallback) | **you** | api |
 | `resend-api-key` | sending email | **you** | api, functions |
 | `supabase-db-url`, `supabase-service-key` | only for the move | **you** | migrate job, copy_storage.sh |
 | `twilio-*` | WhatsApp in incident-deliver (optional) | **you** | functions |
@@ -112,9 +130,10 @@ Run `node scraper/smoke-test.js` before the next push.
 ## Cutover checklist
 
 - [ ] Rehearsal counts all match; the unexpected-errors list is empty or understood
-- [ ] Site works on `<project>.web.app`: sign in by code, by Google; map, hub, dashboard, admin, reports (locked for free readers), profile picture upload
+- [ ] Site works on `<project>.web.app`: sign in through WorkOS by emailed code, by Google, by Microsoft; a new account gets the "One last step" profile form once (and the welcome email); an account copied from Supabase keeps its tier; sign out; map, hub, dashboard, admin, reports (locked for free readers), profile picture upload
+- [ ] WorkOS → Webhooks → "Send test event" reaches `/api/webhooks/workos` (200 in Cloud Logging)
 - [ ] Freeze pipeline pushes → `MIGRATE_MODE=apply` → copy_storage.sh → repoint the pipeline
-- [ ] Connect the custom domain in Firebase Hosting; update `SITE_URL` in config.env; rerun `setup.sh deploy`; add the domain's redirect URI to the Google OAuth client
+- [ ] Connect the custom domain in Firebase Hosting; update `SITE_URL` in config.env; rerun `setup.sh deploy`; in WorkOS add the domain's redirect URI, sign-in endpoint and sign-out redirect (and in the Google OAuth client, if our own Google sign-in is kept)
 - [ ] Resume `attacked-daily-digest` only when you want the subscriber brief to go out (`gcloud scheduler jobs resume attacked-daily-digest --location=<region>`)
 - [ ] Keep Supabase read-only for two weeks as a fallback, then pause the project
 
@@ -127,11 +146,18 @@ Run `node scraper/smoke-test.js` before the next push.
 | Logs | Cloud Logging, filter `resource.labels.service_name="attacked-api"` |
 | Run a job now | `curl -X POST -H "x-internal-token: $(gcloud secrets versions access latest --secret=internal-token)" https://<api-url>/api/jobs/run/incident-deliver` |
 | Backups | automatic daily + point-in-time (7 days of logs, 14 backups). Restore: Cloud SQL → Backups → Restore, or clone to a time |
-| Sign someone out everywhere | `update auth.sessions set revoked_at = now() where user_id = '<id>'` (Cloud SQL Studio) |
+| Sign someone out everywhere | `update auth.sessions set revoked_at = now() where user_id = '<id>'` (Cloud SQL Studio), or delete the user in the WorkOS dashboard (the `user.deleted` webhook does the same) |
+| Switch sign-in to WorkOS on a running service | `gcloud run services update attacked-api --region=<r> --update-env-vars=AUTH_PROVIDER=workos,WORKOS_CLIENT_ID=client_… --update-secrets=WORKOS_API_KEY=workos-api-key:latest,WORKOS_WEBHOOK_SECRET=workos-webhook-secret:latest` (`setup.sh secrets` first, so the API may read them) |
+| Switch sign-in back (rollback) | `gcloud run services update attacked-api --region=<r> --update-env-vars=AUTH_PROVIDER=own`. Open pages offer the emailed code on their next sign-in; no rebuild. Our Google button needs the `google-client-*` secrets on the service |
 | Make someone admin | Admin dashboard → Users → tier `admin` (or `update identity.profiles set tier = 'admin' where email = …`) |
 
 ## Local development against the GCP backend
 
-    cd api && python -m pytest -q        # 17 tests; needs a local PostgreSQL 17 (tests/conftest.py)
+    cd api && python -m pytest -q        # 32 tests; needs a local PostgreSQL 17 (tests/conftest.py)
     BACKEND=gcp ENV=local DEV_DIRECT_SIGNIN=true … uvicorn app.main:app --port 8000
     VITE_BACKEND=gcp npm run dev         # Vite forwards /api and /rest/v1 (vite.config.js)
+
+To try the real WorkOS page locally, give the API the Staging environment's
+keys (`AUTH_PROVIDER=workos`, `WORKOS_API_KEY=sk_test_…`, `WORKOS_CLIENT_ID=…`
+in `api/.env`) and start Vite with `VITE_DIRECT_SIGNIN=0`; otherwise testing
+mode signs you straight in.

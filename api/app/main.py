@@ -7,8 +7,9 @@ path and the sign-in code email.
 
 BACKEND=gcp: on Google Cloud (deploy/gcp/README.md). Everything is served under
 /api, because Firebase Hosting forwards https://<site>/api/** to this service.
-On top of the routes above it signs people in (Google, emailed code), holds
-their sessions, takes uploads to Cloud Storage and runs the scheduled jobs.
+On top of the routes above it signs people in (WorkOS's hosted page, or Google
+and an emailed code), holds their sessions, takes uploads to Cloud Storage,
+hears WorkOS's webhooks and runs the scheduled jobs.
 
 Run locally:   uvicorn app.main:app --reload --port 8000   (from api/)
 Docs:          http://localhost:8000/docs  (local only; off in production)
@@ -55,10 +56,11 @@ for r in (me.router, incidents.router, subscription.router, reports.router, inge
     api.include_router(r)
 
 if settings.gcp:
-    from .routers import gcp_auth, gcp_jobs, gcp_uploads
+    from .routers import gcp_auth, gcp_jobs, gcp_uploads, gcp_webhooks
     api.include_router(gcp_auth.router)
     api.include_router(gcp_jobs.router)
     api.include_router(gcp_uploads.router)
+    api.include_router(gcp_webhooks.router)
 else:
     from .routers import auth_code
     api.include_router(auth_code.router)
