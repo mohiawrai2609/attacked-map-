@@ -6,6 +6,7 @@ import { PartnerFeedbackModal } from "./auth/PartnerFeedbackModal.jsx";
 import { SubscribeModal } from "./auth/SubscribeModal.jsx";
 import { isSubscriber } from "./lib/taxonomy";
 import { supabase } from "./lib/supabaseClient";
+import { incidentImage } from "./lib/images";
 import { Logo } from "./auth/Logo.jsx";
 import { SiteNav } from "./auth/SiteNav.jsx";
 import Globe3D from "./Globe3D.jsx";
