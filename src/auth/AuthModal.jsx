@@ -134,21 +134,26 @@ export function AuthModal({ open, onClose, intent = null, screen = "sign-up" }) 
   // can't ask (job title, company, industry) comes right after the first
   // sign-in, on "One last step" (main.jsx ProfileStep).
   const [hostedError, setHostedError] = useState(null);
+  // No box on the way out (owner, 2026-10-10): "Opening secure sign-in…"
+  // appears only if leaving takes more than 3 s; errors always show.
+  const [slow, setSlow] = useState(false);
   useEffect(() => {
     if (!WORKOS || !open) return;
     const ctl = new AbortController();   // closing the window stops the trip
     setHostedError(null);
+    setSlow(false);
+    const t = setTimeout(() => setSlow(true), 3000);
     const back = `${window.location.origin}/${intent === "subscribe" ? "?subscribe&activate=subscriber" : "?dashboard"}`;
     startHosted(screen, back, ctl.signal).catch((e) => { if (!ctl.signal.aborted) setHostedError(e?.message || "Sign-in is unavailable right now."); });
     // Back from the WorkOS page: the browser may restore this page as it was
     // left, "Opening secure sign-in…" and all. Close the window instead.
     const onShow = (e) => { if (e.persisted) onClose(); };
     window.addEventListener("pageshow", onShow);
-    return () => { ctl.abort(); window.removeEventListener("pageshow", onShow); };
+    return () => { ctl.abort(); clearTimeout(t); window.removeEventListener("pageshow", onShow); };
   }, [open]);
 
   if (!open) return null;
-  if (WORKOS) return <HostedNotice error={hostedError} onClose={onClose} />;
+  if (WORKOS) return hostedError || slow ? <HostedNotice error={hostedError} onClose={onClose} /> : null;
   const providers = PROVIDERS;
 
   const cleanEmail = email.trim().toLowerCase();
