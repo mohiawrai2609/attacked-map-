@@ -87,8 +87,7 @@ export function AuthModal({ open, onClose, intent = null, screen = "sign-up" }) 
 
   // Google Cloud backend: ask the API which sign-in is on (null while asking,
   // "workos", "own", or { error }). With WorkOS the browser leaves for the
-  // hosted page at once; the card stays (with a button) for a reader who comes
-  // back with the browser's Back button.
+  // hosted page at once, without showing a card (see `slow` below).
   const asksApi = GCP && !DIRECT_SIGNIN;
   const [hosted, setHosted] = useState(null);
   const [ask, setAsk] = useState(0);              // bumped by "Try again"
@@ -128,8 +127,22 @@ export function AuthModal({ open, onClose, intent = null, screen = "sign-up" }) 
   const [robot, setRobot] = useState(false);
   const [code, setCode] = useState("");
   const [sentAt, setSentAt] = useState(null);   // when the current code was sent — the newest email is the only valid one
+  // WorkOS: no card on the way out (owner, 2026-10-10). It shows only if
+  // leaving takes more than 3 s (with a button), or with the reason sign-in
+  // could not start.
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!open || hosted !== "workos") { setSlow(false); return undefined; }
+    const t = setTimeout(() => setSlow(true), 3000);
+    // Back from the WorkOS page: the browser may restore this page with the
+    // window still open (and invisible); close it so "Sign in" works again.
+    const onShow = (e) => { if (e.persisted) onClose(); };
+    window.addEventListener("pageshow", onShow);
+    return () => { clearTimeout(t); window.removeEventListener("pageshow", onShow); };
+  }, [open, hosted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
+  if (handOff && !(hosted && hosted.error) && !slow) return null;
 
   const cleanEmail = email.trim().toLowerCase();
   // Accept whatever length the Supabase email-OTP is configured to (6–10).
