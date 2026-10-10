@@ -26,6 +26,7 @@ export function SiteNav({ active }) {
   const { user, tier, profile, signOut } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authIntent, setAuthIntent] = useState(null);
+  const [authScreen, setAuthScreen] = useState("sign-up"); // WorkOS page: "Sign in" opens sign-in
   const [menuOpen, setMenuOpen] = useState(false); // account dropdown (signed-in)
   const [navOpen, setNavOpen] = useState(false);   // mobile hamburger panel
 
@@ -33,7 +34,7 @@ export function SiteNav({ active }) {
   // keeps them on the landing page); anonymous visitors hit the sign-in wall.
   function enterMap() {
     if (user) window.location.href = "/?map";
-    else setAuthOpen(true);
+    else { setAuthScreen("sign-up"); setAuthOpen(true); }
   }
 
   // Hidden admin shortcut — three clicks on the wordmark inside 600ms opens
@@ -125,14 +126,14 @@ export function SiteNav({ active }) {
             </>
           ) : (
             <>
-              <button type="button" className="nav-ghost" onClick={() => { setAuthIntent(null); setAuthOpen(true); }}>Sign in</button>
+              <button type="button" className="nav-ghost" onClick={() => { setAuthIntent(null); setAuthScreen("sign-in"); setAuthOpen(true); }}>Sign in</button>
               <a className="nav-gold" href="/?subscribe">Subscribe</a>
             </>
           )}
         </nav>
       </header>
 
-      <AuthModal open={authOpen} intent={authIntent} onClose={() => setAuthOpen(false)} />
+      <AuthModal open={authOpen} intent={authIntent} screen={authScreen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }

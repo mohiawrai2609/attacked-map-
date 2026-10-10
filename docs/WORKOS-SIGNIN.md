@@ -1,35 +1,40 @@
 # WorkOS sign-in on the live site (Supabase / Vercel)
 
-Status: 2026-10-08. Branch `workos-live` (from the live commit `dc7953a`), not committed yet.
+Status: 2026-10-10. On the live branch `cards-only-on-live`, dormant until the
+build has `VITE_AUTH_PROVIDER=workos` (localhost:5173 has it; Vercel does not yet).
 
-## What the reader sees
+## What the reader sees (owner's choice 2026-10-10: the WorkOS page)
 
-One window, two screens:
+- *Sign up free* / *Sign in* (and every other sign-in button) sends the reader to
+  the **WorkOS-hosted page** (AuthKit, branded in the WorkOS dashboard: white, the
+  shield logo, gold button): name + email with a 6-digit code from WorkOS, or
+  Google / Microsoft / GitHub. The navbar's *Sign in* opens WorkOS's sign-in screen,
+  everything else its sign-up screen.
+- Back on the site, a reader whose profile has no industry yet sees **"One last
+  step"** once (name, job title, company, industry, opt-in), then the dashboard.
+  Everyone else lands straight on the dashboard.
+- If the sign-in service can't be reached, or the WorkOS key isn't set, our window
+  says so ("Sign-in is unavailable right now" / "not switched on yet") instead of
+  sending the reader to an error page. It always has Cancel / Escape.
 
-- **Create an account**: email, first and last name, job title, company, industry,
-  email opt-in. Then either *Create your account* (a 6-digit code by email) or
-  *Continue with Google / Microsoft / GitHub / LinkedIn*. Choosing a provider asks
-  for job title, company and industry first, on this same page; the name and email
-  come from the provider. After the code or the provider, the reader lands on the
-  dashboard. **No second page.**
-- **Sign in**: email (code) or a provider. A brand-new person who uses *Sign in*
-  instead of *Create an account* gets the same questions once ("One last step"),
-  since nothing was asked before.
-
-No passwords. The code email is ours (Attacked.ai template, light, gold), sent
-through the same Gmail account as the welcome email.
+No passwords.
 
 ## How it works
 
 ```
-page ──POST /email/start──▶ workos-auth ──▶ WorkOS Magic Auth makes the code ──▶ Gmail sends it
-page ──POST /email/verify─▶ workos-auth ──▶ WorkOS checks the code
-                                        └─▶ Supabase admin: create account if new, one-time token
-page ◀── token ── verifyOtp ──▶ normal Supabase session (profiles, tiers, RLS unchanged)
-
-page ──GET /start?provider=…──▶ workos-auth (signed cookie) ──▶ WorkOS ──▶ Google/Microsoft/…
-     ◀── /callback ◀── WorkOS ── token in #wos_token ── verifyOtp ──▶ session
+page ── /providers check ──▶ workos-auth  (authkit on? WorkOS key set?)
+page ── GET /start?provider=authkit&screen_hint=…&redirect=<page>?…&wos_n=<nonce>
+        └▶ workos-auth (signed cookie: state + return page) ──▶ WorkOS-hosted page
+     ◀── /callback ◀── WorkOS ── Supabase admin: account if new, one-time token
+     ◀── <page>?…&wos_n=<nonce>#wos_token=… ── verifyOtp ──▶ normal Supabase session
 ```
+
+- The nonce (`wos_n`) is also kept in the tab's sessionStorage; the page uses a
+  returned token only when the two match, so a link carrying someone else's
+  token is ignored (login CSRF). The function also drops any `#fragment` from the
+  return address before appending the token.
+- The older in-window routes (`/email/start`, `/email/verify`, `/start?provider=GoogleOAuth`)
+  still exist in the function but the site no longer uses them.
 
 - Supabase Edge Function `workos-auth` (project `ovenyjguhkgiceddzwna`, verify_jwt off).
   Only these sites can use it: attackedmap.vercel.app, its Vercel previews,
@@ -45,7 +50,7 @@ page ──GET /start?provider=…──▶ workos-auth (signed cookie) ──�
 
 | File | What |
 |---|---|
-| `supabase/functions/workos-auth/index.ts` | the function (deployed, version 2) |
+| `supabase/functions/workos-auth/index.ts` | the function (deployed, version 4) |
 | `src/lib/workos.js` | browser side: code, providers, return trip |
 | `src/auth/AuthProvider.jsx` | WorkOS branch in signIn / verifyCode / signInWithProvider; return trip handled once |
 | `src/auth/AuthModal.jsx` | provider buttons, sign-up answers kept across the provider trip |

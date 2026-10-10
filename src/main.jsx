@@ -248,7 +248,9 @@ function ProfileStep() {
     try { await supabase.auth.updateUser({ data: { marketing_opt_in: !!consent } }); }
     catch (e) { console.warn("[Profile] opt-in not saved:", e?.message || e); }
     // onboarded_at NULL -> set sends the welcome email (trg_welcome_on_onboarded).
-    await saveProfileBasics({ ...fields, ...(profile.onboarded_at ? {} : { onboarded_at: new Date().toISOString() }) });
+    const r = await saveProfileBasics({ ...fields, ...(profile.onboarded_at ? {} : { onboarded_at: new Date().toISOString() }) });
+    if (r?.error) return { error: r.error };
+    if (!r?.profile?.industry) return { error: "Could not save. Try again." };
     return { ok: true };
   }
   return (
@@ -265,7 +267,7 @@ const SIGNIN_ERRORS = {
   expired: "That sign-in took too long to finish. Please start again.",
   unverified: "We couldn't confirm that email address. Please try another sign-in option.",
   suspended: "This account is suspended. Email hello@attacked.ai if you think that's a mistake.",
-  unavailable: "That sign-in option isn't switched on yet. Please use another one.",
+  unavailable: "Sign-in isn't available right now. Please try again in a few minutes.",
 };
 function SigninNotice() {
   const [reason, setReason] = useState(() => {

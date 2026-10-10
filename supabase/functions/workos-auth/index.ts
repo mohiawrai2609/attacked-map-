@@ -12,6 +12,8 @@
 //   POST /workos-auth/email/start   {email}          WorkOS makes a code; we email it
 //   POST /workos-auth/email/verify  {email, code}    -> { token_hash, type }
 //   GET  /workos-auth/providers                       -> { providers: [those switched on in WorkOS] }
+//   GET  /workos-auth/start?provider=authkit&screen_hint=sign-up&redirect=<page URL>
+//                                                     -> the WorkOS-hosted sign-in page
 //   GET  /workos-auth/start?provider=GoogleOAuth&redirect=<page URL>   -> the provider
 //   GET  /workos-auth/callback                        -> <page URL>#wos_token=…
 //
@@ -33,7 +35,8 @@ const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const CALLBACK = (Deno.env.get("WORKOS_REDIRECT_URI") ?? "https://ovenyjguhkgiceddzwna.supabase.co/functions/v1/workos-auth/callback").trim();
 const COOKIE = "wos_rt";
 const COOKIE_PATH = "/functions/v1/workos-auth";
-const PROVIDERS = new Set(["GoogleOAuth", "MicrosoftOAuth", "GitHubOAuth", "LinkedInOAuth"]);
+// "authkit" = the WorkOS-hosted sign-in page (email code or a provider, all on WorkOS).
+const PROVIDERS = new Set(["authkit", "GoogleOAuth", "MicrosoftOAuth", "GitHubOAuth", "LinkedInOAuth"]);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_SITE = "https://attackedmap.vercel.app";
 
@@ -279,7 +282,10 @@ async function providerReady(provider: string): Promise<boolean> {
 
 async function providersList(origin: string | null): Promise<Response> {
   const list = (await Promise.all([...PROVIDERS].map(async (p) => (await providerReady(p)) ? p : null))).filter(Boolean);
-  return new Response(JSON.stringify({ providers: list }), {
+  // configured: the WorkOS key is set, so a trip can finish (the page checks
+  // this before sending anyone off to WorkOS).
+  const configured = !!(Deno.env.get("WORKOS_API_KEY") ?? "").trim();
+  return new Response(JSON.stringify({ providers: list, configured }), {
     status: 200, headers: { ...cors(origin), "Content-Type": "application/json", "Cache-Control": "private, max-age=60" },
   });
 }
@@ -288,13 +294,17 @@ async function providerStart(url: URL): Promise<Response> {
   const provider = url.searchParams.get("provider") ?? "";
   const redirect = url.searchParams.get("redirect") ?? "";
   let site = DEFAULT_SITE, target = `${DEFAULT_SITE}/?dashboard`;
-  try { const r = new URL(redirect); if (allowed(r.origin)) { site = r.origin; target = r.toString(); } } catch { /* default */ }
+  // No fragment from the link: the callback appends #wos_token=…, and a
+  // fragment planted in a crafted link must not ride ahead of it.
+  try { const r = new URL(redirect); r.hash = ""; if (allowed(r.origin)) { site = r.origin; target = r.toString(); } } catch { /* default */ }
   if (!PROVIDERS.has(provider) || !(await providerReady(provider))) return back(site, "unavailable");
   const state = random();
   const payload = b64url(enc.encode(JSON.stringify({ s: state, t: target, e: Date.now() + 10 * 60_000 })));
   const q = new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: CALLBACK, response_type: "code", provider, state });
   const hint = url.searchParams.get("login_hint");
   if (hint && EMAIL.test(hint)) q.set("login_hint", hint);
+  const screen = url.searchParams.get("screen_hint");
+  if (provider === "authkit" && (screen === "sign-up" || screen === "sign-in")) q.set("screen_hint", screen);
   return new Response(null, {
     status: 302,
     headers: {

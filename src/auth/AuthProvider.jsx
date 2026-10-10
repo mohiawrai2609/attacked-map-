@@ -266,16 +266,22 @@ export function AuthProvider({ children }) {
 
   // Persist the signup form basics onto the profile row. identity.profiles has
   // an own-row UPDATE policy, so this writes only the caller's row. Best-effort
-  // — never blocks the sign-in.
+  // — never blocks the sign-in. Returns { profile } on success, { error }
+  // otherwise, for callers that need to know (WorkOS "One last step").
   const saveProfileBasics = useCallback(async (fields) => {
     try {
       const { data: u } = await supabase.auth.getUser();
       const uid = u?.user?.id;
-      if (!uid) return;
-      await supabase.from("profiles").update(fields).eq("id", uid);
+      if (!uid) return { error: "You're not signed in." };
+      const { error } = await supabase.from("profiles").update(fields).eq("id", uid);
+      if (error) { console.warn("[Auth] profile basics save failed:", error.message); return { error: "Could not save. Try again." }; }
       const fresh = await fetchProfile(uid);
       setProfile(fresh);
-    } catch (err) { console.warn("[Auth] profile basics save failed:", err?.message); }
+      return { profile: fresh };
+    } catch (err) {
+      console.warn("[Auth] profile basics save failed:", err?.message);
+      return { error: "Could not save. Try again." };
+    }
   }, []);
 
   // Upload a profile picture to the `avatars` storage bucket, then persist its

@@ -21,7 +21,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { supabase } from "../lib/supabaseClient";
 import { SECTORS, ROLES } from "../lib/taxonomy";
-import { WORKOS, WORKOS_PROVIDER, liveProviders } from "../lib/workos";
+import { WORKOS, startHosted } from "../lib/workos";
 
 // Light / paper palette — white + ink + strong gold brand accent.
 const C = {
@@ -49,6 +49,40 @@ const C = {
 // "can't type in the password box" bug).
 const Field = ({ children }) => <div style={{ marginBottom: 10 }}>{children}</div>;
 
+// WorkOS: shown for the moment before the browser leaves for the WorkOS page,
+// or with the reason it could not. Always closable (button, backdrop, Escape):
+// a cancelled navigation must not leave the page covered.
+function HostedNotice({ error, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="am-overlay" onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,15,15,0.55)",
+      backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "18px",
+    }}>
+      <div role={error ? "alertdialog" : "status"} aria-live="polite" onClick={(e) => e.stopPropagation()} style={{
+        width: "min(420px, 100%)", background: C.paper, border: `1px solid ${C.line}`, borderRadius: 10,
+        padding: "22px 24px", boxShadow: "0 24px 70px rgba(16,16,16,0.28)", fontFamily: "Inter, sans-serif", textAlign: "center",
+      }}>
+        <div style={{ fontSize: 10, color: C.goldDeep, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+          Attacked.ai™ · Secure sign-in
+        </div>
+        <p style={{ margin: "12px 0 0", fontSize: 14, lineHeight: 1.55, color: error ? C.err : C.ink2 }}>
+          {error || "Opening secure sign-in…"}
+        </p>
+        <button type="button" onClick={onClose} style={{
+          marginTop: 16, padding: "10px 18px", border: "none", borderRadius: 4, cursor: "pointer",
+          background: error ? C.gold : "transparent", color: error ? "#1A1A1A" : C.ink3,
+          fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+        }}>{error ? "Close" : "Cancel"}</button>
+      </div>
+    </div>
+  );
+}
+
 // Supabase provider id, label, brand mark. Which of these are SHOWN comes from
 // VITE_AUTH_PROVIDERS (comma-separated ids, e.g. "google,linkedin_oidc"); unset
 // shows all four. A provider that is not switched on in Supabase
@@ -71,7 +105,8 @@ const PROVIDERS = ENABLED.length ? ALL_PROVIDERS.filter(([id]) => ENABLED.includ
 // intent="subscribe": the reader pressed Subscribe while signed out. Once the
 // session exists we send them back to the subscription page with
 // ?activate=subscriber, which finishes the switch for them.
-export function AuthModal({ open, onClose, intent = null }) {
+// screen: which WorkOS page opens first, "sign-up" (default) or "sign-in".
+export function AuthModal({ open, onClose, intent = null, screen = "sign-up" }) {
   const { signInWithPassword, signIn, signInWithProvider, verifyCode, saveProfileBasics } = useAuth();
 
   const [view, setView] = useState("signup"); // "signup" | "signin" | "code"
@@ -94,18 +129,27 @@ export function AuthModal({ open, onClose, intent = null }) {
   const [robot, setRobot] = useState(false);
   const [code, setCode] = useState("");
   const [sentAt, setSentAt] = useState(null);   // when the current code was sent — the newest email is the only valid one
-  // WorkOS: only the providers it has switched on right now get a button (a
-  // provider not set up there ends on a bare WorkOS error page). null = unknown.
-  const [live, setLive] = useState(null);
+  // WorkOS: the WorkOS-hosted page (AuthKit, branded in the WorkOS dashboard)
+  // replaces this window: opening it sends the reader there. What WorkOS
+  // can't ask (job title, company, industry) comes right after the first
+  // sign-in, on "One last step" (main.jsx ProfileStep).
+  const [hostedError, setHostedError] = useState(null);
   useEffect(() => {
     if (!WORKOS || !open) return;
-    let on = true;
-    liveProviders().then((l) => { if (on) setLive(l); });
-    return () => { on = false; };
+    const ctl = new AbortController();   // closing the window stops the trip
+    setHostedError(null);
+    const back = `${window.location.origin}/${intent === "subscribe" ? "?subscribe&activate=subscriber" : "?dashboard"}`;
+    startHosted(screen, back, ctl.signal).catch((e) => { if (!ctl.signal.aborted) setHostedError(e?.message || "Sign-in is unavailable right now."); });
+    // Back from the WorkOS page: the browser may restore this page as it was
+    // left, "Opening secure sign-in…" and all. Close the window instead.
+    const onShow = (e) => { if (e.persisted) onClose(); };
+    window.addEventListener("pageshow", onShow);
+    return () => { ctl.abort(); window.removeEventListener("pageshow", onShow); };
   }, [open]);
 
   if (!open) return null;
-  const providers = WORKOS && live ? PROVIDERS.filter(([id]) => live.includes(WORKOS_PROVIDER[id])) : PROVIDERS;
+  if (WORKOS) return <HostedNotice error={hostedError} onClose={onClose} />;
+  const providers = PROVIDERS;
 
   const cleanEmail = email.trim().toLowerCase();
   // Accept whatever length the Supabase email-OTP is configured to (6–10).
